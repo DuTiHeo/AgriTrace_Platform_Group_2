@@ -1,0 +1,24 @@
+# Python (backend)
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+
+# Node / Expo (frontend)
+node_modules/
+.expo/
+.expo-shared/
+dist/
+web-build/
+npm-debug.log*
+
+# Docker volumes / data
+pgdata/
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

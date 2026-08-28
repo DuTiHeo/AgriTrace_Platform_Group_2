@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgis/postgis:16-3.4
+    container_name: agritrace_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: agritrace
+      POSTGRES_PASSWORD: agritrace_pass
+      POSTGRES_DB: agritrace_farm
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # File nay CHI chay 1 lan duy nhat, khi volume pgdata con rong (lan dau tao container)
+      - ./database/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
+
+  backend:
+    build: ./backend
+    container_name: agritrace_backend
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    volumes:
+      # Mount code de sua code xong tu reload, khong can build lai image
+      - ./backend/app:/app/app
+
+volumes:
+  pgdata:
