@@ -1,0 +1,275 @@
+<h2 class="sr-only">Sơ đồ ERD đầy đủ hệ thống quản lý nông trại Farmer QuickLog, gồm các thực thể với đầy đủ các trường dữ liệu và quan hệ khóa chính - khóa ngoại</h2>
+<style>
+#erd svg.erDiagram .divider path { stroke-opacity: 0.5; }
+#erd svg.erDiagram .row-rect-odd path,
+#erd svg.erDiagram .row-rect-odd rect,
+#erd svg.erDiagram .row-rect-even path,
+#erd svg.erDiagram .row-rect-even rect { stroke: none !important; }
+</style>
+<div id="erd"></div>
+<script type="module">
+import mermaid from 'https://esm.sh/mermaid@11/dist/mermaid.esm.min.mjs';
+const themeMode = document.documentElement.dataset.mode;
+const dark = themeMode ? themeMode === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+await document.fonts.ready;
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'base',
+  fontFamily: '"anthropic-sans", sans-serif',
+  themeVariables: {
+    darkMode: dark,
+    fontSize: '13px',
+    fontFamily: '"anthropic-sans", sans-serif',
+    lineColor: dark ? '#9c9a92' : '#73726c',
+    textColor: dark ? '#c2c0b6' : '#3d3d3a',
+  },
+});
+const src = `erDiagram
+    %% Nông trại chứa các lô đất, tổ công nhân và lô thu hoạch
+    ORGANIZATIONS ||--o{ PLOTS : "contains"
+    ORGANIZATIONS ||--o{ TEAMS : "manages"
+    ORGANIZATIONS ||--o{ HARVEST_BATCHES : "owns"
+    ORGANIZATIONS ||--o{ ERROR_REPORTS : "receives"
+    ORGANIZATIONS |o--o{ USERS : "has_users"
+    USERS ||--o{ ORGANIZATIONS : "belongs_to_org"
+    %% Tổ công nhân chứa các thành viên và tổ trưởng
+    TEAMS |o--o{ USERS : "contains_members"
+    TEAMS |o--o| USERS : "has_leader"
+    %% Giống cây trồng có các mốc chăm sóc và được canh tác trong mùa vụ
+    CROP_CATALOG ||--o{ CROP_CARE_MILESTONES : "has_milestones"
+    CROP_CATALOG ||--o{ SEASONS : "planted_in"
+    %% Lô đất canh tác các mùa vụ
+    PLOTS ||--o{ SEASONS : "farms"
+    %% Mùa vụ có lịch nhắc, nhật ký canh tác, và đóng góp vào lô thu hoạch
+    SEASONS ||--o{ REMINDER_SCHEDULES : "has_reminders"
+    SEASONS ||--o{ FARMING_LOGS : "generates_logs"
+    SEASONS ||--o{ BATCH_SEASONS : "contributes_to"
+    %% Lô thu hoạch bao gồm nhiều mùa vụ
+    HARVEST_BATCHES ||--o{ BATCH_SEASONS : "contains"
+    %% Các tổ được gán hỗ trợ mùa vụ
+    SEASONS ||--o{ SEASON_TEAM_ASSIGNMENTS : "has_team_support"
+    TEAMS ||--o{ SEASON_TEAM_ASSIGNMENTS : "supports"
+    %% Nhật ký canh tác có ảnh và ghi chú của tổ trưởng
+    FARMING_LOGS ||--o{ LOG_PHOTOS : "has_photos"
+    FARMING_LOGS ||--o{ LOG_NOTES : "has_notes"
+    %% Người dùng ghi nhật ký và viết ghi chú
+    USERS ||--o{ LOG_NOTES : "writes_notes"
+    USERS ||--o{ FARMING_LOGS : "creates_logs"
+    %% Tổ công nhân có nhiệm vụ
+    TEAMS ||--o{ TASKS : "assigns_tasks"
+    %% Công nhân được giao nhiệm vụ
+    USERS ||--o{ TASKS : "receives_tasks"
+    %% Nhiệm vụ thực hiện tại lô đất
+    PLOTS ||--o{ TASKS : "has_tasks"
+    %% Người dùng gửi báo cáo lỗi
+    USERS ||--o{ ERROR_REPORTS : "submits_reports"
+    %% Người dùng nhận thông báo
+    USERS ||--o{ NOTIFICATIONS : "receives_notifications"
+    %% Người dùng tạo nhật ký hệ thống
+    USERS ||--o{ SYSTEM_LOGS : "creates_system_logs"
+
+    %% 1. USERS - Người dùng
+    USERS {
+        uuid user_id PK "Mã người dùng"
+        string full_name "Họ và tên"
+        string phone "Số điện thoại"
+        string national_id "CCCD / CMND"
+        date date_of_birth "Ngày sinh"
+        string address "Địa chỉ"
+        string password_hash "Mật khẩu đã mã hóa"
+        string role "Vai trò: owner/leader/worker/admin"
+        string status "Trạng thái: active/locked"
+        uuid org_id FK "Thuộc nông trại nào"
+        uuid team_id FK "Thuộc tổ nào (có thể null)"
+    }
+    
+    %% 2. ORGANIZATIONS - Nông trại
+    ORGANIZATIONS {
+        uuid org_id PK "Mã nông trại"
+        string name "Tên nông trại"
+        string address "Địa chỉ hành chính"
+        uuid owner_id FK "Chủ sở hữu"
+        string status "Trạng thái: active/suspended/incomplete"
+        geometry boundary_geojson "Ranh giới vùng trồng (Polygon)"
+    }
+    
+    %% 3. PLOTS - Vùng trồng / Lô đất
+    PLOTS {
+        uuid plot_id PK "Mã lô đất"
+        uuid org_id FK "Thuộc nông trại nào"
+        string code "Tên/mã lô (VD: Lô A1)"
+        geometry boundary_geojson "Ranh giới của lô"
+        float area "Diện tích"
+        string status "Trạng thái: active/inactive"
+    }
+    
+    %% 4. TEAMS - Tổ công nhân
+    TEAMS {
+        uuid team_id PK "Mã tổ"
+        uuid org_id FK "Thuộc nông trại nào"
+        string name "Tên tổ"
+        uuid team_leader_id FK "Tổ trưởng (có thể null)"
+    }
+    
+    %% 5. CROP_CATALOG - Danh mục giống cây trồng
+    CROP_CATALOG {
+        uuid crop_id PK "Mã giống"
+        string name "Tên giống"
+        int growth_days "Số ngày sinh trưởng"
+        text planting_guide "Hướng dẫn gieo trồng"
+    }
+    
+    %% 6. CROP_CARE_MILESTONES - Mốc chăm sóc của giống
+    CROP_CARE_MILESTONES {
+        uuid milestone_id PK "Mã mốc chăm sóc"
+        uuid crop_id FK "Thuộc giống nào"
+        int days_after_planting "Số ngày sau khi gieo"
+        string task_type "Loại công việc: bón phân, phun thuốc…"
+        text description "Mô tả chi tiết"
+    }
+    
+    %% 7. SEASONS - Mùa vụ
+    SEASONS {
+        uuid season_id PK "Mã mùa vụ"
+        uuid plot_id FK "Canh tác trên lô nào"
+        uuid crop_id FK "Trồng giống nào"
+        date planting_date "Ngày gieo trồng"
+        date expected_harvest_date "Ngày thu hoạch dự kiến"
+        date actual_harvest_date "Ngày thu hoạch thực tế"
+        string status "Trạng thái: growing/ready_to_harvest/completed"
+    }
+    
+    %% 8. REMINDER_SCHEDULES - Lịch nhắc nhở
+    REMINDER_SCHEDULES {
+        uuid reminder_id PK "Mã lịch nhắc"
+        uuid season_id FK "Thuộc mùa vụ nào"
+        string milestone_type "Loại mốc: thu hoạch, bón phân…"
+        date remind_date "Ngày sẽ nhắc"
+        string channel "Kênh gửi: push, sms…"
+        string status "Trạng thái: scheduled/sent/seen"
+    }
+    
+    %% 9. HARVEST_BATCHES - Lô thu hoạch
+    HARVEST_BATCHES {
+        uuid batch_id PK "Mã lô thu hoạch"
+        string batch_code "Mã định danh (BATCH-…) UNIQUE"
+        uuid org_id FK "Thuộc nông trại nào"
+        float quantity "Sản lượng"
+        date harvest_date "Ngày thu hoạch"
+        string status "Trạng thái"
+        string qr_url "Đường dẫn ảnh mã QR"
+    }
+    
+    %% 10. BATCH_SEASONS - Bảng trung gian Lô thu hoạch ↔ Mùa vụ
+    BATCH_SEASONS {
+        uuid batch_id PK "FK - Mã lô thu hoạch"
+        uuid season_id PK "FK - Mã mùa vụ đóng góp"
+        float contributed_quantity "Sản lượng đóng góp từ mùa vụ này"
+    }
+    
+    %% 11. SEASON_TEAM_ASSIGNMENTS - Gán tổ hỗ trợ mùa vụ
+    SEASON_TEAM_ASSIGNMENTS {
+        uuid season_id PK "FK - Mã mùa vụ"
+        uuid team_id PK "FK - Mã tổ hỗ trợ"
+        date start_date "Ngày bắt đầu hỗ trợ"
+        date end_date "Ngày kết thúc hỗ trợ"
+    }
+    
+    %% 12. FARMING_LOGS - Nhật ký canh tác
+    FARMING_LOGS {
+        uuid log_id PK "Mã nhật ký"
+        uuid season_id FK "Thuộc mùa vụ nào"
+        uuid user_id FK "Người ghi nhật ký"
+        string activity_type "Loại hoạt động"
+        text content "Nội dung"
+        point gps "Tọa độ GPS"
+        timestamp logged_at "Thời gian ghi"
+    }
+    
+    %% 13. LOG_PHOTOS - Ảnh đính kèm nhật ký
+    LOG_PHOTOS {
+        uuid photo_id PK "Mã ảnh"
+        uuid log_id FK "Thuộc nhật ký nào"
+        string url "Đường dẫn ảnh"
+    }
+    
+    %% 14. LOG_NOTES - Ghi chú của Tổ trưởng dưới nhật ký
+    LOG_NOTES {
+        uuid note_id PK "Mã ghi chú"
+        uuid log_id FK "Thuộc nhật ký nào"
+        uuid leader_id FK "Tổ trưởng viết ghi chú"
+        text content "Nội dung ghi chú"
+        timestamp created_at "Thời gian viết"
+    }
+    
+    %% 15. TASKS - Nhiệm vụ
+    TASKS {
+        uuid task_id PK "Mã nhiệm vụ"
+        uuid team_id FK "Thuộc tổ nào"
+        uuid worker_id FK "Công nhân được giao"
+        uuid plot_id FK "Thực hiện tại lô nào"
+        text content "Nội dung công việc"
+        date due_date "Hạn hoàn thành"
+        string status "Trạng thái: in_progress/completed"
+    }
+    
+    %% 16. ERROR_REPORTS - Báo cáo lỗi hệ thống
+    ERROR_REPORTS {
+        uuid report_id PK "Mã báo cáo"
+        uuid user_id FK "Người gửi"
+        uuid org_id FK "Thuộc nông trại nào"
+        string error_type "Loại lỗi"
+        text description "Mô tả chi tiết"
+        string screenshot_url "Ảnh chụp màn hình"
+        string status "Trạng thái: new/processing/resolved"
+        text admin_response "Phản hồi của Admin"
+        timestamp submitted_at "Thời gian gửi"
+    }
+    
+    %% 17. NOTIFICATIONS - Thông báo
+    NOTIFICATIONS {
+        uuid notification_id PK "Mã thông báo"
+        uuid user_id FK "Người nhận"
+        text content "Nội dung thông báo"
+        string type "Loại: task_assigned, log_note, reminder…"
+        boolean is_read "Đã đọc hay chưa"
+        timestamp created_at "Thời gian tạo"
+    }
+    
+    %% 18. SYSTEM_LOGS - Nhật ký hệ thống
+    SYSTEM_LOGS {
+        uuid log_id PK "Mã log"
+        uuid actor_id FK "Người thực hiện hành động"
+        string target_type "Loại đối tượng bị tác động"
+        uuid target_id "ID đối tượng bị tác động"
+        string action "Hành động: create, update, delete…"
+        timestamp performed_at "Thời gian thực hiện"
+        string result "Kết quả: success/failed"
+    }`;
+const { svg } = await mermaid.render('erd-svg', src);
+document.getElementById('erd').innerHTML = svg;
+
+document.querySelectorAll('#erd svg.erDiagram .node').forEach(node => {
+  const firstPath = node.querySelector('path[d]');
+  if (!firstPath) return;
+  const d = firstPath.getAttribute('d');
+  const nums = d.match(/-?[\d.]+/g)?.map(Number);
+  if (!nums || nums.length < 8) return;
+  const xs = [nums[0], nums[2], nums[4], nums[6]];
+  const ys = [nums[1], nums[3], nums[5], nums[7]];
+  const x = Math.min(...xs), y = Math.min(...ys);
+  const w = Math.max(...xs) - x, h = Math.max(...ys) - y;
+  const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  rect.setAttribute('x', x); rect.setAttribute('y', y);
+  rect.setAttribute('width', w); rect.setAttribute('height', h);
+  rect.setAttribute('rx', '8');
+  for (const a of ['fill', 'stroke', 'stroke-width', 'class', 'style']) {
+    if (firstPath.hasAttribute(a)) rect.setAttribute(a, firstPath.getAttribute(a));
+  }
+  firstPath.replaceWith(rect);
+});
+
+document.querySelectorAll('#erd svg.erDiagram .row-rect-odd path, #erd svg.erDiagram .row-rect-even path').forEach(p => {
+  p.setAttribute('stroke', 'none');
+});
+</script>
