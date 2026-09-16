@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel
 
 
@@ -9,3 +11,12 @@ class LoginRequest(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"  
+
+class UserInformation(BaseModel):
+    full_name: str
+    phone: str
+    national_id: Optional[str] = None
+    address: Optional[str] = None
+    role: str
+    orgid: Optional[str] = None
+    team_id: Optional[str] = None
