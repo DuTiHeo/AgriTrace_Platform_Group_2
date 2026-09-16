@@ -4,7 +4,11 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 
+from app.routers import auth
+
 app = FastAPI(title="AgriTrace - Farmer QuickLog API")
+
+app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 
 
 @app.get("/health")
