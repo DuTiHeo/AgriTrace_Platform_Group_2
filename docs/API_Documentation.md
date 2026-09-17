@@ -11,8 +11,6 @@
 | Method | Endpoint | Mo ta | Trang thai |
 |---|---|---|---|
 | GET | /health | Kiem tra Backend + Database da ket noi | Da xong |
-| GET | /farms | Danh sach nong trai | Chua lam |
-| POST | /farms | Tao nong trai moi | Chua lam |
-| POST | /seasons | Tao mua vu | Chua lam |
-| POST | /farming-logs | Ghi nhat ky canh tac (QuickLog) | Chua lam |
-| POST | /batches | Khoi tao lo thu hoach + sinh batch_code | Chua lam |
+| POST | /auth/login | Đăng nhập và phân quyền | Đã xong |
+| POST | /auth/logout | Đăng xuất và thêm token vào token_blacklist | Đã xong |
+| POST | /auth/me | Lấy thông tin của người dùng hiện tại | Đã xong |
