@@ -360,7 +360,7 @@ COMMENT ON COLUMN notifications.is_read IS 'Đã đọc hay chưa';
 
 CREATE INDEX idx_notifications_user_unread ON notifications(user_id, is_read) WHERE is_read = FALSE;
 
--- 18. SYSTEM_LOGS (Nhật ký hệ thống)
+-- 18. SYSTEM_LOGS (Nhật ký của hệ thống)
 CREATE TABLE system_logs (
     log_id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     actor_id            UUID REFERENCES users(user_id),
