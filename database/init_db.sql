@@ -378,3 +378,16 @@ COMMENT ON COLUMN system_logs.action IS 'Hành động: create | update | delete
 
 CREATE INDEX idx_system_logs_actor ON system_logs(actor_id);
 CREATE INDEX idx_system_logs_time ON system_logs(performed_at DESC);
+
+-- 19. TOKEN_BLACKLIST (Danh sách token đã bị vô hiệu hóa do logout)
+CREATE TABLE token_blacklist (
+    jti                 UUID PRIMARY KEY,
+    user_id             UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    expires_at          TIMESTAMP WITH TIME ZONE NOT NULL,  --exp gốc của token, để biết khi nào có thể dọn
+    revoked_at          TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+COMMENT ON TABLE token_blacklist IS 'Cac access token da bi vo hieu hoa (do nguoi dung logout) truoc khi het han tu nhien';
+
+--Dùng để dọn nhanh các bản ghi đã hết hạn (token đã tự hết hạn, không cần check nữa)
+CREATE INDEX idx_token_blacklist_expires ON token_blacklist(expires_at);
