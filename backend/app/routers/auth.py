@@ -1,17 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-
 from app.db.session import get_db
-from app.schemas.auth import LoginRequest, Token, UserInformation
+from app.schemas.auth import LoginRequest, Token, UserInformation, ChangePasswordRequest
 from app.crud import user as crud_user
-from app.core.security import verify_password, create_access_token, get_current_user
-
 from datetime import datetime, timezone
 from jose import jwt, JWTError
-
 from app.core.security import (
     verify_password, create_access_token, get_current_user,
-    oauth2_scheme, SECRET_KEY, ALGORITHM,
+    hash_password, oauth2_scheme, SECRET_KEY, ALGORITHM,
 ) 
 from app.crud import token_blacklist as crud_blacklist
 
@@ -55,3 +51,39 @@ def logout(token: str = Depends(oauth2_scheme), current_user: dict = Depends(get
     crud_blacklist.add_to_blacklist(db, jti, current_user["user_id"], expires_at)
 
     return {"message": "Dang xuat thanh cong"}
+
+@router.post("/change-password")
+def change_password(payload: ChangePasswordRequest, token: str = Depends(oauth2_scheme), current_user: dict = Depends(get_current_user), db: Session = Depends(get_db),):
+    #Xác thuc mk cu truoc
+    if not verify_password(payload.old_password, current_user["password_hash"]):
+        raise HTTPException(400, "Mat khau cu khong dung")
+
+    #Rang buoc điều kiện đặt mk mới
+    if len(payload.new_password) < 8:
+        raise HTTPException(400, "Mat khau moi phai co it nhat 8 ky tu")
+    if payload.new_password.strip() != payload.new_password or not payload.new_password.strip():
+        raise HTTPException(400, "Mat khau khong duoc chua khoang trang dau/cuoi hoac toan khoang trang")
+    if not any(c.isalpha() for c in payload.new_password):
+        raise HTTPException(400, "Mat khau moi phai chua it nhat 1 chu cai")
+    if not any(c.isdigit() for c in payload.new_password):
+        raise HTTPException(400, "Mat khau moi phai chua it nhat 1 chu so")
+    if len(set(payload.new_password)) == 1:
+        raise HTTPException(400, "Mat khau moi khong duoc toan ky tu giong nhau")
+    if payload.new_password == payload.old_password:
+        raise HTTPException(400, "Mat khau moi phai khac mat khau cu")
+
+    #Băm và lưu mk ms
+    new_hash = hash_password(payload.new_password)
+    crud_user.update_password(db, current_user["user_id"], new_hash)
+
+    #Thu hoi token hien tại, bắt đang nhập lại
+    try:
+        decoded = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        jti = decoded.get("jti")
+        exp_timestamp = decoded.get("exp")
+        expires_at = datetime.fromtimestamp(exp_timestamp, tz=timezone.utc)
+        crud_blacklist.add_to_blacklist(db, jti, current_user["user_id"], expires_at)
+    except JWTError:
+        pass  # token da khong hop le thi khong can blacklist them
+
+    return {"message": "Doi mat khau thanh cong, vui long dang nhap lai"}

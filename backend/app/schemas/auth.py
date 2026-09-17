@@ -20,3 +20,7 @@ class UserInformation(BaseModel):
     role: str
     orgid: Optional[str] = None
     team_id: Optional[str] = None
+
+class ChangePasswordRequest(BaseModel):
+    old_password: str
+    new_password: str
