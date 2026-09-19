@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.schemas.auth import LoginRequest, Token, UserInformation, ChangePasswordRequest
@@ -10,11 +10,14 @@ from app.core.security import (
     hash_password, oauth2_scheme, SECRET_KEY, ALGORITHM,
 ) 
 from app.crud import token_blacklist as crud_blacklist
+from app.core.limiter import limiter
+
 
 router = APIRouter()
 
 @router.post("/login", response_model=Token)
-def login(payload: LoginRequest, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")   # toi da 5 request login moi phut, TINH THEO IP, khong dung sdt
+def login(request: Request, payload: LoginRequest, db: Session = Depends(get_db)):
     user = crud_user.get_user_by_phone(db, payload.phone)
     if not user or not verify_password(payload.password, user["password_hash"]):
         raise HTTPException(401, "Sai so dien thoai hoac mat khau")
