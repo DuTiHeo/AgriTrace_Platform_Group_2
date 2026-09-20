@@ -7,7 +7,7 @@ from slowapi.errors import RateLimitExceeded
 
 from app.db.session import get_db
 from app.core.limiter import limiter
-from app.routers import auth
+from app.routers import auth, user
 
 app = FastAPI(title="AgriTrace - Farmer QuickLog API")
 
@@ -15,6 +15,8 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
+app.include_router(user.router, prefix="/users", tags=["User"])
+
 
 
 @app.get("/health")
