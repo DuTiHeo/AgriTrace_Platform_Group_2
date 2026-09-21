@@ -1,26 +1,19 @@
-
-
 -- data test all tables
--- =====================================================================
--- FARMER QUICKLOG - SAMPLE DATA
--- Khớp với schema thật trong init_db.sql (bảng tiếng Anh, UUID, PostGIS)
--- Chạy SAU KHI đã chạy xong init_db.sql
--- =====================================================================
-
+-- mật khẩu chung để test login là Test@1234
 BEGIN;
 
 -- 1. USERS (org_id, team_id để NULL trước vì organizations/teams chưa có)
 -- user 1-4: nông trại 1 (Đà Lạt) | user 5-7: nông trại 2 (Mộc Châu) | user 8: admin hệ thống
 
 INSERT INTO users (user_id, full_name, phone, national_id, date_of_birth, address, password_hash, role, status, org_id, team_id) VALUES
-('10000000-0000-0000-0000-000000000001', 'Nguyễn Văn An',  '0901000001', '079090000001', '1980-03-12', 'Đà Lạt, Lâm Đồng', 'hash_demo_1', 'owner',  'active', NULL, NULL),
-('10000000-0000-0000-0000-000000000002', 'Lê Văn Cường',   '0901000002', '079090000002', '1992-01-05', 'Đà Lạt, Lâm Đồng', 'hash_demo_2', 'leader', 'active', NULL, NULL),
-('10000000-0000-0000-0000-000000000003', 'Phạm Thị Dung',  '0901000003', '079090000003', '1995-11-30', 'Đà Lạt, Lâm Đồng', 'hash_demo_3', 'worker', 'active', NULL, NULL),
-('10000000-0000-0000-0000-000000000004', 'Hoàng Văn Em',   '0901000004', '079090000004', '1998-02-14', 'Đà Lạt, Lâm Đồng', 'hash_demo_4', 'worker', 'active', NULL, NULL),
-('10000000-0000-0000-0000-000000000005', 'Vũ Thị Phương',  '0902000001', '079090000005', '1985-09-09', 'Mộc Châu, Sơn La', 'hash_demo_5', 'owner',  'active', NULL, NULL),
-('10000000-0000-0000-0000-000000000006', 'Đỗ Văn Giang',   '0902000002', '079090000006', '1993-06-18', 'Mộc Châu, Sơn La', 'hash_demo_6', 'leader', 'active', NULL, NULL),
-('10000000-0000-0000-0000-000000000007', 'Bùi Thị Hoa',    '0902000003', '079090000007', '1999-12-01', 'Mộc Châu, Sơn La', 'hash_demo_7', 'worker', 'active', NULL, NULL),
-('10000000-0000-0000-0000-000000000008', 'Trần Thị Bình',  '0900000008', '079090000008', '1990-07-20', 'Hà Nội',           'hash_demo_8', 'admin',  'active', NULL, NULL);
+('10000000-0000-0000-0000-000000000001', 'Nguyễn Văn An',  '0901000001', '079090000001', '1980-03-12', 'Đà Lạt, Lâm Đồng', '$2b$12$fV5zOvn5kXwAxe.rCA7hSus8N5sjhZKKlqjgVlPYVUPzwxpsDrxua', 'owner',  'active', NULL, NULL),
+('10000000-0000-0000-0000-000000000002', 'Lê Văn Cường',   '0901000002', '079090000002', '1992-01-05', 'Đà Lạt, Lâm Đồng', '$2b$12$fV5zOvn5kXwAxe.rCA7hSus8N5sjhZKKlqjgVlPYVUPzwxpsDrxua', 'leader', 'active', NULL, NULL),
+('10000000-0000-0000-0000-000000000003', 'Phạm Thị Dung',  '0901000003', '079090000003', '1995-11-30', 'Đà Lạt, Lâm Đồng', '$2b$12$fV5zOvn5kXwAxe.rCA7hSus8N5sjhZKKlqjgVlPYVUPzwxpsDrxua', 'worker', 'active', NULL, NULL),
+('10000000-0000-0000-0000-000000000004', 'Hoàng Văn Em',   '0901000004', '079090000004', '1998-02-14', 'Đà Lạt, Lâm Đồng', '$2b$12$fV5zOvn5kXwAxe.rCA7hSus8N5sjhZKKlqjgVlPYVUPzwxpsDrxua', 'worker', 'active', NULL, NULL),
+('10000000-0000-0000-0000-000000000005', 'Vũ Thị Phương',  '0902000001', '079090000005', '1985-09-09', 'Mộc Châu, Sơn La', '$2b$12$fV5zOvn5kXwAxe.rCA7hSus8N5sjhZKKlqjgVlPYVUPzwxpsDrxua', 'owner',  'active', NULL, NULL),
+('10000000-0000-0000-0000-000000000006', 'Đỗ Văn Giang',   '0902000002', '079090000006', '1993-06-18', 'Mộc Châu, Sơn La', '$2b$12$fV5zOvn5kXwAxe.rCA7hSus8N5sjhZKKlqjgVlPYVUPzwxpsDrxua', 'leader', 'active', NULL, NULL),
+('10000000-0000-0000-0000-000000000007', 'Bùi Thị Hoa',    '0902000003', '079090000007', '1999-12-01', 'Mộc Châu, Sơn La', '$2b$12$fV5zOvn5kXwAxe.rCA7hSus8N5sjhZKKlqjgVlPYVUPzwxpsDrxua', 'worker', 'active', NULL, NULL),
+('10000000-0000-0000-0000-000000000008', 'Trần Thị Bình',  '0900000008', '079090000008', '1990-07-20', 'Hà Nội',           '$2b$12$fV5zOvn5kXwAxe.rCA7hSus8N5sjhZKKlqjgVlPYVUPzwxpsDrxua', 'admin',  'active', NULL, NULL);
 
 -- 2. ORGANIZATIONS (owner_id NOT NULL nên phải có user trước)
 
@@ -32,15 +25,17 @@ ST_SetSRID(ST_GeomFromText('POLYGON((108.42 11.94, 108.43 11.94, 108.43 11.95, 1
 '10000000-0000-0000-0000-000000000005', 'active',
 ST_SetSRID(ST_GeomFromText('POLYGON((104.60 20.83, 104.61 20.83, 104.61 20.84, 104.60 20.84, 104.60 20.83))'), 4326));
 
--- Cập nhật org_id cho các user thuộc từng nông trại (user 8 là admin hệ thống, không thuộc org nào)
+-- Cập nhật org_id cho các user thuộc từng nông trại
+-- LƯU Ý: KHÔNG gán org_id cho user role 'owner' (user 1, user 5) vì constraint
+-- chk_owner_no_single_org bắt buộc owner phải có org_id = NULL (owner sở hữu
+-- nông trại qua organizations.owner_id, có thể sở hữu nhiều nông trại cùng lúc).
+-- user 8 là admin hệ thống, cũng không thuộc org nào.
 UPDATE users SET org_id = '20000000-0000-0000-0000-000000000001' WHERE user_id IN (
-'10000000-0000-0000-0000-000000000001',
 '10000000-0000-0000-0000-000000000002',
 '10000000-0000-0000-0000-000000000003',
 '10000000-0000-0000-0000-000000000004'
 );
 UPDATE users SET org_id = '20000000-0000-0000-0000-000000000002' WHERE user_id IN (
-'10000000-0000-0000-0000-000000000005',
 '10000000-0000-0000-0000-000000000006',
 '10000000-0000-0000-0000-000000000007'
 );
