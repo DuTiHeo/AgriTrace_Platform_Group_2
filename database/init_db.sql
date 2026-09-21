@@ -13,6 +13,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- 1. USERS (Người dùng)
+-- 1. USERS (Người dùng)
 CREATE TABLE users (
     user_id         UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     full_name       VARCHAR(150) NOT NULL,
@@ -28,7 +29,8 @@ CREATE TABLE users (
     created_at      TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at      TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT uq_users_phone UNIQUE (phone)
+    CONSTRAINT uq_users_phone UNIQUE (phone),
+    CONSTRAINT chk_owner_no_single_org CHECK (role <> 'owner' OR org_id IS NULL) -- Owner co the so huu NHIEU nong trai
 );
 
 -- Comment để tí vào mấy cái app quản trị csdl cho dễ nhìn

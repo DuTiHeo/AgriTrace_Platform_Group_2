@@ -20,7 +20,7 @@ from app.db.session import get_db
 from app.core.security import get_current_user, hash_password
 from app.crud import user as crud_user
 from app.schemas.user import *
-
+from app.crud import organization as crud_org
 router = APIRouter()
 
 # Dependency phan quyen dung chung cho ca module
@@ -41,6 +41,13 @@ def require_role(*allowed_roles: str) -> Callable[..., dict]:
 
     return checker
 
+def ensure_owns_org(db: Session, current_user: dict, org_id: UUID | None) -> None:
+    """Chặn Owner thao tac tren nong trai khong thuoc so huu cua minh.
+    Admin duoc bo qua (ho tro khan cap - UC-A01.2/A01.3)."""
+    if current_user["role"] != "owner":
+        return
+    if org_id is None or not crud_org.user_owns_org(db, current_user["user_id"], org_id):
+        raise HTTPException(403, "Ban khong so huu nong trai nay")
 
 # UC-SH04.1 - GET /users (danh sach + tim kiem)
 @router.get("", response_model=list[UserSummary])
@@ -62,9 +69,11 @@ def list_users(
         scope_team_id = None
 
     elif caller_role == "owner":
-        if org_id is not None:
-            raise HTTPException(400, "Owner khong duoc truyen org_id, he thong tu gioi han theo nong trai cua ban")
-        scope_org_id = current_user["org_id"]
+        if org_id is None:
+            raise HTTPException(400, "Owner phai truyen org_id (nong trai muon xem) - xem GET /organizations/mine")
+        if not crud_org.user_owns_org(db, current_user["user_id"], org_id):
+            raise HTTPException(403, "Ban khong so huu nong trai nay")
+        scope_org_id = org_id
         scope_team_id = team_id
 
     else:  # leader
@@ -118,7 +127,8 @@ def get_user_detail(
     is_self = target["user_id"] == current_user["user_id"]
 
     if caller_role == "owner":
-        if target["org_id"] != current_user["org_id"] and not is_self:
+        same_org = target["org_id"] is not None and crud_org.user_owns_org(db, current_user["user_id"], target["org_id"])
+        if not (same_org or is_self):
             raise HTTPException(403, "Ban chi duoc xem nhan su thuoc nong trai cua minh")
     elif caller_role == "leader":
         same_team = target["team_id"] is not None and target["team_id"] == current_user["team_id"]
@@ -140,8 +150,7 @@ def create_staff(
     current_user: dict = Depends(require_role("owner")),
     db: Session = Depends(get_db),
 ):
-    if current_user["org_id"] is None:
-        raise HTTPException(400, "Ban chua co nong trai, vui long tao nong trai truoc khi them nhan su")
+    ensure_owns_org(db, current_user, payload.org_id)
 
     if crud_user.phone_exists(db, payload.phone):
         raise HTTPException(400, "So dien thoai da duoc su dung")
@@ -150,7 +159,7 @@ def create_staff(
 
     return crud_user.create_staff(
         db,
-        org_id=current_user["org_id"],
+        org_id=payload.org_id,
         full_name=payload.full_name,
         phone=payload.phone,
         password_hash=hash_password(payload.password),
@@ -172,8 +181,7 @@ def update_user(
     if target is None:
         raise HTTPException(404, "Khong tim thay nguoi dung")
 
-    if current_user["role"] == "owner" and target["org_id"] != current_user["org_id"]:
-        raise HTTPException(403, "Ban chi duoc sua nhan su thuoc nong trai cua minh")
+    ensure_owns_org(db, current_user, target["org_id"])
 
     data = payload.model_dump(exclude_unset=True)
     if not data:
@@ -202,8 +210,7 @@ def update_role(
     if target["role"] not in ("worker", "leader"):
         raise HTTPException(400, "Route nay chi doi vai tro giua worker/leader, khong ap dung cho owner/admin")
 
-    if current_user["role"] == "owner" and target["org_id"] != current_user["org_id"]:
-        raise HTTPException(403, "Ban chi duoc doi vai tro nhan su thuoc nong trai cua minh")
+    ensure_owns_org(db, current_user, target["org_id"])
 
     if payload.role == AssignableRole.leader:
         team = crud_user.get_team(db, payload.team_id)
@@ -229,8 +236,7 @@ def update_status(
     if target is None:
         raise HTTPException(404, "Khong tim thay nguoi dung")
 
-    if current_user["role"] == "owner" and target["org_id"] != current_user["org_id"]:
-        raise HTTPException(403, "Ban chi duoc khoa/mo khoa nhan su thuoc nong trai cua minh")
+    ensure_owns_org(db, current_user, target["org_id"])
 
     if target["user_id"] == current_user["user_id"] and payload.status == UserStatus.locked:
         raise HTTPException(400, "Khong the tu khoa tai khoan cua chinh minh")
