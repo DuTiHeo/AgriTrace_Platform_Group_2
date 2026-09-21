@@ -89,8 +89,12 @@ def create_owner(
     date_of_birth=None,
     address: str | None = None,
 ) -> dict:
-    """UC-A01.1 - Admin tao tai khoan Owner. org_id = NULL (Owner se tu tao
-    nong trai sau o UC-O01.1, luc do moi back-fill org_id)."""
+    """UC-A01.1 - Admin tao tai khoan Owner. org_id LUON la NULL va se
+    KHONG bao gio duoc gan - vi 1 owner co the so huu NHIEU nong trai
+    (organizations.owner_id la nguon su that, xem chk_owner_no_single_org
+    trong init_db.sql). Khi lam UC-O01.1 (Owner tu tao nong trai), CHI
+    INSERT vao bang organizations voi owner_id = user nay, TUYET DOI
+    KHONG UPDATE users.org_id."""
     return _insert_user(
         db,
         full_name=full_name,

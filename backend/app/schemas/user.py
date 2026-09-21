@@ -67,6 +67,7 @@ class UserCreateOwner(UserBase):
 
 class UserCreateStaff(UserBase):
     # Tuong tu UserCreateOwner (Owner tao nhanh mat khau tam cho worker/leader)
+    org_id: UUID
     password: str = Field(min_length=8)
 
 
