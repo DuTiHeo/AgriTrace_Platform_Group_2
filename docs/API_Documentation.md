@@ -28,3 +28,15 @@ Usecase | Method | Endpoint | Mo ta | Trang thai |
 |UC-O05.2| PATCH | /users/{user_id} | Owner, Admin	Sửa thông tin cốt lõi (không đụng role/status/team) | Đã xong |
 |UC-O05.3 + UC-A01.3 + UC-O06.3| PATCH | /users/{user_id}/role | Owner, Admin Đổi vai trò — kèm transaction gán/gỡ team_leader_id bên teams nếu liên quan đến leader | Đã xong |
 |UC-O05.4 + UC-A01.2| PATCH | /users/{user_id}/status | Owner, Admin Khóa/mở khóa |Đã xong |
+
+Đợt 1: Module CropCatalog (gộp CropCareMilestones — theo bảng kế hoạch các đợt, milestones là bảng con nên gộp chung file thay vì tách riêng)
+Usecase | Method | Endpoint | Mo ta | Trang thai |
+|---|---|---|---|---|
+|UC-SH04.1| GET | /crops | Danh sách + tìm kiếm giống cây. KHÔNG scope theo org_id — dữ liệu danh mục dùng chung toàn hệ thống, cả 4 role (owner/leader/worker/admin) đều xem được | Đã xong |
+|UC-SH04.1| GET | /crops/{crop_id} | Xem chi tiết 1 giống, kèm danh sách mốc chăm sóc (milestones) | Đã xong |
+|UC-A02.1| POST | /crops | Admin thêm giống cây mới vào danh mục | Đã xong |
+|UC-A02.1| PATCH | /crops/{crop_id} | Admin sửa thông tin giống | Đã xong |
+|UC-A02.1| DELETE | /crops/{crop_id} | Admin xóa giống — bảng chưa có cột status nên xóa cứng; nếu giống đang được season nào dùng, FK chặn lại và trả 400 thân thiện | Đã xong |
+|UC-A02.1| POST | /crops/{crop_id}/milestones | Admin thêm mốc chăm sóc cho giống — UC-O03.3 (module Season) sẽ đọc dữ liệu này để tự sinh reminder_schedules | Đã xong |
+|UC-A02.1| PATCH | /crops/{crop_id}/milestones/{milestone_id} | Admin sửa mốc chăm sóc | Đã xong |
+|UC-A02.1| DELETE | /crops/{crop_id}/milestones/{milestone_id} | Admin xóa mốc chăm sóc | Đã xong |
