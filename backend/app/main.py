@@ -7,7 +7,7 @@ from slowapi.errors import RateLimitExceeded
 
 from app.db.session import get_db
 from app.core.limiter import limiter
-from app.routers import auth, user, organization, crop
+from app.routers import auth, user, organization, crop, plot, team, season
 
 app = FastAPI(title="AgriTrace - Farmer QuickLog API")
 
@@ -18,6 +18,9 @@ app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 app.include_router(user.router, prefix="/users", tags=["User"])
 app.include_router(organization.router, prefix="/organizations", tags=["Organization"])
 app.include_router(crop.router, prefix="/crops", tags=["CropCatalog"])
+app.include_router(plot.router, prefix="/plots", tags=["Plot"])
+app.include_router(team.router, prefix="/teams", tags=["Team"])
+app.include_router(season.router, prefix="/seasons", tags=["Season"])
 
 
 
