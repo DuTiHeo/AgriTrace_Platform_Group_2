@@ -1,6 +1,7 @@
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
 from app.db.session import get_db
 from app.core.security import get_current_user
@@ -103,6 +104,16 @@ def create_plot(
             f"Ma lo '{payload.code}' da ton tai trong nong trai nay",
         )
 
+    if payload.boundary_geojson is not None:
+        within = crud_plot.is_within_org_boundary(db, payload.org_id, payload.boundary_geojson)
+        # within = None nghia la nong trai cha chua co ranh gioi (status='incomplete') ->
+        # khong co gi de doi chieu nen cho qua, chi chan khi biet chac (within = False)
+        if within is False:
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                "Ranh gioi lo dat vuot ra ngoai ranh gioi nong trai cha",
+            )
+
     return crud_plot.create_plot(
         db,
         org_id=payload.org_id,
@@ -137,6 +148,23 @@ def update_plot(
                 f"Ma lo '{data['code']}' da ton tai trong nong trai nay",
             )
 
+    if "boundary_geojson" in data:
+        # UC-O02.2: khong cho sua (hoac xoa) ranh gioi neu lo dang gan mua vu con hieu luc,
+        # tranh sai lech du lieu dang canh tac. Ap dung ca khi client gui boundary_geojson=null.
+        if crud_plot.has_active_season(db, plot_id):
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                "Khong the sua ranh gioi lo dat dang co mua vu canh tac hoat dong",
+            )
+
+        if data["boundary_geojson"] is not None:
+            within = crud_plot.is_within_org_boundary(db, plot["org_id"], data["boundary_geojson"])
+            if within is False:
+                raise HTTPException(
+                    status.HTTP_400_BAD_REQUEST,
+                    "Ranh gioi lo dat vuot ra ngoai ranh gioi nong trai cha",
+                )
+
     return crud_plot.update_plot(db, plot_id, data)
 
 
@@ -163,5 +191,11 @@ def delete_plot(
             "Khong the xoa lo dat dang co mua vu canh tac hoat dong",
         )
 
-    crud_plot.delete_plot(db, plot_id, soft=soft)
+    try:
+        crud_plot.delete_plot(db, plot_id, soft=soft)
+    except IntegrityError:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "Lo dat da co lich su mua vu/nhiem vu, khong the xoa cung. Hay dung xoa mem (soft=true, mac dinh)",
+        )
     return None

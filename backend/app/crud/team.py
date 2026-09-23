@@ -1,5 +1,6 @@
 from uuid import UUID
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 
@@ -162,6 +163,14 @@ def update_team(db: Session, team_id: UUID, data: dict, old_team: dict) -> dict:
 
         # Neu leader moi khac leader cu
         if new_leader_id != old_leader_id:
+            # Ha role nguoi cu ve worker TRUOC. Ho chac chan khong con la leader
+            # cua to nao khac nua vi uq_teams_leader dam bao 1 nguoi chi lam
+            # leader DUNG 1 to tai 1 thoi diem -> to nay la to duy nhat ho tung dan dat.
+            if old_leader_id:
+                db.execute(
+                    text("UPDATE users SET role = 'worker' WHERE user_id = :uid AND role = 'leader'"),
+                    {"uid": old_leader_id},
+                )
             # Gan leader moi
             if new_leader_id:
                 db.execute(
@@ -182,12 +191,18 @@ def update_team(db: Session, team_id: UUID, data: dict, old_team: dict) -> dict:
 
 
 def delete_team(db: Session, team_id: UUID) -> None:
-    """Xoa to. Bang users co FK on delete set null nen cac thanh vien se tu dong ve team_id = null."""
-    db.execute(
-        text("DELETE FROM teams WHERE team_id = :team_id"),
-        {"team_id": team_id},
-    )
-    db.commit()
+    """Xoa to. Bang users co FK on delete set null nen cac thanh vien se tu dong ve team_id = null.
+    Rieng tasks.team_id va season_team_assignments.team_id KHONG co ON DELETE -> se
+    chan hard delete neu to nay tung duoc giao viec hoac ho tro mua vu (ke ca da xong)."""
+    try:
+        db.execute(
+            text("DELETE FROM teams WHERE team_id = :team_id"),
+            {"team_id": team_id},
+        )
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise
 
 
 def add_members_to_team(
@@ -212,7 +227,22 @@ def add_members_to_team(
 
 
 def remove_member_from_team(db: Session, team_id: UUID, user_id: UUID) -> None:
-    """Go cong nhan khoi to. Neu nguoi nay dang la To truong thi go ca team_leader_id o to."""
+    """Go cong nhan khoi to. Neu nguoi nay dang la To truong thi go ca team_leader_id o to
+    va ha role ve worker (tranh 'leader mo coi': role=leader nhung khong con quan ly to nao."""
+
+    # Phai check + ha role TRUOC khi UPDATE teams ben duoi, vi EXISTS can doc
+    # dung team_leader_id hien tai (con la user_id nay) truoc khi bi xoa.
+    db.execute(
+        text("""
+            UPDATE users SET role = 'worker'
+            WHERE user_id = :user_id AND role = 'leader'
+              AND EXISTS (
+                  SELECT 1 FROM teams
+                  WHERE team_id = :team_id AND team_leader_id = :user_id
+              )
+        """),
+        {"team_id": team_id, "user_id": user_id},
+    )
     db.execute(
         text("UPDATE teams SET team_leader_id = NULL WHERE team_id = :team_id AND team_leader_id = :user_id"),
         {"team_id": team_id, "user_id": user_id},

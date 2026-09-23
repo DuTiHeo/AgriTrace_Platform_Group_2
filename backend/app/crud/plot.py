@@ -1,6 +1,7 @@
 import json
 from uuid import UUID
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 
@@ -101,6 +102,21 @@ def list_plots(
     rows = db.execute(text(sql), params).mappings().all()
     return [dict(r) for r in rows]
 
+def is_within_org_boundary(db: Session, org_id: UUID, boundary_geojson: dict) -> bool | None:
+    """Kiem tra ranh gioi lo co nam gon trong ranh gioi nong trai cha khong (UC-O02.1/.2).
+    Tra ve:
+      True/False - neu nong trai da co ranh gioi va kiem tra duoc
+      None       - neu nong trai CHUA co ranh gioi (status='incomplete') -> khong co gi de doi chieu, goi noi (router) tu quyet dinh cho qua hay chan trong truong hop nay
+    """
+    row = db.execute(
+        text("""
+            SELECT ST_Contains(o.boundary_geojson, ST_SetSRID(ST_GeomFromGeoJSON(:boundary), 4326)) AS is_within
+            FROM organizations o
+            WHERE o.org_id = :org_id
+        """),
+        {"org_id": org_id, "boundary": json.dumps(boundary_geojson)},
+    ).scalar()
+    return row
 
 def create_plot(
     db: Session,
@@ -239,9 +255,17 @@ def delete_plot(db: Session, plot_id: UUID, soft: bool = True) -> None:
             text("UPDATE plots SET status = 'inactive' WHERE plot_id = :plot_id"),
             {"plot_id": plot_id},
         )
+        db.commit()
     else:
-        db.execute(
-            text("DELETE FROM plots WHERE plot_id = :plot_id"),
-            {"plot_id": plot_id},
-        )
-    db.commit()
+        # has_active_season() o router chi chan mua vu dang growing/ready_to_harvest.
+        # Neu lo da co mua vu completed hoac task (ke ca da completed), FK cua
+        # seasons.plot_id / tasks.plot_id (khong ON DELETE) se chan hard delete.
+        try:
+            db.execute(
+                text("DELETE FROM plots WHERE plot_id = :plot_id"),
+                {"plot_id": plot_id},
+            )
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            raise
