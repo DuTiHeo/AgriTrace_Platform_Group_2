@@ -79,6 +79,9 @@ def list_users(
     else:  # leader
         if org_id is not None or team_id is not None:
             raise HTTPException(400, "Leader khong duoc truyen org_id/team_id, he thong tu gioi han theo to cua ban")
+        if not current_user.get("team_id"):
+            # Leader chua/khong con gan voi to nao -> khong co du lieu de xem.
+            return []
         scope_org_id = None
         scope_team_id = current_user["team_id"]
 

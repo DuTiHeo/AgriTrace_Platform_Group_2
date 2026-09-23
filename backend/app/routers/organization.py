@@ -1,6 +1,8 @@
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
+
 
 from app.db.session import get_db
 from app.core.security import get_current_user
@@ -158,5 +160,11 @@ def delete_organization(
     if not org:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Khong tim thay nong trai")
 
-    crud_org.delete_organization(db, org_id, soft=soft)
+    try:
+        crud_org.delete_organization(db, org_id, soft=soft)
+    except IntegrityError:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "Nong trai da phat sinh du lieu lien quan (lo thu hoach, bao cao loi...), khong the xoa cung. Hay dung xoa mem (soft=true, mac dinh)",
+        )
     return None

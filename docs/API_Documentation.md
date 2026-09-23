@@ -40,3 +40,44 @@ Usecase | Method | Endpoint | Mo ta | Trang thai |
 |UC-A02.1| POST | /crops/{crop_id}/milestones | Admin thêm mốc chăm sóc cho giống — UC-O03.3 (module Season) sẽ đọc dữ liệu này để tự sinh reminder_schedules | Đã xong |
 |UC-A02.1| PATCH | /crops/{crop_id}/milestones/{milestone_id} | Admin sửa mốc chăm sóc | Đã xong |
 |UC-A02.1| DELETE | /crops/{crop_id}/milestones/{milestone_id} | Admin xóa mốc chăm sóc | Đã xong |
+
+Đợt 1: Module Organization
+Usecase | Method | Endpoint | Mo ta | Trang thai |
+|---|---|---|---|---|
+|UC-O01.1| GET | /organizations/mine | Owner xem danh sách nông trại mình sở hữu (dùng để chọn org trước khi gọi các API khác) | Đã xong |
+|UC-SH04.1| GET | /organizations | Danh sách + tìm kiếm, scope theo role (Admin: all/lọc theo owner_id, Owner: chỉ farm mình sở hữu, Leader/Worker: farm trực thuộc) | Đã xong |
+|UC-SH04.1| GET | /organizations/{org_id} | Xem chi tiết 1 nông trại, kèm ranh giới GeoJSON và thống kê nhanh (số plot, số team, số mùa vụ đang hoạt động) | Đã xong |
+|UC-O01.1| POST | /organizations | Owner tự tạo nông trại (owner_id lấy từ token); hoặc Admin tạo hộ, tự chỉ định owner_id. Status tự động incomplete nếu chưa có ranh giới | Đã xong |
+|UC-O01.2 + UC-O01.3 + UC-O01.4/.5| PATCH | /organizations/{org_id} | Sửa tên/địa chỉ, đổi trạng thái (active/suspended/incomplete), hoặc cập nhật ranh giới Polygon. Nếu bổ sung ranh giới khi đang incomplete, tự chuyển sang active | Đã xong |
+|UC-O01.3| DELETE | /organizations/{org_id}?soft=true\|false | Xóa nông trại. Mặc định xóa mềm (chuyển status=suspended); soft=false xóa cứng — trả 400 nếu đã phát sinh dữ liệu liên quan (harvest_batches, error_reports) thay vì lỗi 500 | Đã xong |
+
+Đợt 1: Module Plot (Vùng trồng / Lô đất)
+Usecase | Method | Endpoint | Mo ta | Trang thai |
+|---|---|---|---|---|
+|UC-SH04.1| GET | /plots | Danh sách + tìm kiếm, scope theo role (tương tự Organization), lọc thêm theo org_id/status/keyword | Đã xong |
+|UC-SH04.1| GET | /plots/{plot_id} | Xem chi tiết lô đất kèm ranh giới GeoJSON và mùa vụ đang canh tác hiện tại (nếu có) | Đã xong |
+|UC-O02.1| POST | /plots | Tạo lô đất mới thuộc 1 nông trại. Tự tính diện tích từ ranh giới nếu không nhập tay; chặn nếu ranh giới lô vượt ra ngoài ranh giới nông trại cha (ST_Contains) | Đã xong |
+|UC-O02.2| PATCH | /plots/{plot_id} | Sửa mã lô, diện tích, trạng thái hoặc ranh giới. Chặn sửa ranh giới nếu lô đang có mùa vụ hoạt động (growing/ready_to_harvest); ranh giới mới vẫn phải nằm trong nông trại cha | Đã xong |
+|UC-O02.3| DELETE | /plots/{plot_id}?soft=true\|false | Xóa lô đất. Mặc định xóa mềm (status=inactive); luôn chặn nếu đang có mùa vụ hoạt động; soft=false trả 400 nếu lô đã có lịch sử mùa vụ/nhiệm vụ | Đã xong |
+
+Đợt 1: Module Team (Tổ công nhân)
+Usecase | Method | Endpoint | Mo ta | Trang thai |
+|---|---|---|---|---|
+|UC-SH04.1| GET | /teams | Danh sách + tìm kiếm tổ, scope theo role (Admin/Owner theo org, Leader/Worker theo farm trực thuộc) | Đã xong |
+|UC-SH04.1| GET | /teams/{team_id} | Xem chi tiết tổ kèm danh sách thành viên | Đã xong |
+|UC-O06.1| POST | /teams | Tạo tổ mới; có thể gán luôn Tổ trưởng (kiểm tra người này chưa làm Tổ trưởng của tổ khác) | Đã xong |
+|UC-O06.2 + UC-O06.3| PATCH | /teams/{team_id} | Đổi tên tổ hoặc đổi Tổ trưởng. Tổ trưởng cũ (nếu bị thay) tự động hạ role về worker | Đã xong |
+|-| DELETE | /teams/{team_id} | Xóa tổ (hard delete, bảng teams không có cột status). Chặn nếu đang có nhiệm vụ in_progress; trả 400 nếu tổ đã có lịch sử task/mùa vụ hỗ trợ | Đã xong |
+|UC-O06.2| POST | /teams/{team_id}/members | Thêm danh sách công nhân vào tổ | Đã xong |
+|UC-O06.2| DELETE | /teams/{team_id}/members/{user_id} | Gỡ 1 công nhân khỏi tổ. Nếu người đó đang là Tổ trưởng của tổ này, tự động gỡ team_leader_id và hạ role về worker | Đã xong |
+
+Đợt 1: Module Season (Mùa vụ canh tác)
+Usecase | Method | Endpoint | Mo ta | Trang thai |
+|---|---|---|---|---|
+|UC-SH04.1| GET | /seasons | Danh sách + tìm kiếm mùa vụ, lọc theo org/plot/crop/status/team, scope theo role | Đã xong |
+|UC-SH04.1 + UC-O03.5| GET | /seasons/{season_id} | Xem chi tiết mùa vụ kèm lịch nhắc nhở tự sinh (reminder_schedules) và danh sách tổ đang hỗ trợ | Đã xong |
+|UC-O03.1 + UC-O03.2 + UC-O03.3| POST | /seasons | Khởi tạo mùa vụ. Tự tính ngày thu hoạch dự kiến nếu không nhập; tự sinh reminder_schedules theo mốc chăm sóc chuẩn của giống cây (crop_care_milestones); chặn nếu lô đã có mùa vụ khác đang hoạt động | Đã xong |
+|UC-O03.4| PATCH | /seasons/{season_id} | Cập nhật ngày thu hoạch thực tế / trạng thái mùa vụ | Đã xong |
+|-| DELETE | /seasons/{season_id} | Xóa mùa vụ. Chặn nếu đã có nhật ký canh tác hoặc đã được gom vào lô thu hoạch | Đã xong |
+|-| POST | /seasons/{season_id}/teams | Gán thêm tổ hỗ trợ mùa vụ | Đã xong |
+|-| DELETE | /seasons/{season_id}/teams/{team_id} | Hủy gán tổ khỏi mùa vụ | Đã xong |

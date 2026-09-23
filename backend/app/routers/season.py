@@ -98,7 +98,7 @@ def get_season_detail(
 @router.post("", response_model=SeasonDetail, status_code=status.HTTP_201_CREATED)
 def create_season(
     payload: SeasonCreate,
-    current_user: dict = Depends(require_role("admin", "owner")),
+    current_user: dict = Depends(require_role("admin", "owner", "leader")),
     db: Session = Depends(get_db),
 ):
     """
