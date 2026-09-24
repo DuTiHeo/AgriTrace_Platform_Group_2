@@ -1,5 +1,9 @@
 # backend/app/main.py
+from pathlib import Path
+import os
+
 from fastapi import FastAPI, Depends
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from slowapi import _rate_limit_exceeded_handler
@@ -40,6 +44,8 @@ app.include_router(season.router, prefix="/seasons", tags=["Season"])
 app.include_router(tasks.router, prefix="/tasks", tags=["Tasks"])
 app.include_router(havest_batches.router, prefix="/harvest-batches", tags=["HarvestBatches"])
 app.include_router(batch_seasons.router, prefix="/batch-seasons", tags=["BatchSeasons"])
+app.include_router(farming_log.router, prefix="/farming-logs", tags=["FarmingLog"])
+app.include_router(log_note.router, prefix="/log-notes", tags=["LogNote"])
 
 
 @app.get("/health", tags=["Health"])

@@ -20,6 +20,8 @@ services:
     restart: unless-stopped
     env_file:
       - ./backend/.env
+    environment:
+      UPLOAD_DIR: /app/uploads
     ports:
       - "8000:8000"
     depends_on:
@@ -27,6 +29,8 @@ services:
     volumes:
       # Mount code de sua code xong tu reload, khong can build lai image
       - ./backend/app:/app/app
+      # Anh upload cua nhat ky canh tac duoc luu tren disk cuc bo qua Docker volume rieng
+      - ./backend/uploads:/app/uploads
 
 volumes:
   pgdata:
