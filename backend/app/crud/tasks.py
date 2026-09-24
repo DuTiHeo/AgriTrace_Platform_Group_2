@@ -6,26 +6,6 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 
-def _ensure_tasks_status_constraint(db: Session) -> None:
-
-    try:
-        db.execute(text("""
-            DO $$
-            BEGIN
-                IF EXISTS (
-                    SELECT 1 FROM pg_constraint 
-                    WHERE conname = 'tasks_status_check'
-                ) THEN
-                    ALTER TABLE tasks DROP CONSTRAINT tasks_status_check;
-                    ALTER TABLE tasks ADD CONSTRAINT tasks_status_check 
-                        CHECK (status IN ('in_progress', 'completed', 'cancelled'));
-                END IF;
-            END $$;
-        """))
-        db.commit()
-    except Exception:
-        db.rollback()
-
 
 def validate_task_context(
     db: Session,
@@ -65,11 +45,13 @@ def validate_task_context(
     if worker["role"] not in ("worker", "leader"):
         return False, "Chỉ có thể giao việc cho Worker hoặc Leader", None
 
-    # Công nhân phải thuộc cùng nông trại hoặc cùng tổ
+    # Công nhân phải thuộc cùng nông trại và đúng tổ
     if worker["org_id"] and worker["org_id"] != org_id:
         return False, "Công nhân không thuộc nông trại này", None
-    if worker["team_id"] and worker["team_id"] != team_id:
-        return False, f"Công nhân đang thuộc tổ khác ({worker['team_id']})", None
+    if not worker["team_id"]:
+        return False, "Công nhân chưa được phân công vào tổ nào", None
+    if worker["team_id"] != team_id:
+        return False, f"Công nhân đang thuộc tổ khác ({worker['team_id']}), chỉ được giao việc cho công nhân thuộc đúng tổ phụ trách", None
 
     return True, "", org_id
 
@@ -209,7 +191,6 @@ def update_task(db: Session, task_id: UUID, update_data: dict) -> Optional[dict]
 
 def soft_delete_task(db: Session, task_id: UUID) -> Optional[dict]:
 
-    _ensure_tasks_status_constraint(db)
     query = text("""
         UPDATE tasks 
         SET status = 'cancelled'
