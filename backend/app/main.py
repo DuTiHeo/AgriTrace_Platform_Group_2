@@ -28,6 +28,7 @@ app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 # Đăng ký các router nghiệp vụ
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
+app.include_router(password_recovery.router, prefix="/auth", tags=["Auth"])
 app.include_router(user.router, prefix="/users", tags=["User"])
 app.include_router(organization.router, prefix="/organizations", tags=["Organization"])
 app.include_router(crop.router, prefix="/crops", tags=["CropCatalog"])
