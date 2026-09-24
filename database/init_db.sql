@@ -290,6 +290,7 @@ CREATE TABLE log_notes (
     log_id              UUID NOT NULL REFERENCES farming_logs(log_id) ON DELETE CASCADE,
     leader_id           UUID NOT NULL REFERENCES users(user_id),
     content             TEXT NOT NULL,
+    resolved            BOOLEAN NOT NULL DEFAULT FALSE,
     created_at          TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
