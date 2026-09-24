@@ -28,6 +28,13 @@ def _ensure_can_read_log(log: dict, current_user: dict, db: Session) -> None:
     if role == "owner":
         ensure_owns_org(db, current_user, log["org_id"])
         return
+
+    # Tac gia LUON xem duoc nhat ky cua chinh minh, ke ca khi chua/khong
+    # con thuoc to nao (fix bug: worker moi tao, chua duoc gan to, bi tu
+    # khoa khoi chinh log/anh vua gui).
+    if log["user_id"] == current_user["user_id"]:
+        return
+
     user_team_id = current_user.get("team_id")
     if role in ("leader", "worker") and user_team_id and log["team_id"] == user_team_id:
         return
@@ -53,6 +60,7 @@ def list_farming_logs(
         scope_org_id = org_id
         scope_owner_id = None
         scope_team_id = None
+        scope_own_user_id = None
     elif role == "owner":
         if org_id:
             ensure_owns_org(db, current_user, org_id)
@@ -62,14 +70,18 @@ def list_farming_logs(
             scope_org_id = None
             scope_owner_id = current_user["user_id"]
         scope_team_id = None
+        scope_own_user_id = None
     elif role in ("leader", "worker"):
         if org_id and org_id != current_user.get("org_id"):
             raise HTTPException(status.HTTP_403_FORBIDDEN, "Ban khong co quyen xem nhat ky cua nong trai khac")
-        if not current_user.get("team_id"):
-            return []
+        # Luon duoc xem: (a) log cua DUNG to minh (so voi team_id SNAPSHOT
+        # luc ghi, neu hien dang thuoc to nao) VA (b) log do CHINH MINH
+        # tao, du dang/chua/khong con thuoc to nao. Truoc day thieu (b)
+        # nen worker chua vao to bi tra ve list RONG voi ca log cua ho.
         scope_org_id = current_user.get("org_id")
         scope_owner_id = None
-        scope_team_id = current_user["team_id"]
+        scope_team_id = current_user.get("team_id")
+        scope_own_user_id = current_user["user_id"]
     else:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Ban khong co quyen xem nhat ky canh tac")
 
@@ -78,6 +90,7 @@ def list_farming_logs(
         org_id=scope_org_id,
         owner_id=scope_owner_id,
         team_id=scope_team_id,
+        own_user_id=scope_own_user_id,
         season_id=season_id,
     )
 
@@ -113,6 +126,8 @@ def create_farming_log(
         db,
         season_id=payload.season_id,
         user_id=current_user["user_id"],
+        # Snapshot to TAI THOI DIEM ghi log - xem crud_farming_log.create_log()
+        team_id=current_user.get("team_id"),
         activity_type=payload.activity_type,
         content=payload.content,
         latitude=payload.gps.latitude,

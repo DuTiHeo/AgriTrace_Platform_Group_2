@@ -258,6 +258,7 @@ CREATE TABLE farming_logs (
     log_id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     season_id           UUID NOT NULL REFERENCES seasons(season_id),
     user_id             UUID NOT NULL REFERENCES users(user_id),
+    team_id             UUID REFERENCES teams(team_id),  -- SNAPSHOT to luc tao log, KHONG doi theo users.team_id sau nay
     activity_type       VARCHAR(50),                   -- bón phân, tưới nước, phun thuốc...
     content             TEXT,
     gps                 GEOMETRY(Point, 4326),
@@ -269,6 +270,7 @@ COMMENT ON COLUMN farming_logs.user_id IS 'Người ghi nhật ký';
 
 CREATE INDEX idx_farming_logs_season ON farming_logs(season_id);
 CREATE INDEX idx_farming_logs_user ON farming_logs(user_id);
+CREATE INDEX idx_farming_logs_team ON farming_logs(team_id);   -- MOI
 CREATE INDEX idx_farming_logs_time ON farming_logs(logged_at DESC);
 
 -- 13. LOG_PHOTOS (Ảnh đính kèm nhật ký)

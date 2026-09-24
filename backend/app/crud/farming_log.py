@@ -31,17 +31,29 @@ def create_log(
     *,
     season_id: UUID,
     user_id: UUID,
+    team_id: UUID | None,
     activity_type: str,
     content: str | None,
     latitude: float,
     longitude: float,
 ) -> dict:
+    """
+    Tao nhat ky canh tac moi.
+
+    team_id: SNAPSHOT to cua nguoi ghi TAI THOI DIEM tao log (lay tu
+    current_user["team_id"] ben router, KHONG doc lai tu bang users sau
+    nay). Co the la None neu nguoi ghi chua/khong thuoc to nao luc do.
+    Ghi 1 lan roi giu nguyen vinh vien - tranh bug: worker doi to thi log
+    cu "theo" ho sang to moi, lam to truong cu mat quyen xem va to
+    truong moi lai thay duoc log tu truoc khi nguoi do vao to minh.
+    """
     row = db.execute(
         text("""
-            INSERT INTO farming_logs (season_id, user_id, activity_type, content, gps)
+            INSERT INTO farming_logs (season_id, user_id, team_id, activity_type, content, gps)
             VALUES (
                 :season_id,
                 :user_id,
+                :team_id,
                 :activity_type,
                 :content,
                 ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326)
@@ -51,6 +63,7 @@ def create_log(
         {
             "season_id": season_id,
             "user_id": user_id,
+            "team_id": team_id,
             "activity_type": activity_type,
             "content": content,
             "latitude": latitude,
@@ -62,9 +75,11 @@ def create_log(
 
 
 def _base_log_select() -> str:
+    # fl.team_id (snapshot luc tao log) - KHONG join u.team_id (to HIEN TAI
+    # cua user), de tranh quyen xem/ghi chu bi doi nguoc khi user doi to.
     return """
         SELECT fl.log_id, fl.season_id, fl.user_id, u.full_name AS user_name,
-               u.team_id, p.org_id, fl.activity_type, fl.content,
+               fl.team_id, p.org_id, fl.activity_type, fl.content,
                ST_Y(fl.gps) AS latitude, ST_X(fl.gps) AS longitude,
                fl.logged_at
         FROM farming_logs fl
@@ -91,8 +106,16 @@ def list_logs(
     org_id: UUID | None = None,
     owner_id: UUID | None = None,
     team_id: UUID | None = None,
+    own_user_id: UUID | None = None,
     season_id: UUID | None = None,
 ) -> list[dict]:
+    """
+    team_id: loc theo to (so voi fl.team_id - snapshot).
+    own_user_id: LUON cho phep thay log cua chinh nguoi nay, du co khop
+    team_id hay khong - fix bug worker chua/khong con thuoc to nao bi
+    khoa khoi chinh nhat ky cua minh. Neu ca 2 cung duoc truyen, ghep
+    bang OR (xem log cua to minh + xem log cua rieng minh).
+    """
     conditions = ["1=1"]
     params: dict = {}
     join_owner = ""
@@ -104,12 +127,19 @@ def list_logs(
     if org_id:
         conditions.append("p.org_id = :org_id")
         params["org_id"] = org_id
-    if team_id:
-        conditions.append("u.team_id = :team_id")
-        params["team_id"] = team_id
     if season_id:
         conditions.append("fl.season_id = :season_id")
         params["season_id"] = season_id
+
+    scope_parts = []
+    if team_id:
+        scope_parts.append("fl.team_id = :team_id")
+        params["team_id"] = team_id
+    if own_user_id:
+        scope_parts.append("fl.user_id = :own_user_id")
+        params["own_user_id"] = own_user_id
+    if scope_parts:
+        conditions.append(f"({' OR '.join(scope_parts)})")
 
     rows = db.execute(
         text(f"""
