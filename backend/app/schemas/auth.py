@@ -18,7 +18,7 @@ class UserInformation(BaseModel):
     national_id: Optional[str] = None
     address: Optional[str] = None
     role: str
-    orgid: Optional[str] = None
+    org_id: Optional[str] = None
     team_id: Optional[str] = None
 
 class ChangePasswordRequest(BaseModel):
