@@ -81,3 +81,79 @@ Usecase | Method | Endpoint | Mo ta | Trang thai |
 |-| DELETE | /seasons/{season_id} | Xóa mùa vụ. Chặn nếu đã có nhật ký canh tác hoặc đã được gom vào lô thu hoạch | Đã xong |
 |-| POST | /seasons/{season_id}/teams | Gán thêm tổ hỗ trợ mùa vụ | Đã xong |
 |-| DELETE | /seasons/{season_id}/teams/{team_id} | Hủy gán tổ khỏi mùa vụ | Đã xong |
+
+Đợt 2: Module FarmingLog + LogPhoto
+Usecase | Method | Endpoint | Mo ta | Trang thai |
+|---|---|---|---|---|
+|UC-W03.1 -> UC-W03.6 + UC-W02.1| GET | /farming-logs | Danh sách nhật ký canh tác, scope theo role. Worker/Leader xem log cả tổ mình; Owner xem theo org mình sở hữu; Admin xem toàn bộ hoặc lọc org_id. Hỗ trợ lọc season_id, chưa phân trang | Đã xong |
+|UC-W03.1 -> UC-W03.6 + UC-T01.1 + UC-O03.5| GET | /farming-logs/{log_id} | Xem chi tiết 1 nhật ký, trả kèm sẵn photos[] và notes[] để FE không cần gọi API ảnh/ghi chú riêng | Đã xong |
+|UC-W03.1 -> UC-W03.6| POST | /farming-logs | Worker/Leader tạo nhật ký canh tác bằng JSON thuần. Bắt buộc activity_type và gps; content optional; activity_type là free text, không enum. Chỉ cho tạo khi season cùng org và status là growing/ready_to_harvest | Đã xong |
+|UC-W03.1 -> UC-W03.6| POST | /farming-logs/{log_id}/photos | Tác giả log upload ảnh theo flow bước 2, multipart/form-data key files. Tối đa 5 ảnh/log, 5MB/ảnh, chỉ .jpg/.jpeg, không convert HEIC ở backend | Đã xong |
+
+Ghi chú request/response chính cho FarmingLog:
+
+```json
+POST /farming-logs
+{
+  "season_id": "70000000-0000-0000-0000-000000000001",
+  "activity_type": "bao_cao_su_co",
+  "content": "Phat hien la co dau hieu sau benh o luong A",
+  "gps": {
+    "latitude": 11.9415,
+    "longitude": 108.4215
+  }
+}
+```
+
+Upload ảnh bằng Postman:
+
+```text
+POST /farming-logs/{log_id}/photos
+Authorization: Bearer <token>
+Body: form-data
+KEY: files
+TYPE: File
+VALUE: anh.jpg
+```
+
+Nếu upload nhiều ảnh trong cùng request, thêm nhiều row cùng key `files`.
+Response trả về `url` dạng `/uploads/farming-logs/{log_id}/{file}.jpg`.
+Xem ảnh bằng URL đầy đủ: `http://localhost:8000` + `url`.
+
+Ví dụ:
+
+```text
+http://localhost:8000/uploads/farming-logs/{log_id}/{file}.jpg
+```
+
+Đợt 2: Module LogNote
+Usecase | Method | Endpoint | Mo ta | Trang thai |
+|---|---|---|---|---|
+|UC-T01.2| POST | /log-notes | Leader/Owner viết ghi chú nhắc nhở dưới farming log. Leader chỉ note log của worker/leader trong team mình; Owner chỉ note log thuộc org mình sở hữu. Worker/Admin không viết note | Đã xong |
+|UC-T01.2 + UC-T02.2| PATCH | /log-notes/{note_id} | Leader/Owner đúng phạm vi toggle field resolved true/false. Chỉ đổi resolved, không sửa content. Không yêu cầu phải có log mới sau note | Đã xong |
+
+Ghi chú request/response chính cho LogNote:
+
+```json
+POST /log-notes
+{
+  "log_id": "a0000000-0000-0000-0000-000000000001",
+  "content": "Can chup can canh mat duoi la trong lan kiem tra tiep theo."
+}
+```
+
+```json
+PATCH /log-notes/{note_id}
+{
+  "resolved": true
+}
+```
+
+Schema DB bổ sung ở đợt 2:
+
+```sql
+ALTER TABLE log_notes
+    ADD COLUMN IF NOT EXISTS resolved BOOLEAN NOT NULL DEFAULT FALSE;
+```
+
+Notification khi có note mới tạm bỏ qua ở đợt 2: không insert vào bảng `notifications`.
