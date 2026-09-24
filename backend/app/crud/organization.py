@@ -1,6 +1,7 @@
 import json
 from uuid import UUID
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 
@@ -211,9 +212,17 @@ def delete_organization(db: Session, org_id: UUID, soft: bool = True) -> None:
             text("UPDATE organizations SET status = 'suspended' WHERE org_id = :org_id"),
             {"org_id": org_id},
         )
+        db.commit()
     else:
-        db.execute(
-            text("DELETE FROM organizations WHERE org_id = :org_id"),
-            {"org_id": org_id},
-        )
-    db.commit()
+        # Hard delete: plots/teams se tu dong CASCADE (theo init_db.sql), nhung
+        # harvest_batches/error_reports KHONG co ON DELETE -> FK se chan lai
+        # neu nong trai da phat sinh du lieu lich su.
+        try:
+            db.execute(
+                text("DELETE FROM organizations WHERE org_id = :org_id"),
+                {"org_id": org_id},
+            )
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            raise

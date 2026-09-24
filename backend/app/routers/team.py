@@ -1,6 +1,7 @@
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
 from app.db.session import get_db
 from app.core.security import get_current_user
@@ -191,7 +192,13 @@ def delete_team(
             "Khong the xoa to dang co cong viec dang thuc hien",
         )
 
-    crud_team.delete_team(db, team_id)
+    try:
+        crud_team.delete_team(db, team_id)
+    except IntegrityError:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "To da tung duoc giao viec hoac ho tro mua vu (du la da xong), khong the xoa cung theo yeu cau toan ven du lieu truy xuat nguon goc",
+        )
     return None
 
 

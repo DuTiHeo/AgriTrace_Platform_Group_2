@@ -16,6 +16,7 @@ npm-debug.log*
 
 # Docker volumes / data
 pgdata/
+backend/uploads/
 
 # OS / Editor
 .DS_Store
