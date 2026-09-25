@@ -14,7 +14,7 @@ class BatchSeasonStatus(str, Enum):
 class BatchSeasonBase(BaseModel):
     batch_id: UUID = Field(..., description="Mã lô thu hoạch")
     season_id: UUID = Field(..., description="Mã mùa vụ canh tác")
-    contributed_quantity: Optional[float] = Field(None, ge=0, description="Sản lượng đóng góp (kg hoặc tấn)")
+    contributed_quantity: float = Field(..., gt=0, description="Sản lượng đóng góp (kg hoặc tấn, bắt buộc > 0)")
 
 
 class BatchSeasonCreate(BatchSeasonBase):
@@ -22,7 +22,7 @@ class BatchSeasonCreate(BatchSeasonBase):
 
 
 class BatchSeasonUpdate(BaseModel):
-    contributed_quantity: float = Field(..., ge=0, description="Sản lượng đóng góp cập nhật")
+    contributed_quantity: float = Field(..., gt=0, description="Sản lượng đóng góp cập nhật (bắt buộc > 0)")
 
 
 class BatchSeasonDetail(BaseModel):

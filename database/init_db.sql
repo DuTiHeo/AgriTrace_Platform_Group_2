@@ -229,11 +229,14 @@ CREATE TABLE batch_seasons (
     batch_id                UUID NOT NULL REFERENCES harvest_batches(batch_id) ON DELETE CASCADE,
     season_id               UUID NOT NULL REFERENCES seasons(season_id),
     contributed_quantity    DOUBLE PRECISION,
+    status                  VARCHAR(20) NOT NULL DEFAULT 'active'
+                            CHECK (status IN ('active', 'cancelled')),
     PRIMARY KEY (batch_id, season_id)
 );
 
 COMMENT ON TABLE batch_seasons IS 'Bảng trung gian: 1 lô thu hoạch có thể gom từ nhiều mùa vụ';
 COMMENT ON COLUMN batch_seasons.contributed_quantity IS 'Sản lượng đóng góp từ mùa vụ này';
+COMMENT ON COLUMN batch_seasons.status IS 'active | cancelled (xóa mềm liên kết)';
 
 -- PK (batch_id, season_id) da co index tu nhien cho tra cuu theo batch_id,
 -- nhung tra cuu nguoc theo season_id ("mua vu nay gop vao lo nao") can index rieng
@@ -305,14 +308,14 @@ CREATE TABLE tasks (
     content             TEXT NOT NULL,
     due_date            DATE,
     status              VARCHAR(20) NOT NULL DEFAULT 'in_progress'
-                        CHECK (status IN ('in_progress', 'completed')),
+                        CHECK (status IN ('in_progress', 'completed', 'cancelled')),
     created_at          TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at          TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 COMMENT ON TABLE tasks IS 'Nhiệm vụ do Tổ trưởng giao cho công nhân';
 COMMENT ON COLUMN tasks.worker_id IS 'user_id của công nhân được giao việc';
-COMMENT ON COLUMN tasks.status IS 'in_progress | completed';
+COMMENT ON COLUMN tasks.status IS 'in_progress | completed | cancelled (xóa mềm)';
 
 CREATE INDEX idx_tasks_worker ON tasks(worker_id);
 CREATE INDEX idx_tasks_team ON tasks(team_id);

@@ -5,24 +5,6 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 
-def _ensure_batch_seasons_status_column(db: Session) -> None:
-    """Đảm bảo bảng batch_seasons có cột status để phục vụ XÓA MỀM liên kết."""
-    try:
-        db.execute(text("""
-            DO $$
-            BEGIN
-                IF NOT EXISTS (
-                    SELECT 1 FROM information_schema.columns 
-                    WHERE table_name = 'batch_seasons' AND column_name = 'status'
-                ) THEN
-                    ALTER TABLE batch_seasons ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'active';
-                END IF;
-            END $$;
-        """))
-        db.commit()
-    except Exception:
-        db.rollback()
-
 
 def sync_batch_total_quantity(db: Session, batch_id: UUID) -> None:
     """Tự động tính lại tổng sản lượng của lô thu hoạch từ các mùa vụ active."""
@@ -61,7 +43,7 @@ def validate_batch_and_season(
 
     season = db.execute(
         text("""
-            SELECT s.season_id, s.status, p.org_id
+            SELECT s.season_id, s.crop_id, s.status, p.org_id
             FROM seasons s
             JOIN plots p ON s.plot_id = p.plot_id
             WHERE s.season_id = :season_id
@@ -73,12 +55,21 @@ def validate_batch_and_season(
     if season["org_id"] != org_id:
         return False, "Mùa vụ và lô thu hoạch không thuộc cùng một nông trại", None
 
+    # Kiểm tra trạng thái mùa vụ: phải đủ điều kiện thu hoạch
+    if season["status"] not in ("ready_to_harvest", "completed"):
+        return False, f"Mùa vụ đang ở trạng thái '{season['status']}', chưa đủ điều kiện thu hoạch (yêu cầu 'ready_to_harvest' hoặc 'completed')", None
+
+    # Kiểm tra tính đồng nhất về giống cây trong cùng 1 lô thu hoạch
+    existing_seasons = list_seasons_by_batch(db, batch_id, include_cancelled=False)
+    for es in existing_seasons:
+        if es["season_id"] != season_id and es.get("crop_id") and es["crop_id"] != season["crop_id"]:
+            return False, "Tất cả các mùa vụ trong cùng một lô thu hoạch bắt buộc phải cùng giống cây trồng", None
+
     return True, "", org_id
 
 
 def get_batch_season(db: Session, batch_id: UUID, season_id: UUID) -> Optional[dict]:
     """Lấy chi tiết liên kết giữa 1 lô thu hoạch và 1 mùa vụ."""
-    _ensure_batch_seasons_status_column(db)
     query = text("""
         SELECT bs.batch_id, hb.batch_code, hb.org_id,
                bs.season_id, s.crop_id, c.name AS crop_name,
@@ -99,7 +90,6 @@ def get_batch_season(db: Session, batch_id: UUID, season_id: UUID) -> Optional[d
 
 def list_seasons_by_batch(db: Session, batch_id: UUID, include_cancelled: bool = False) -> list[dict]:
     """Lấy danh sách các mùa vụ góp sản lượng vào 1 lô thu hoạch."""
-    _ensure_batch_seasons_status_column(db)
     filter_cancelled = "" if include_cancelled else "AND (bs.status IS NULL OR bs.status != 'cancelled')"
     query = text(f"""
         SELECT bs.batch_id, hb.batch_code, hb.org_id,
@@ -122,7 +112,6 @@ def list_seasons_by_batch(db: Session, batch_id: UUID, include_cancelled: bool =
 
 def list_batches_by_season(db: Session, season_id: UUID, include_cancelled: bool = False) -> list[dict]:
 
-    _ensure_batch_seasons_status_column(db)
     filter_cancelled = "" if include_cancelled else "AND (bs.status IS NULL OR bs.status != 'cancelled')"
     query = text(f"""
         SELECT bs.batch_id, hb.batch_code, hb.org_id, hb.harvest_date, hb.status AS batch_status,
@@ -144,7 +133,6 @@ def create_or_reactivate_batch_season(
     contributed_quantity: Optional[float] = None,
 ) -> dict:
 
-    _ensure_batch_seasons_status_column(db)
     existing = get_batch_season(db, batch_id, season_id)
 
     if existing:
@@ -184,7 +172,6 @@ def update_batch_season(
     contributed_quantity: float,
 ) -> Optional[dict]:
     """Cập nhật sản lượng đóng góp của mùa vụ vào lô thu hoạch."""
-    _ensure_batch_seasons_status_column(db)
     existing = get_batch_season(db, batch_id, season_id)
     if not existing:
         return None
@@ -206,7 +193,6 @@ def update_batch_season(
 
 def soft_delete_batch_season(db: Session, batch_id: UUID, season_id: UUID) -> Optional[dict]:
 
-    _ensure_batch_seasons_status_column(db)
     existing = get_batch_season(db, batch_id, season_id)
     if not existing:
         return None

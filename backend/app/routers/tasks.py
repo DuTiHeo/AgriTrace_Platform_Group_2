@@ -94,7 +94,7 @@ def get_task_detail(
     if role == "owner":
         ensure_owns_org(db, current_user, task["org_id"])
     elif role == "leader":
-        if current_user.get("team_id") != task["team_id"] and current_user.get("org_id") != task["org_id"]:
+        if current_user.get("team_id") != task["team_id"]:
             raise HTTPException(status.HTTP_403_FORBIDDEN, "Bạn không có quyền xem nhiệm vụ của tổ khác")
     elif role == "worker":
         if current_user["user_id"] != task["worker_id"]:
@@ -210,6 +210,11 @@ def update_task_status(
             raise HTTPException(status.HTTP_403_FORBIDDEN, "Bạn chỉ được cập nhật trạng thái nhiệm vụ của chính mình")
         if payload.status == TaskStatus.cancelled:
             raise HTTPException(status.HTTP_403_FORBIDDEN, "Công nhân không có quyền hủy nhiệm vụ")
+        if payload.status == TaskStatus.completed:
+            raise HTTPException(
+                status.HTTP_403_FORBIDDEN,
+                "Chỉ Tổ trưởng mới có thẩm quyền đánh giá nghiệm thu (ĐẠT) nhiệm vụ"
+            )
     elif role == "leader":
         if current_user.get("team_id") != task["team_id"]:
             raise HTTPException(status.HTTP_403_FORBIDDEN, "Tổ trưởng chỉ được cập nhật nhiệm vụ của tổ mình")
