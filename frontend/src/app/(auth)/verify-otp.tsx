@@ -22,6 +22,7 @@ export default function VerifyOtpScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const pending = useRef(false);
+  const otpRef = useRef<TextInput>(null);
 
   useEffect(() => {
     setOtp('');
@@ -50,6 +51,7 @@ export default function VerifyOtpScreen() {
 
     if (!/^\d{4}$/.test(otp)) {
       setError('Vui lòng nhập đủ 4 chữ số.');
+      otpRef.current?.focus();
       return;
     }
 
@@ -136,11 +138,10 @@ export default function VerifyOtpScreen() {
           </Text>
 
           <TextInput
+            ref={otpRef}
             accessibilityLabel="Mã OTP"
             value={otp}
-            onChangeText={value =>
-              setOtp(value.replace(/\D/g, '').slice(0, 4))
-            }
+            onChangeText={value => { const next = value.replace(/\D/g, '').slice(0, 4); setOtp(next); if (next.length === 4) setError(''); }}
             keyboardType="number-pad"
             maxLength={4}
             editable={!loading}
@@ -188,7 +189,7 @@ export default function VerifyOtpScreen() {
 
           <PrimaryButton
             title={loading ? 'Đang xử lý…' : 'Xác nhận'}
-            disabled={loading || otp.length !== 4}
+            disabled={loading}
             onPress={confirm}
             style={styles.confirm}
           />

@@ -28,7 +28,7 @@ export default function WorkerScheduleScreen() {
   }, [date]);
   const days = Array.from({ length: 7 }, (_, index) => shift(weekStart(selected), index));
   const selectedKey = dateKey(selected);
-  const jobs = workerTasks.filter(task => task.due === selectedKey || reports.find(r => r.taskId === task.id)?.review === 'rejected')
+  const jobs = workerTasks.filter(task => task.status !== 'done' && (task.due === selectedKey || reports.find(r => r.taskId === task.id)?.review === 'rejected'))
     .sort((a, b) => (a.startTime || '99:99').localeCompare(b.startTime || '99:99') || priorityOrder[a.priority] - priorityOrder[b.priority]);
   return <SafeAreaView style={shared.page} edges={['top']}>
     <View style={shared.header}>
@@ -44,7 +44,7 @@ export default function WorkerScheduleScreen() {
       </View>
       <View style={s.week}>{days.map((day, index) => {
         const key = dateKey(day), active = key === selectedKey;
-        const hasWork = workerTasks.some(task => task.due === key);
+        const hasWork = workerTasks.some(task => task.status !== 'done' && task.due === key);
         return <Pressable key={key} accessibilityRole="button" accessibilityState={{ selected: active }} accessibilityLabel={`${dayLabels[index]}, ${day.toLocaleDateString('vi-VN')}${hasWork ? ', có công việc' : ''}`}
           style={[s.day, active && s.selected]} onPress={() => setSelected(day)}>
           <Text style={[shared.muted, active && s.white]}>{dayLabels[index]}</Text>

@@ -23,6 +23,8 @@ export default function ResetPasswordScreen() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const pending = useRef(false);
+  const passwordRef = useRef<TextInput>(null), confirmRef = useRef<TextInput>(null);
+  const [field, setField] = useState<'password' | 'confirm' | ''>('');
   const { recovery, setRecovery } = useRecovery();
   const { clearAuth } = useAuth();
 
@@ -42,11 +44,13 @@ export default function ResetPasswordScreen() {
       setError(
         'Mật khẩu cần ít nhất 8 ký tự, có chữ và số, không có khoảng trắng đầu/cuối.'
       );
+      setField('password'); passwordRef.current?.focus();
       return;
     }
 
     if (password !== confirmPassword) {
       setError('Mật khẩu xác nhận không khớp.');
+      setField('confirm'); confirmRef.current?.focus();
       return;
     }
 
@@ -127,12 +131,13 @@ export default function ResetPasswordScreen() {
             </Text>
 
             <TextInput
+              ref={passwordRef}
               value={password}
-              onChangeText={setPassword}
+              onChangeText={value => { setPassword(value); if (field === 'password') { setError(''); setField(''); } }}
               secureTextEntry
               placeholder="Nhập mật khẩu mới"
               placeholderTextColor="#A6B1A7"
-              style={styles.input}
+              style={[styles.input, field === 'password' && { borderColor: '#B42318' }]}
             />
 
             <Text style={styles.label}>
@@ -140,12 +145,13 @@ export default function ResetPasswordScreen() {
             </Text>
 
             <TextInput
+              ref={confirmRef}
               value={confirmPassword}
-              onChangeText={setConfirmPassword}
+              onChangeText={value => { setConfirmPassword(value); if (field === 'confirm' && value === password) { setError(''); setField(''); } }}
               secureTextEntry
               placeholder="Nhập lại mật khẩu mới"
               placeholderTextColor="#A6B1A7"
-              style={styles.input}
+              style={[styles.input, field === 'confirm' && { borderColor: '#B42318' }]}
             />
 
             {error ? (

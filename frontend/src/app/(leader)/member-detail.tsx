@@ -1,25 +1,43 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocalSearchParams } from "expo-router";
-import { Keyboard, Switch, Text, View } from "react-native";
+import { Keyboard, Switch, Text, TextInput, View } from "react-native";
 import { useLeader } from "@/contexts/leader-context";
-import { Avatar, Button, Card, dateText, Empty, Input, Row, Screen, Section, s, Status } from "@/components/leader/ui";
+import { Avatar, Button, Card, dateText, Empty, Input, Row, Screen, Section, s } from "@/components/leader/ui";
 import { Feedback } from "@/components/leader/feedback";
+import { useAuth } from "@/contexts/auth-context";
+import { getMemberActivity } from "@/sevices/farming-log.service";
 
 export default function MemberDetailScreen() {
     const { id } = useLocalSearchParams<{
         id: string;
     }>();
-    const { members, tasks, diaries, updateMember } = useLeader();
+    const { members, updateMember } = useLeader();
+    const { accessToken } = useAuth();
     const member = members.find(m => m.id === id);
     const [phone, setPhone] = useState(member?.phone ?? ''), [active, setActive] = useState(member?.active ?? true), [message, setMessage] = useState('');
+    const phoneRef = useRef<TextInput>(null);
+    const [activity, setActivity] = useState({ totalLogs: 0, completedTasks: 0 });
+    const [activityLoading, setActivityLoading] = useState(true);
+    const [activityError, setActivityError] = useState('');
     useEffect(() => { setPhone(member?.phone ?? ''); setActive(member?.active ?? true); setMessage(''); }, [id, member?.phone, member?.active]);
-    const work = tasks.filter(t => t.memberIds.includes(id));
-    const logs = diaries.filter(d => d.memberId === id);
+    useEffect(() => {
+        let activeRequest = true;
+        if (!accessToken || !id) return;
+        setActivityLoading(true);
+        setActivityError('');
+        void getMemberActivity(accessToken, id)
+            .then(result => { if (activeRequest) setActivity(result); })
+            .catch(error => { if (activeRequest) setActivityError(error instanceof Error ? error.message : 'Không tải được thành tích thành viên.'); })
+            .finally(() => { if (activeRequest) setActivityLoading(false); });
+        return () => { activeRequest = false; };
+    }, [accessToken, id]);
     function save() { if (!/^\+?\d{9,15}$/.test(phone.trim())) {
         setMessage('Số điện thoại phải gồm 9–15 chữ số.');
+        phoneRef.current?.focus();
         return;
     } if (members.some(m => m.id !== id && m.phone === phone.trim())) {
         setMessage('Số điện thoại đã có trong tổ.');
+        phoneRef.current?.focus();
         return;
     } updateMember(id, phone.trim(), active);
 setMessage('Đã lưu thay đổi.');
@@ -46,13 +64,14 @@ return (
 
           <Row
             label="Ngày tham gia"
-            value={dateText(member.joined)}
+            value={member.joined ? dateText(member.joined) : 'Chưa có dữ liệu'}
           />
 
           <Input
+            ref={phoneRef}
             label="Số điện thoại"
             value={phone}
-            onChangeText={setPhone}
+            onChangeText={value => { setPhone(value); if (/^\+?\d{9,15}$/.test(value.trim())) setMessage(''); }}
             keyboardType="phone-pad"
           />
 
@@ -89,34 +108,16 @@ return (
 
         <Card>
           <Row
-            label="Công việc hoàn thành"
-            value={`${work.filter(t => t.status === 'done').length} / ${work.length}`}
+            label="Tổng số nhật ký đã tạo"
+            value={activityLoading ? 'Đang tải…' : `${activity.totalLogs} nhật ký`}
           />
 
           <Row
-            label="Nhật ký đã đăng"
-            value={`${logs.length} nhật ký`}
+            label="Tổng số công việc đã hoàn thành"
+            value={activityLoading ? 'Đang tải…' : `${activity.completedTasks} công việc`}
           />
-
-          <Row
-            label="Ảnh minh chứng"
-            value={`${logs.reduce((sum, d) => sum + d.photos.length, 0)} ảnh`}
-          />
+          <Feedback text={activityError} />
         </Card>
-
-        {work.map(t => (
-          <Card key={t.id}>
-            <Text style={s.section}>
-              {t.title}
-            </Text>
-
-            <Text style={s.muted}>
-              {t.area} · Hạn {dateText(t.due)}
-            </Text>
-
-            <Status status={t.status} />
-          </Card>
-        ))}
       </>
     ) : (
       <Empty text="Không tìm thấy thành viên." />

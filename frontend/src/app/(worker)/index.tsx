@@ -3,7 +3,8 @@ import { Status } from '@/components/common/role-ui';
 import { colors } from '@/styles/theme';
 import { sharedStyles as shared } from '@/styles/role-styles';
 import { type Href, router } from 'expo-router';
-import { useState } from 'react';
+import { useCallback } from 'react';
+import { useFocusEffect } from 'expo-router';
 import {
   Pressable,
   ScrollView,
@@ -16,62 +17,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useReports } from '@/contexts/report-context';
 import { WorkerHeader } from '@/components/worker/worker-header';
 
-type TaskStatus = 'todo' | 'doing';
-
-type Task = {
-  id: number;
-  title: string;
-  area: string;
-  due: string;
-  status: TaskStatus;
-  priority: 'high' | 'normal';
-};
-
-const initialTasks: Task[] = [
-  {
-    id: 1,
-    title: 'Kiểm tra sâu bệnh',
-    area: 'KV-B',
-    due: '17/09',
-    status: 'doing',
-    priority: 'high'
-  },
-  {
-    id: 2,
-    title: 'Tưới nước hằng ngày',
-    area: 'KV-A',
-    due: '17/09',
-    status: 'todo',
-    priority: 'high'
-  },
-  {
-    id: 3,
-    title: 'Phun thuốc trừ sâu',
-    area: 'KV-A',
-    due: '20/09',
-    status: 'todo',
-    priority: 'normal'
-  },
-];
-
 export default function WorkerHome() {
-  const [tasks, setTasks] = useState(initialTasks);
-  const { reports } = useReports();
-  const { workerTasks } = useWorkSchedule();
+  const { reports, drafts } = useReports();
+  const { workerTasks, loadWorkerTasks } = useWorkSchedule();
+  useFocusEffect(useCallback(() => { void loadWorkerTasks(); }, [loadWorkerTasks]));
+  const tasks = workerTasks.filter(task => task.status !== 'done');
+  const completedCount = workerTasks.filter(task => task.status === 'done').length;
   const rework = workerTasks.filter(t => reports.find(r => r.taskId === t.id)?.review === 'rejected');
 
-  const doing = tasks.filter(
-    (task) => task.status === 'doing'
-  ).length;
-
-  const startTask = (id: number) =>
-    setTasks((items) =>
-      items.map((task) =>
-        task.id === id
-          ? { ...task, status: 'doing' }
-          : task
-      )
-    );
+  const notStarted = tasks.filter(task => !drafts[`task:${task.id}`]).length;
 
   return (
     <SafeAreaView style={styles.page} edges={['top']}>
@@ -90,21 +44,17 @@ export default function WorkerHome() {
         </View>}
         <View style={styles.summaryRow}>
           <Summary
-            number={
-              tasks.filter(
-                (task) => task.status === 'todo'
-              ).length
-            }
-            label="Cần làm"
+            number={tasks.length}
+            label="Việc cần làm"
           />
 
           <Summary
-            number={doing}
-            label="Đang làm"
+            number={notStarted}
+            label="Chưa làm"
           />
 
           <Summary
-            number={1}
+            number={completedCount}
             label="Đã xong"
           />
         </View>
@@ -116,7 +66,7 @@ export default function WorkerHome() {
             </Text>
 
             <Text style={styles.count}>
-              3 nhiệm vụ
+              {tasks.length} nhiệm vụ
             </Text>
           </View>
 
@@ -129,7 +79,7 @@ export default function WorkerHome() {
                 <Text style={styles.taskName}>
                   <Text
                     style={{
-                      color:
+                          color:
                         task.priority === 'high'
                           ? colors.danger
                           : colors.warning
@@ -156,17 +106,13 @@ export default function WorkerHome() {
                       styles.completeButton
                   ]}
                   onPress={() =>
-                    task.status === 'doing'
-                      ? router.push(
-                          { pathname: '/(worker)/report-note', params: { taskTitle: task.title, area: task.area } } as Href
-                        )
-                      : startTask(task.id)
+                    router.push(
+                      { pathname: '/(worker)/report-note', params: { taskId: String(task.id), taskTitle: task.title, area: task.area } } as Href
+                    )
                   }
                 >
                   <Text style={styles.actionText}>
-                    {task.status === 'doing'
-                      ? '✓ Hoàn thành (Chụp ảnh)'
-                      : '▶ Bắt đầu làm'}
+                    ✓ Hoàn thành (Chụp ảnh)
                   </Text>
                 </Pressable>
 
