@@ -19,18 +19,22 @@ export function ChangePasswordScreen() {
   const [busy, setBusy] = useState(false);
   const [success, setSuccess] = useState(false);
   const pending = useRef(false);
+  const oldRef = useRef<TextInput>(null), passwordRef = useRef<TextInput>(null), confirmRef = useRef<TextInput>(null);
+  const [errorField, setErrorField] = useState<'old' | 'password' | 'confirm' | ''>('');
 
   async function submit(recover = false) {
     Keyboard.dismiss();
     if (pending.current || !user || !accessToken) return;
     setError('');
     if (!recover) {
-      if (!old || password.length < 8 || password !== password.trim() || !/[a-zA-Z]/.test(password) || !/\d/.test(password)) {
-        setError('Nhập mật khẩu cũ. Mật khẩu mới cần ít nhất 8 ký tự, có chữ và số, không có khoảng trắng đầu/cuối.');
-        return;
-      }
-      if (password !== confirm) { setError('Mật khẩu xác nhận không khớp.'); return; }
-      if (password === old) { setError('Mật khẩu mới phải khác mật khẩu cũ.'); return; }
+      if (!old) { setError('Vui lòng nhập mật khẩu cũ.'); setErrorField('old'); oldRef.current?.focus(); return; }
+      if (password.length < 8) { setError('Mật khẩu mới phải có ít nhất 8 ký tự.'); setErrorField('password'); passwordRef.current?.focus(); return; }
+      if (password.trim() !== password || !password.trim()) { setError('Mật khẩu không được chứa khoảng trắng đầu/cuối hoặc toàn khoảng trắng.'); setErrorField('password'); passwordRef.current?.focus(); return; }
+      if (!/[a-zA-Z]/.test(password)) { setError('Mật khẩu mới phải chứa ít nhất 1 chữ cái.'); setErrorField('password'); passwordRef.current?.focus(); return; }
+      if (!/\d/.test(password)) { setError('Mật khẩu mới phải chứa ít nhất 1 chữ số.'); setErrorField('password'); passwordRef.current?.focus(); return; }
+      if (new Set(password).size === 1) { setError('Mật khẩu mới không được toàn ký tự giống nhau.'); setErrorField('password'); passwordRef.current?.focus(); return; }
+      if (password === old) { setError('Mật khẩu mới phải khác mật khẩu cũ.'); setErrorField('password'); passwordRef.current?.focus(); return; }
+      if (password !== confirm) { setError('Mật khẩu xác nhận không khớp.'); setErrorField('confirm'); confirmRef.current?.focus(); return; }
     }
     pending.current = true;
     setBusy(true);
@@ -65,13 +69,13 @@ export function ChangePasswordScreen() {
                 <PrimaryButton title="Về đăng nhập" onPress={() => { clearAuth(); router.replace('/login'); }} />
               </> : <View style={s.card}>
                 <Text style={s.label}>Mật khẩu cũ</Text>
-                <TextInput accessibilityLabel="Mật khẩu cũ" style={s.input} secureTextEntry autoCapitalize="none" autoCorrect={false} editable={!busy} value={old} onChangeText={setOld} placeholder="Nhập mật khẩu hiện tại" />
+                <TextInput ref={oldRef} accessibilityLabel="Mật khẩu cũ" style={[s.input, errorField === 'old' && s.invalid]} secureTextEntry autoCapitalize="none" autoCorrect={false} editable={!busy} value={old} onChangeText={value => { setOld(value); if (value && errorField === 'old') { setError(''); setErrorField(''); } }} placeholder="Nhập mật khẩu hiện tại" />
                 <Pressable disabled={busy} onPress={() => submit(true)}><Text style={s.link}>Quên mật khẩu cũ?</Text></Pressable>
                 <Text style={s.label}>Mật khẩu mới</Text>
-                <TextInput accessibilityLabel="Mật khẩu mới" style={s.input} secureTextEntry autoCapitalize="none" autoCorrect={false} editable={!busy} value={password} onChangeText={setPassword} placeholder="Nhập mật khẩu mới" />
+                <TextInput ref={passwordRef} accessibilityLabel="Mật khẩu mới" style={[s.input, errorField === 'password' && s.invalid]} secureTextEntry autoCapitalize="none" autoCorrect={false} editable={!busy} value={password} onChangeText={value => { setPassword(value); if (errorField === 'password') { setError(''); setErrorField(''); } }} placeholder="Nhập mật khẩu mới" />
                 <Text style={s.label}>Xác nhận mật khẩu mới</Text>
-                <TextInput accessibilityLabel="Xác nhận mật khẩu mới" style={s.input} secureTextEntry autoCapitalize="none" autoCorrect={false} editable={!busy} value={confirm} onChangeText={setConfirm} placeholder="Nhập lại mật khẩu mới" />
-                <Text style={s.muted}>Ít nhất 8 ký tự, bao gồm chữ và số.</Text>
+                <TextInput ref={confirmRef} accessibilityLabel="Xác nhận mật khẩu mới" style={[s.input, errorField === 'confirm' && s.invalid]} secureTextEntry autoCapitalize="none" autoCorrect={false} editable={!busy} value={confirm} onChangeText={value => { setConfirm(value); if (value === password && errorField === 'confirm') { setError(''); setErrorField(''); } }} placeholder="Nhập lại mật khẩu mới" />
+                <Text style={s.muted}>Ít nhất 8 ký tự, bao gồm chữ và số, không khoảng trắng đầu/cuối, không toàn ký tự giống nhau.</Text>
                 {!!error && <Text accessibilityRole="alert" style={s.error}>{error}</Text>}
                 <PrimaryButton title={busy ? 'Đang xử lý…' : 'Cập nhật mật khẩu'} disabled={busy} style={busy && { opacity: 0.5 }} onPress={() => submit()} />
               </View>}
@@ -92,4 +96,5 @@ const s = StyleSheet.create({
   muted: { ...shared.muted },
   link: { ...shared.link, paddingVertical: 8 },
   error: { color: colors.danger, lineHeight: 21 },
+  invalid: { borderColor: colors.danger },
 });

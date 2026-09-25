@@ -16,11 +16,11 @@ import { WorkerHeader } from '@/components/worker/worker-header';
 import { useAuth } from '@/contexts/auth-context';
 import { logout } from '@/sevices/auth.sevice';
 
-const settings = [
+const utilities = [
   { label: '⚠️  Báo cáo sự cố / Lỗi kỹ thuật', route: '/account/issues' },
   { label: '🔒  Đổi mật khẩu', route: '/account/change-password' },
-  { label: '🔔  Cài đặt thông báo', route: '/account/settings' },
-  { label: '🌐  Ngôn ngữ (Tiếng Việt)', route: '/account/settings' },
+  { label: '🔔  Cài đặt thông báo', route: '/account/notification-settings' },
+  { label: '🌐  Ngôn ngữ (Tiếng Việt)', route: '/account/language' },
 ];
 
 export default function WorkerProfileScreen() {
@@ -100,7 +100,7 @@ export default function WorkerProfileScreen() {
         </Section>
 
         <Section title="⚙️ Cài đặt & Tiện ích">
-          {settings.map((setting) => (
+          {utilities.map((setting) => (
             <Pressable
               key={setting.label}
               style={styles.setting}

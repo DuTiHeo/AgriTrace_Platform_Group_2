@@ -1,7 +1,7 @@
 import { useLocalSearchParams, router } from 'expo-router';
 import { PriorityBadge, PriorityPicker, type TaskPriority } from '@/components/common/task-priority';
 import { useWorkSchedule } from '@/contexts/work-schedule-context';
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Keyboard, Pressable, ScrollView, Text, View } from "react-native";
 import { useLeader, areas } from "@/contexts/leader-context";
 import {
@@ -19,14 +19,19 @@ import {
 } from "@/components/leader/ui";
 import { Feedback } from "@/components/leader/feedback";
 import { AreaPicker } from "@/components/leader/area-picker";
+import { useAuth } from '@/contexts/auth-context';
+import { listPlots, type Plot } from '@/sevices/farming-log.service';
 
 export default function AssignmentsScreen() {
   const { taskId } = useLocalSearchParams<{ taskId?: string }>();
   const { members, tasks, addTask } = useLeader();
+  const { accessToken } = useAuth();
+  const [plots, setPlots] = useState<Plot[]>([]);
   const { ready, error: storageError, retry } = useWorkSchedule();
   const scrollRef = useRef<ScrollView>(null);
   const fields = useRef<Record<string, View | null>>({});
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const clearFieldError = (name: string) => setFieldErrors(old => old[name] ? { ...old, [name]: '' } : old);
   function showErrors(errors: Record<string, string>) {
     setFieldErrors(errors);
     const first = Object.keys(errors)[0];
@@ -54,9 +59,10 @@ export default function AssignmentsScreen() {
   const [title, setTitle] = useState(''),
     [instructions, setInstructions] = useState(''),
     [selected, setSelected] = useState<string[]>([]),
-    [area, setArea] = useState(areas[0]),
+    [area, setArea] = useState(''),
     [due, setDue] = useState(''),
     [message, setMessage] = useState('');
+  useEffect(() => { if (accessToken) void listPlots(accessToken).then(setPlots).catch(error => setMessage(error instanceof Error ? error.message : 'Không tải được danh sách lô đất.')); }, [accessToken]);
 
   const assigned = tasks.filter(t => !t.owner && (!taskId || t.id === taskId));
 
@@ -65,7 +71,8 @@ export default function AssignmentsScreen() {
     const errors: Record<string, string> = {};
     if (!title.trim()) errors.title = 'Nhập tên nhiệm vụ.';
     if (!selected.length || selected.some(id => !members.some(m => m.id === id && m.active))) errors.members = 'Chọn ít nhất một công nhân đang hoạt động.';
-    if (!areas.includes(area)) errors.area = 'Chọn khu vực làm việc.';
+    const plot = plots.find(item => item.code === area);
+    if (!plot) errors.area = 'Chọn lô đất đang hoạt động.';
     const date = new Date(due + 'T12:00:00');
     const today = new Date(); today.setHours(0, 0, 0, 0);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(due) || Number.isNaN(date.getTime()) || date.getFullYear() !== Number(due.slice(0, 4)) || date.getMonth() + 1 !== Number(due.slice(5, 7)) || date.getDate() !== Number(due.slice(8, 10)) || date < today) errors.due = 'Chọn hạn hoàn thành hợp lệ, từ hôm nay trở đi.';
@@ -82,6 +89,7 @@ export default function AssignmentsScreen() {
       instructions,
       memberIds: selected,
       area,
+      plotId: plot!.plot_id,
       due, priority, startTime, endTime, tools: tools.trim()
     });
 
@@ -128,7 +136,7 @@ export default function AssignmentsScreen() {
           <Input
             label="Tên nhiệm vụ *"
             value={title}
-            onChangeText={setTitle}
+            onChangeText={value => { setTitle(value); if (value.trim()) clearFieldError('title'); }}
             placeholder="Ví dụ: Chăm sóc luống rau khu A"
             maxLength={150}
           />
@@ -145,6 +153,7 @@ export default function AssignmentsScreen() {
               disabled={!m.active}
               onPress={() => {
                 Keyboard.dismiss();
+                clearFieldError('members');
                 setSelected(old =>
                   old.includes(m.id)
                     ? old.filter(id => id !== m.id)
@@ -177,25 +186,24 @@ export default function AssignmentsScreen() {
 
           {fieldError('members')}</View>
           <View {...fieldProps('area')}>
-          <Text style={s.label}>Khu vực *</Text>
           <AreaPicker
             value={area}
-            onChange={setArea}
+            onChange={value => { setArea(value); clearFieldError('area'); }}
+            options={plots.map(plot => plot.code)}
           />
           {fieldError('area')}</View>
 
           <View {...fieldProps('due')}>
-          <Text style={s.label}>Hạn hoàn thành *</Text>
           <Calendar
             value={due}
-            onChange={setDue}
+            onChange={value => { setDue(value); clearFieldError('due'); }}
           />
           {fieldError('due')}</View>
 
-          <View {...fieldProps('priority')}><Text style={s.label}>Ưu tiên *</Text><PriorityPicker value={priority} onChange={setPriority} />{fieldError('priority')}</View>
-          <View {...fieldProps('startTime')}><Input label="Giờ bắt đầu *" value={startTime} onChangeText={setStartTime} placeholder="08:00" maxLength={5} />{fieldError('startTime')}</View>
-          <View {...fieldProps('endTime')}><Input label="Giờ kết thúc *" value={endTime} onChangeText={setEndTime} placeholder="10:00" maxLength={5} />{fieldError('endTime')}</View>
-          <View {...fieldProps('tools')}><Input label="Công cụ / vật tư *" value={tools} onChangeText={setTools} placeholder="Ví dụ: Kéo cắt tỉa, bình xịt cầm tay" maxLength={300} />{fieldError('tools')}</View>
+          <View {...fieldProps('priority')}><Text style={s.label}>Ưu tiên *</Text><PriorityPicker value={priority} onChange={value => { setPriority(value); clearFieldError('priority'); }} />{fieldError('priority')}</View>
+          <View {...fieldProps('startTime')}><Input label="Giờ bắt đầu *" value={startTime} onChangeText={value => { setStartTime(value); if (/^([01]\d|2[0-3]):[0-5]\d$/.test(value)) clearFieldError('startTime'); }} placeholder="08:00" maxLength={5} />{fieldError('startTime')}</View>
+          <View {...fieldProps('endTime')}><Input label="Giờ kết thúc *" value={endTime} onChangeText={value => { setEndTime(value); if (/^([01]\d|2[0-3]):[0-5]\d$/.test(value) && value > startTime) clearFieldError('endTime'); }} placeholder="10:00" maxLength={5} />{fieldError('endTime')}</View>
+          <View {...fieldProps('tools')}><Input label="Công cụ / vật tư *" value={tools} onChangeText={value => { setTools(value); if (value.trim()) clearFieldError('tools'); }} placeholder="Ví dụ: Kéo cắt tỉa, bình xịt cầm tay" maxLength={300} />{fieldError('tools')}</View>
           <Input
             label="Ghi chú / hướng dẫn (không bắt buộc)"
             value={instructions}
