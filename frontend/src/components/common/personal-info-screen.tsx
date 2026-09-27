@@ -40,9 +40,9 @@ export function PersonalInfoScreen() {
           </View>
           <Field label="Họ và tên" value={information.full_name} />
           <Field label="Số điện thoại" value={information.phone} />
-          <Field label="Email" value={null} />
+          <Field label="CCCD" value={information.national_id} />
           <Field label="Địa chỉ" value={information.address} />
-          <Field label="Vai trò" value={roleNames[information.role] ?? information.role} />
+          <Field label="Vai trò" value={`${roleNames[information.role] ?? information.role}${information.team_id ? ` · Mã tổ ${information.team_id}` : ''}`} />
         </>}
     </ScrollView>
   </SafeAreaView>;

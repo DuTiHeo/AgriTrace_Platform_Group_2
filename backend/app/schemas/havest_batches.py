@@ -14,7 +14,7 @@ class HarvestBatchStatus(str, Enum):
 
 class BatchSeasonContributionInput(BaseModel):
     season_id: UUID = Field(..., description="ID mùa vụ đóng góp sản lượng")
-    contributed_quantity: Optional[float] = Field(None, ge=0, description="Sản lượng mùa vụ đóng góp (kg hoặc tấn)")
+    contributed_quantity: float = Field(..., gt=0, description="Sản lượng mùa vụ đóng góp (kg hoặc tấn, bắt buộc > 0)")
 
 
 class HarvestBatchBase(BaseModel):
@@ -27,13 +27,15 @@ class HarvestBatchBase(BaseModel):
 
 
 class HarvestBatchCreate(HarvestBatchBase):
-    initial_seasons: Optional[list[BatchSeasonContributionInput]] = Field(
-        default=[],
-        description="Danh sách mùa vụ đóng góp sản lượng ngay khi tạo lô",
+    initial_seasons: list[BatchSeasonContributionInput] = Field(
+        ...,
+        min_length=1,
+        description="Danh sách mùa vụ đóng góp sản lượng (bắt buộc ít nhất 1 mùa vụ)",
     )
 
 
 class HarvestBatchUpdate(BaseModel):
+    batch_code: Optional[str] = None
     quantity: Optional[float] = Field(None, ge=0)
     harvest_date: Optional[date] = None
     status: Optional[HarvestBatchStatus] = None

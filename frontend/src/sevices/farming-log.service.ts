@@ -12,6 +12,14 @@ export type FarmingLog = {
 export type FarmingLogDetail = FarmingLog & { photos: LogPhoto[]; notes: LogNote[] };
 export type Season = { season_id: string; plot_code: string; crop_name: string; planting_date: string; status: string; org_id: string };
 export type TeamMember = { user_id: string; full_name: string; phone: string; role: string; status: 'active' | 'locked' };
+export type UserDetail = TeamMember & {
+  national_id: string | null;
+  date_of_birth: string | null;
+  address: string | null;
+  org_id: string | null;
+  team_id: string | null;
+  created_at: string;
+};
 export type MemberTask = { task_id: string; worker_id: string; status: 'in_progress' | 'completed' | 'cancelled' };
 export type ApiTask = MemberTask & {
   team_id: string; team_name: string | null; worker_name: string | null; worker_phone: string | null;
@@ -60,6 +68,7 @@ export const listLogs = (token: string, seasonId?: string) => request<FarmingLog
 export const getLog = (token: string, id: string) => request<FarmingLogDetail>(token, `/farming-logs/${encodeURIComponent(id)}`);
 export const listSeasons = (token: string) => request<Season[]>(token, '/seasons');
 export const listTeamMembers = (token: string) => request<TeamMember[]>(token, '/users?role=worker');
+export const getUserDetail = (token: string, id: string) => request<UserDetail>(token, `/users/${encodeURIComponent(id)}`);
 export const listMemberTasks = (token: string, userId: string) => request<MemberTask[]>(token, `/tasks?worker_id=${encodeURIComponent(userId)}&include_cancelled=true`);
 export const listMyTasks = (token: string) => request<ApiTask[]>(token, '/tasks');
 export const updateTaskStatus = (token: string, taskId: string, status: 'in_progress' | 'completed') => request<ApiTask>(token, `/tasks/${encodeURIComponent(taskId)}/status`, json('PATCH', { status }));
@@ -72,7 +81,7 @@ export async function getMemberActivity(token: string, userId: string) {
     completedTasks: tasks.filter(task => task.worker_id === userId && task.status === 'completed').length,
   };
 }
-export const getLogAuthor = (token: string, id: string) => request<{ user_id: string; role: string }>(token, `/users/${encodeURIComponent(id)}`);
+export const getLogAuthor = (token: string, id: string) => getUserDetail(token, id);
 export const createLog = (token: string, payload: CreateLog) => request<FarmingLogDetail>(token, '/farming-logs', json('POST', payload));
 export const createNote = (token: string, logId: string, content: string) => request<LogNote>(token, '/log-notes', json('POST', { log_id: logId, content }));
 export const resolveNote = (token: string, noteId: string, resolved: boolean) => request<LogNote>(token, `/log-notes/${encodeURIComponent(noteId)}`, json('PATCH', { resolved }));

@@ -3,10 +3,12 @@ import { useAuth } from '@/contexts/auth-context';
 import { type ReportDraft, useReports } from '@/contexts/report-context';
 import { getLogLocation, prepareLogPhoto, uploadDraftPhotos } from '@/sevices/log-media';
 import { updateTaskStatus } from '@/sevices/farming-log.service';
+import { useWorkSchedule } from '@/contexts/work-schedule-context';
 
 export function useFarmingLogForm(draft: ReportDraft, updateDraft: (update: (old: ReportDraft) => ReportDraft) => void) {
   const { accessToken } = useAuth();
   const { seasons, createReport, storeDetail } = useReports();
+  const { loadWorkerTasks } = useWorkSchedule();
   const [gpsStatus, setGpsStatus] = useState('Đang lấy vị trí hiện tại…');
   const locating = useRef(false);
   const activeSeasons = seasons.filter(season => ['growing', 'ready_to_harvest'].includes(season.status));
@@ -51,6 +53,7 @@ export function useFarmingLogForm(draft: ReportDraft, updateDraft: (update: (old
     }
     if (draft.taskId && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(draft.taskId)) {
       await updateTaskStatus(accessToken, draft.taskId, 'completed');
+      await loadWorkerTasks();
     }
     return detail;
   }

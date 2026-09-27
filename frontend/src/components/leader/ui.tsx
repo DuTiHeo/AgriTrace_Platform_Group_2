@@ -5,7 +5,7 @@ export { sharedStyles as s } from '@/styles/role-styles';
 import { Button } from '@/components/common/role-ui';
 export { Avatar, Button, Card, Section, Input, Chip, Status, Empty, Row } from '@/components/common/role-ui';
 import { router, type Href } from 'expo-router';
-import { useState, type RefObject, type PropsWithChildren } from 'react';
+import { useState, type ReactNode, type RefObject, type PropsWithChildren } from 'react';
 import {
   Keyboard,
   KeyboardAvoidingView,
@@ -37,10 +37,12 @@ export const dateText = (value: string) =>
 export function Screen({
   children,
   title,
+  titleAction,
   back = false,
   scrollRef
 }: PropsWithChildren<{
   title?: string;
+  titleAction?: ReactNode;
   back?: boolean;
   scrollRef?: RefObject<ScrollView | null>;
 }>) {
@@ -131,9 +133,18 @@ export function Screen({
         >
 
           {!back && title && (
-            <Text style={s.title}>
-              {title}
-            </Text>
+            titleAction ? (
+              <View style={[s.row, { alignItems: 'center' }]}>
+                <Text style={[s.title, { flex: 1 }]}>
+                  {title}
+                </Text>
+                {titleAction}
+              </View>
+            ) : (
+              <Text style={s.title}>
+                {title}
+              </Text>
+            )
           )}
 
           {children}

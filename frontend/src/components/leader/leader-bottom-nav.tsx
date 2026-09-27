@@ -49,5 +49,6 @@ const items = [
 ] as const satisfies readonly NavItem[];
 
 export function LeaderBottomNav(props: RoleNavProps) {
+  if (props.state.routes[props.state.index]?.name === 'create-assignment') return null;
   return <RoleBottomNav {...props} items={items} />;
 }

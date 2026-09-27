@@ -1,26 +1,37 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type PropsWithChildren } from 'react';
 import { useAuth } from './auth-context';
-import { type TaskPriority } from '@/components/common/task-priority';
 import { listMyTasks } from '@/sevices/farming-log.service';
 export type ScheduledTask = {
   id: string; title: string; instructions: string; memberIds: string[]; area: string; due: string;
-  priority: TaskPriority; startTime?: string; endTime?: string; tools?: string;
+  startDate?: string;
+  startTime?: string; endTime?: string; tools?: string;
   status: 'todo' | 'doing' | 'done'; assigneePhones: string[];
   leaderPhone: string; orgId: string | null; teamId: string | null;
+  teamName?: string | null;
+  updatedAt?: string | null;
 };
 const KEY = 'agrifarm.work-schedule.v1';
+function localDateKey(value: string | null) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
 const normalizePhone = (phone: string) => phone.replace(/\D/g, '').replace(/^84(?=\d{9}$)/, '0');
 function validTask(value: unknown): value is ScheduledTask {
   if (!value || typeof value !== 'object') return false;
   const t = value as ScheduledTask;
   return ['id','title','instructions','area','due','leaderPhone'].every(key => typeof (value as Record<string, unknown>)[key] === 'string')
     && /^\d{4}-\d{2}-\d{2}$/.test(t.due)
-    && ['high','medium','low'].includes(t.priority) && ['todo','doing','done'].includes(t.status)
+    && (t.startDate === undefined || /^\d{4}-\d{2}-\d{2}$/.test(t.startDate))
+    && ['todo','doing','done'].includes(t.status)
     && Array.isArray(t.memberIds) && t.memberIds.every(x => typeof x === 'string')
     && Array.isArray(t.assigneePhones) && t.assigneePhones.every(x => typeof x === 'string')
     && (t.orgId === null || typeof t.orgId === 'string') && (t.teamId === null || typeof t.teamId === 'string')
-    && [t.startTime, t.endTime, t.tools].every(x => x === undefined || typeof x === 'string');
+    && [t.startTime, t.endTime, t.tools].every(x => x === undefined || typeof x === 'string')
+    && (t.teamName === undefined || t.teamName === null || typeof t.teamName === 'string')
+    && (t.updatedAt === undefined || t.updatedAt === null || typeof t.updatedAt === 'string');
 }
 function useScheduleState() {
   const { user, accessToken } = useAuth();
@@ -49,7 +60,9 @@ function useScheduleState() {
     if (saving.current) throw new Error('Đang lưu phân công. Vui lòng chờ.');
     saving.current = true;
     try {
-      const task: ScheduledTask = { ...input, id: `assigned-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, status: 'todo', leaderPhone: user.phone, orgId: user.org_id, teamId: user.team_id };
+      const now = new Date();
+      const startDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const task: ScheduledTask = { ...input, startDate, id: `assigned-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, status: 'todo', leaderPhone: user.phone, orgId: user.org_id, teamId: user.team_id };
       const next = [task, ...current.current];
       await AsyncStorage.setItem(KEY, JSON.stringify(next));
       current.current = next; setAll(next);
@@ -68,12 +81,14 @@ function useScheduleState() {
         memberIds: [task.worker_id],
         area: task.plot_code ?? 'Chưa có mã lô',
         due: task.due_date ?? '',
-        priority: 'medium',
+        startDate: localDateKey(task.created_at) || task.due_date || '',
         status: task.status === 'completed' ? 'done' : 'doing',
         assigneePhones: task.worker_phone ? [task.worker_phone] : [],
         leaderPhone: '',
         orgId: task.org_id,
         teamId: task.team_id,
+        teamName: task.team_name,
+        updatedAt: task.updated_at,
       })));
       setApiReady(true);
     } catch (error) {

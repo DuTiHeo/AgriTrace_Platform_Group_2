@@ -154,7 +154,7 @@ def create_harvest_batch(
         while batch_code_exists(db, batch_code):
             batch_code = generate_batch_code(str(org_id), harvest_date)
 
-    if not qr_url:
+    if not qr_url and status == "ready":
         qr_url = generate_qr_url(batch_code)
 
     query = text("""

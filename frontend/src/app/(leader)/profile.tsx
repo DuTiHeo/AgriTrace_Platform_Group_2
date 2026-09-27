@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { router, type Href } from "expo-router";
 import { Keyboard, Pressable, Text, View } from "react-native";
 import { useAuth } from "@/contexts/auth-context";
@@ -15,12 +15,25 @@ import {
   s
 } from "@/components/leader/ui";
 import { Feedback } from "@/components/leader/feedback";
+import { listMyTasks, listPlots } from '@/sevices/farming-log.service';
 
 export default function ProfileScreen() {
   const { user, accessToken, clearAuth } = useAuth();
-  const { members, tasks, diaries } = useLeader();
+  const { members, diaries } = useLeader();
   const [busy, setBusy] = useState(false),
     [error, setError] = useState('');
+  const [management, setManagement] = useState<{ areas: string[]; taskCount: number } | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    if (!accessToken) return;
+    Promise.all([listPlots(accessToken), listMyTasks(accessToken)])
+      .then(([plots, apiTasks]) => {
+        if (active) setManagement({ areas: plots.map(plot => plot.code), taskCount: apiTasks.length });
+      })
+      .catch(loadError => { if (active) setError(loadError instanceof Error ? loadError.message : 'Không tải được thông tin quản lý.'); });
+    return () => { active = false; };
+  }, [accessToken]);
 
   async function signOut() {
     if (busy)
@@ -64,7 +77,7 @@ export default function ProfileScreen() {
             </Text>
 
             <Text style={s.muted}>
-              Tổ trưởng · AgriFarm
+              Tổ trưởng · {user?.team_id ? `Mã tổ ${user.team_id}` : 'Chưa được phân tổ'}
             </Text>
           </View>
         </View>
@@ -80,7 +93,7 @@ export default function ProfileScreen() {
 
         <Row
           label="Khu vực quản lý"
-          value="Khu A, Khu B, Khu C"
+          value={management ? (management.areas.join(', ') || 'Chưa có dữ liệu') : 'Đang tải…'}
         />
 
         <Row
@@ -90,7 +103,7 @@ export default function ProfileScreen() {
 
         <Row
           label="Nhiệm vụ đã giao"
-          value={`${tasks.filter(t => !t.owner).length} nhiệm vụ`}
+          value={management ? `${management.taskCount} nhiệm vụ` : 'Đang tải…'}
         />
 
         <Row

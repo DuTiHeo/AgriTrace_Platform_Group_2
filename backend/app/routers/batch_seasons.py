@@ -21,7 +21,7 @@ router = APIRouter()
 @router.post("", response_model=BatchSeasonDetail, status_code=status.HTTP_201_CREATED)
 def link_season_to_batch(
     payload: BatchSeasonCreate,
-    current_user: dict = Depends(require_role("admin", "owner", "leader")),
+    current_user: dict = Depends(require_role("admin", "owner")),
     db: Session = Depends(get_db),
 ):
 
@@ -36,9 +36,6 @@ def link_season_to_batch(
     role = current_user["role"]
     if role == "owner":
         ensure_owns_org(db, current_user, org_id)
-    elif role == "leader":
-        if current_user.get("org_id") != org_id:
-            raise HTTPException(status.HTTP_403_FORBIDDEN, "Bạn không thể gán mùa vụ của nông trại khác")
 
     try:
         bs_record = crud_bs.create_or_reactivate_batch_season(
@@ -125,7 +122,7 @@ def update_contributed_quantity(
     batch_id: UUID,
     season_id: UUID,
     payload: BatchSeasonUpdate,
-    current_user: dict = Depends(require_role("admin", "owner", "leader")),
+    current_user: dict = Depends(require_role("admin", "owner")),
     db: Session = Depends(get_db),
 ):
 
@@ -136,9 +133,6 @@ def update_contributed_quantity(
     role = current_user["role"]
     if role == "owner":
         ensure_owns_org(db, current_user, link["org_id"])
-    elif role == "leader":
-        if current_user.get("org_id") != link["org_id"]:
-            raise HTTPException(status.HTTP_403_FORBIDDEN, "Bạn không thuộc nông trại quản lý liên kết này")
 
     updated = crud_bs.update_batch_season(
         db,
@@ -153,7 +147,7 @@ def update_contributed_quantity(
 def remove_season_from_batch(
     batch_id: UUID,
     season_id: UUID,
-    current_user: dict = Depends(require_role("admin", "owner", "leader")),
+    current_user: dict = Depends(require_role("admin", "owner")),
     db: Session = Depends(get_db),
 ):
 
@@ -164,9 +158,6 @@ def remove_season_from_batch(
     role = current_user["role"]
     if role == "owner":
         ensure_owns_org(db, current_user, link["org_id"])
-    elif role == "leader":
-        if current_user.get("org_id") != link["org_id"]:
-            raise HTTPException(status.HTTP_403_FORBIDDEN, "Bạn không thuộc nông trại quản lý liên kết này")
 
     soft_deleted = crud_bs.soft_delete_batch_season(db, batch_id, season_id)
     return soft_deleted

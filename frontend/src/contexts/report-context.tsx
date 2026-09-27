@@ -38,10 +38,24 @@ function useReportState() {
     setLoading(true); setError('');
     const [listResult, seasonResult] = await Promise.allSettled([api.listLogs(accessToken), api.listSeasons(accessToken)]);
     if (session.current !== accessToken || sequence !== listSequence.current) return;
-    if (listResult.status === 'fulfilled') { setLogs(listResult.value); setReady(true); }
-    else setError(listResult.reason instanceof Error ? listResult.reason.message : 'Không tải được nhật ký.');
     if (seasonResult.status === 'fulfilled') { setSeasons(seasonResult.value); setSeasonsError(''); }
     else setSeasonsError(seasonResult.reason instanceof Error ? seasonResult.reason.message : 'Không tải được mùa vụ.');
+    if (listResult.status === 'fulfilled') {
+      setLogs(listResult.value);
+      setReady(true);
+      const detailResults = await Promise.allSettled(listResult.value.map(log => api.getLog(accessToken, log.log_id)));
+      if (session.current !== accessToken || sequence !== listSequence.current) return;
+      const loadedDetails: Record<string, api.FarmingLogDetail> = {};
+      for (const result of detailResults) {
+        if (result.status === 'fulfilled') loadedDetails[result.value.log_id] = result.value;
+      }
+      setDetails(old => ({ ...old, ...loadedDetails }));
+      if (detailResults.some(result => result.status === 'rejected')) {
+        setError('Một số hình ảnh hoặc ghi chú chưa tải được. Vui lòng thử tải lại.');
+      }
+    } else {
+      setError(listResult.reason instanceof Error ? listResult.reason.message : 'Không tải được nhật ký.');
+    }
     setLoading(false);
   }, [accessToken]);
   useEffect(() => {

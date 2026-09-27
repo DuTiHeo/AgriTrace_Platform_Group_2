@@ -1,11 +1,10 @@
 import { Keyboard, Pressable, Text, View } from "react-native";
-import { areas } from "@/contexts/leader-context";
 import { s } from "./ui";
 
 export function AreaPicker({
   value,
   onChange,
-  options = areas,
+  options = [],
 }: {
   value: string;
   onChange: (v: string) => void;

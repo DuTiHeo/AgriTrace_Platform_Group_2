@@ -17,15 +17,27 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useReports } from '@/contexts/report-context';
 import { WorkerHeader } from '@/components/worker/worker-header';
 
+function localDateKey(value: string | null | undefined) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
 export default function WorkerHome() {
-  const { reports, drafts } = useReports();
+  const { reports } = useReports();
   const { workerTasks, loadWorkerTasks } = useWorkSchedule();
-  useFocusEffect(useCallback(() => { void loadWorkerTasks(); }, [loadWorkerTasks]));
+  useFocusEffect(useCallback(() => {
+    void loadWorkerTasks();
+    const timer = setInterval(() => { void loadWorkerTasks(); }, 10000);
+    return () => clearInterval(timer);
+  }, [loadWorkerTasks]));
+  const today = localDateKey(new Date().toISOString());
   const tasks = workerTasks.filter(task => task.status !== 'done');
-  const completedCount = workerTasks.filter(task => task.status === 'done').length;
+  const completedToday = workerTasks.filter(task => task.status === 'done' && localDateKey(task.updatedAt) === today);
+  const reportsToday = reports.filter(report => localDateKey(report.completedAt) === today);
   const rework = workerTasks.filter(t => reports.find(r => r.taskId === t.id)?.review === 'rejected');
 
-  const notStarted = tasks.filter(task => !drafts[`task:${task.id}`]).length;
 
   return (
     <SafeAreaView style={styles.page} edges={['top']}>
@@ -49,12 +61,12 @@ export default function WorkerHome() {
           />
 
           <Summary
-            number={notStarted}
+            number={tasks.length}
             label="Chưa làm"
           />
 
           <Summary
-            number={completedCount}
+            number={completedToday.length}
             label="Đã xong"
           />
         </View>
@@ -77,14 +89,7 @@ export default function WorkerHome() {
             >
               <View style={styles.taskTop}>
                 <Text style={styles.taskName}>
-                  <Text
-                    style={{
-                          color:
-                        task.priority === 'high'
-                          ? colors.danger
-                          : colors.warning
-                    }}
-                  >
+                  <Text style={{ color: colors.warning }}>
                     ●{' '}
                   </Text>
 
@@ -120,7 +125,7 @@ export default function WorkerHome() {
                   style={styles.detailButton}
                   onPress={() =>
                     router.push(
-                      '/(worker)/task-detail' as Href
+                      { pathname: '/(worker)/task-detail', params: { id: task.id } } as Href
                     )
                   }
                 >
@@ -136,12 +141,12 @@ export default function WorkerHome() {
         <View style={styles.section}>
           <View style={styles.sectionHeading}>
             <Text style={styles.sectionTitle}>
-              ✅ Báo cáo đã ghi nhận ({reports.length})
+              ✅ Báo cáo đã ghi nhận hôm nay ({reportsToday.length})
             </Text>
           </View>
 
-          {!reports.length && <Text style={styles.meta}>Chưa có báo cáo được ghi nhận.</Text>}
-          {reports.map(report => (
+          {!reportsToday.length && <Text style={styles.meta}>Hôm nay chưa có báo cáo được ghi nhận.</Text>}
+          {reportsToday.map(report => (
             <Pressable key={report.id} style={styles.completedRow}
               onPress={() => router.push({ pathname: '/(worker)/diary-detail', params: { id: report.id } } as Href)}>
               <View style={{ flex: 1 }}>

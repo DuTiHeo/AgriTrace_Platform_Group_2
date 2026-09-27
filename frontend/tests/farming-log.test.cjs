@@ -25,7 +25,9 @@ test('farming-log API uses backend paths and bearer authentication', async () =>
   await api.createNote('token', 'log', 'Đánh giá: Đạt');
   await api.resolveNote('token', 'note', true);
   await api.updateTaskStatus('token', 'task', 'completed');
-  assert.deepEqual(calls.map(call => call.url.replace('http://backend.test:8000', '')), ['/farming-logs', '/farming-logs/log', '/farming-logs', '/log-notes', '/log-notes/note', '/tasks/task/status']);
+  await api.listPlots('token');
+  await api.createTask('token', { team_id: 'team', worker_id: 'worker', plot_id: 'plot', content: 'Tưới cây', due_date: '2026-09-26' });
+  assert.deepEqual(calls.map(call => call.url.replace('http://backend.test:8000', '')), ['/farming-logs', '/farming-logs/log', '/farming-logs', '/log-notes', '/log-notes/note', '/tasks/task/status', '/plots?status=active', '/tasks']);
   calls.forEach(call => assert.equal(call.options.headers.get('Authorization'), 'Bearer token'));
 });
 

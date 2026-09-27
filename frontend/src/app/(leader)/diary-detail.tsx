@@ -1,4 +1,3 @@
-import { ReportReview } from '@/components/leader/report-review';
 import { useCallback, useState } from 'react';
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { Text } from "react-native";
@@ -6,7 +5,6 @@ import { useLeader } from "@/contexts/leader-context";
 import { useReports } from '@/contexts/report-context';
 import { Card, Chip, Empty, Row, Screen, Section, s } from "@/components/leader/ui";
 import { Photos } from "@/components/leader/report-photos";
-import { Comments } from "@/components/leader/diary-comments";
 
 export default function DiaryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -30,7 +28,6 @@ export default function DiaryDetailScreen() {
           </Card>
           <Card><Section title="Nội dung công việc" /><Text style={{ color: '#617A68', lineHeight: 23 }}>{diary.note || 'Không có ghi chú.'}</Text></Card>
           <Card><Section title={`Hình ảnh minh chứng (${diary.photos.length})`} /><Photos photos={diary.photos} /></Card>
-          <Card><ReportReview id={diary.id} /><Comments diary={diary} /></Card>
         </>
       ) : <Empty text="Đang tải nhật ký…" />}
     </Screen>

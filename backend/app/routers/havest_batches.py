@@ -9,6 +9,8 @@ from app.core.security import get_current_user
 from app.routers.user import require_role, ensure_owns_org
 from app.crud import havest_batches as crud_batches
 from app.crud import batch_seasons as crud_bs
+from app.utils.batch_code import validate_batch_code
+from app.utils.qr_generator import generate_qr_url
 from app.schemas.havest_batches import (
     HarvestBatchCreate,
     HarvestBatchUpdate,
@@ -90,42 +92,53 @@ def get_harvest_batch_detail(
 @router.post("", response_model=HarvestBatchDetail, status_code=status.HTTP_201_CREATED)
 def create_harvest_batch(
     payload: HarvestBatchCreate,
-    current_user: dict = Depends(require_role("admin", "owner", "leader")),
+    current_user: dict = Depends(require_role("admin", "owner")),
     db: Session = Depends(get_db),
 ):
 
     role = current_user["role"]
     if role == "owner":
         ensure_owns_org(db, current_user, payload.org_id)
-    elif role == "leader":
-        if current_user.get("org_id") != payload.org_id:
-            raise HTTPException(status.HTTP_403_FORBIDDEN, "Tổ trưởng chỉ được tạo lô trong nông trại của mình")
 
-    if payload.batch_code and crud_batches.batch_code_exists(db, payload.batch_code):
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Mã lô '{payload.batch_code}' đã tồn tại")
+    if not payload.initial_seasons:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "Lô thu hoạch bắt buộc phải liên kết với ít nhất một mùa vụ để đảm bảo truy xuất nguồn gốc",
+        )
+
+    if payload.batch_code:
+        if not validate_batch_code(payload.batch_code):
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                "Mã lô không đúng định dạng chuẩn (AGT-xxxx-YYYYMMDD-xxxx hoặc BATCH-...)",
+            )
+        if crud_batches.batch_code_exists(db, payload.batch_code):
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Mã lô '{payload.batch_code}' đã tồn tại")
+
+    # Tính sản lượng khởi tạo từ các mùa vụ đóng góp
+    initial_qty = sum(s.contributed_quantity for s in payload.initial_seasons)
 
     batch = crud_batches.create_harvest_batch(
         db,
         org_id=payload.org_id,
         batch_code=payload.batch_code,
-        quantity=payload.quantity,
+        quantity=initial_qty,
         harvest_date=payload.harvest_date,
         status=payload.status.value if payload.status else "pending",
         qr_url=payload.qr_url,
     )
 
-    # Nếu có gộp mùa vụ ban đầu
-    if payload.initial_seasons:
-        for s_item in payload.initial_seasons:
-            is_valid, err_msg, _ = crud_bs.validate_batch_and_season(db, batch["batch_id"], s_item.season_id)
-            if not is_valid:
-                raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Mùa vụ {s_item.season_id}: {err_msg}")
-            crud_bs.create_or_reactivate_batch_season(
-                db,
-                batch_id=batch["batch_id"],
-                season_id=s_item.season_id,
-                contributed_quantity=s_item.contributed_quantity,
-            )
+    # Gộp các mùa vụ ban đầu
+    for s_item in payload.initial_seasons:
+        is_valid, err_msg, _ = crud_bs.validate_batch_and_season(db, batch["batch_id"], s_item.season_id)
+        if not is_valid:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Mùa vụ {s_item.season_id}: {err_msg}")
+        crud_bs.create_or_reactivate_batch_season(
+            db,
+            batch_id=batch["batch_id"],
+            season_id=s_item.season_id,
+            contributed_quantity=s_item.contributed_quantity,
+        )
 
     return crud_batches.get_harvest_batch(db, batch["batch_id"])
 
@@ -135,10 +148,10 @@ def create_harvest_batch(
 def update_harvest_batch(
     batch_id: UUID,
     payload: HarvestBatchUpdate,
-    current_user: dict = Depends(require_role("admin", "owner", "leader")),
+    current_user: dict = Depends(require_role("admin", "owner")),
     db: Session = Depends(get_db),
 ):
-    """Cập nhật thông tin lô thu hoạch (sản lượng, ngày thu hoạch, trạng thái, mã QR)."""
+    """Cập nhật thông tin lô thu hoạch (ngày thu hoạch, trạng thái, mã QR)."""
     batch = crud_batches.get_harvest_batch(db, batch_id)
     if not batch:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Không tìm thấy lô thu hoạch")
@@ -146,18 +159,60 @@ def update_harvest_batch(
     role = current_user["role"]
     if role == "owner":
         ensure_owns_org(db, current_user, batch["org_id"])
-    elif role == "leader":
-        if current_user.get("org_id") != batch["org_id"]:
-            raise HTTPException(status.HTTP_403_FORBIDDEN, "Bạn không thuộc nông trại quản lý lô thu hoạch này")
 
     data = payload.model_dump(exclude_unset=True)
     if not data:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Không có dữ liệu cập nhật")
 
+    if "batch_code" in data and data["batch_code"]:
+        if not validate_batch_code(data["batch_code"]):
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                "Mã lô không đúng định dạng chuẩn (AGT-xxxx-YYYYMMDD-xxxx hoặc BATCH-...)",
+            )
+        if crud_batches.batch_code_exists(db, data["batch_code"], exclude_batch_id=batch_id):
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Mã lô '{data['batch_code']}' đã tồn tại")
+
+    # Kiểm tra xung đột trường quantity khi lô đã có mùa vụ đóng góp
+    if "quantity" in data and batch.get("seasons_count", 0) > 0:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "Lô thu hoạch đã có mùa vụ đóng góp. Vui lòng cập nhật sản lượng từng mùa vụ qua API /batch-seasons để hệ thống tự động đồng bộ tổng sản lượng.",
+        )
+
     if "status" in data and isinstance(data["status"], HarvestBatchStatus):
         data["status"] = data["status"].value
 
     updated = crud_batches.update_harvest_batch(db, batch_id, data)
+    return updated
+
+
+@router.post("/{batch_id}/generate-qr", response_model=HarvestBatchDetail)
+def generate_batch_qr(
+    batch_id: UUID,
+    current_user: dict = Depends(require_role("admin", "owner")),
+    db: Session = Depends(get_db),
+):
+    """UC-O04.3: Chủ nông trại kích hoạt lệnh tạo mã QR / Tem nhãn cho lô thu hoạch."""
+    batch = crud_batches.get_harvest_batch(db, batch_id)
+    if not batch:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Không tìm thấy lô thu hoạch")
+
+    if current_user["role"] == "owner":
+        ensure_owns_org(db, current_user, batch["org_id"])
+
+    if batch["status"] == "cancelled":
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Không thể sinh mã QR cho lô đã bị hủy")
+
+    if not batch.get("batch_code"):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Lô thu hoạch chưa có mã định danh hợp lệ để sinh QR")
+
+    qr_url = generate_qr_url(batch["batch_code"])
+    updated = crud_batches.update_harvest_batch(
+        db,
+        batch_id,
+        {"qr_url": qr_url, "status": HarvestBatchStatus.ready.value},
+    )
     return updated
 
 

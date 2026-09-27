@@ -1,5 +1,5 @@
 import { type Href, router, useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Keyboard, Pressable, RefreshControl, ScrollView, Text, TextInput, TouchableWithoutFeedback, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PrimaryButton } from '@/components/common/primary-button';
@@ -8,20 +8,31 @@ import { ReportComments, ReportPhotos, s } from '@/components/worker/diary-conte
 import { reviewLabel, useReports } from '@/contexts/report-context';
 import { useAuth } from '@/contexts/auth-context';
 import { colors } from '@/styles/theme';
+import { inJournalPeriod, journalPeriods, type JournalPeriod } from '@/sevices/journal-filter';
 
 export default function WorkerDiaryScreen() {
   const { reports, refresh, loading, error } = useReports();
   const { user } = useAuth();
   const [query, setQuery] = useState('');
+  const [period, setPeriod] = useState<JournalPeriod>('all');
+  const [limit, setLimit] = useState(10);
   useFocusEffect(useCallback(() => { void refresh(); }, [refresh]));
-  const visible = reports.filter(report => `${report.taskTitle} ${report.area}`.toLocaleLowerCase('vi').includes(query.trim().toLocaleLowerCase('vi')));
+  useEffect(() => { setLimit(10); }, [period, query]);
+  const filtered = reports.filter(report => inJournalPeriod(report.completedAt, period)
+    && `${report.taskTitle} ${report.area}`.toLocaleLowerCase('vi').includes(query.trim().toLocaleLowerCase('vi')));
+  const visible = filtered.slice(0, limit);
   return <SafeAreaView style={s.page} edges={['top']}>
     <WorkerHeader />
     <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={s.content} refreshControl={<RefreshControl refreshing={loading} onRefresh={() => { void refresh(); }} />}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
         <View style={{ gap: 16, flexGrow: 1 }}>
           <Text style={s.title}>Nhật ký canh tác</Text>
-          <Text style={s.muted}>{reports.length} báo cáo của bạn</Text>
+          <View style={[s.row, { flexWrap: 'wrap' }]}>
+            {journalPeriods.map(item => <Pressable key={item.value} accessibilityRole="button" accessibilityState={{ selected: period === item.value }}
+              onPress={() => setPeriod(item.value)} style={[s.linkButton, period === item.value && { backgroundColor: colors.primarySoft, borderColor: colors.primary }]}>
+              <Text style={period === item.value ? s.link : s.muted}>{item.label}</Text>
+            </Pressable>)}
+          </View>
           <TextInput accessibilityLabel="Tìm nhật ký" style={s.input} placeholder="Tìm theo công việc hoặc khu vực…" value={query} onChangeText={setQuery} />
           {!!error && <View style={s.card}><Text accessibilityRole="alert" style={{ color: '#B42318' }}>{error}</Text><PrimaryButton title="Thử tải lại" onPress={() => { void refresh(); }} /></View>}
           {!error && !visible.length && <View style={s.card}>
@@ -37,6 +48,8 @@ export default function WorkerDiaryScreen() {
             <Pressable style={s.linkButton} onPress={() => { Keyboard.dismiss(); router.push({ pathname: '/(worker)/diary-detail', params: { id: report.id } } as Href); }}><Text style={s.link}>Xem chi tiết nhật ký →</Text></Pressable>
             <ReportComments comments={report.comments} />
           </View>)}
+          {visible.length < filtered.length && <PrimaryButton title="Xem thêm nhật ký" onPress={() => setLimit(value => value + 10)} />}
+          {!!filtered.length && visible.length === filtered.length && filtered.length > 10 && <Text style={s.muted}>Đã hiển thị toàn bộ nhật ký.</Text>}
         </View>
       </TouchableWithoutFeedback>
     </ScrollView>
