@@ -99,8 +99,8 @@ INSERT INTO reminder_schedules (reminder_id, season_id, milestone_type, remind_d
 INSERT INTO harvest_batches (batch_id, batch_code, org_id, quantity, harvest_date, status, qr_url) VALUES
 ('90000000-0000-0000-0000-000000000001', 'BATCH-DL-0001', '20000000-0000-0000-0000-000000000001', 120.5, '2026-06-16', 'ready', 'https://quicklog.example.com/qr/BATCH-DL-0001');
 
-INSERT INTO batch_seasons (batch_id, season_id, contributed_quantity) VALUES
-('90000000-0000-0000-0000-000000000001', '70000000-0000-0000-0000-000000000002', 120.5);
+INSERT INTO batch_seasons (batch_id, season_id, contributed_quantity, status) VALUES
+('90000000-0000-0000-0000-000000000001', '70000000-0000-0000-0000-000000000002', 120.5, 'active');
 
 -- 9. SEASON_TEAM_ASSIGNMENTS
 
@@ -131,7 +131,9 @@ INSERT INTO tasks (task_id, team_id, worker_id, plot_id, content, due_date, stat
 ('d0000000-0000-0000-0000-000000000001', '40000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000003',
 '30000000-0000-0000-0000-000000000001', 'Tưới nước luống xà lách khu A', '2026-06-10', 'in_progress'),
 ('d0000000-0000-0000-0000-000000000002', '40000000-0000-0000-0000-000000000002', '10000000-0000-0000-0000-000000000007',
-'30000000-0000-0000-0000-000000000003', 'Làm giàn cho cà chua', '2026-04-20', 'completed');
+'30000000-0000-0000-0000-000000000003', 'Làm giàn cho cà chua', '2026-04-20', 'completed'),
+('d0000000-0000-0000-0000-000000000003', '40000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000004',
+'30000000-0000-0000-0000-000000000001', 'Phun thuốc trừ sâu sinh học đợt 1 (Đã hủy do thời tiết mưa)', '2026-06-05', 'cancelled');
 
 -- 12. ERROR_REPORTS
 
