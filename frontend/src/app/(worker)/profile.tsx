@@ -15,19 +15,25 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { WorkerHeader } from '@/components/worker/worker-header';
 import { useAuth } from '@/contexts/auth-context';
 import { logout } from '@/sevices/auth.sevice';
+import { useWorkSchedule } from '@/contexts/work-schedule-context';
 
-const settings = [
+const utilities = [
   { label: '⚠️  Báo cáo sự cố / Lỗi kỹ thuật', route: '/account/issues' },
   { label: '🔒  Đổi mật khẩu', route: '/account/change-password' },
-  { label: '🔔  Cài đặt thông báo', route: '/account/settings' },
-  { label: '🌐  Ngôn ngữ (Tiếng Việt)', route: '/account/settings' },
+  { label: '🔔  Cài đặt thông báo', route: '/account/notification-settings' },
+  { label: '🌐  Ngôn ngữ (Tiếng Việt)', route: '/account/language' },
 ];
 
 export default function WorkerProfileScreen() {
   const { user, accessToken, clearAuth } = useAuth();
+  const { workerTasks } = useWorkSchedule();
   const [loggingOut, setLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState<string | null>(null);
   const submitting = useRef(false);
+  const assignedAreas = [...new Set(workerTasks.map(task => task.area).filter(Boolean))];
+  const completedTasks = workerTasks.filter(task => task.status === 'done').length;
+  const roleName = user?.role === 'worker' ? 'Công nhân' : user?.role ?? 'Chưa có dữ liệu';
+  const teamText = user?.team_id ? `Mã tổ ${user.team_id}` : 'Chưa được phân tổ';
 
   async function signOut() {
     if (submitting.current) return;
@@ -61,7 +67,7 @@ export default function WorkerProfileScreen() {
             </Text>
 
             <Text style={styles.role}>
-              Nông dân · Tổ 1 (KV-A, KV-B)
+              {roleName} · {teamText}
             </Text>
 
             <Text style={styles.active}>
@@ -78,29 +84,29 @@ export default function WorkerProfileScreen() {
 
           <Info
             label="Khu vực phụ trách:"
-            value="KV-A, KV-B"
+            value={assignedAreas.length ? assignedAreas.join(', ') : 'Chưa có dữ liệu'}
           />
 
           <Info
             label="Ngày gia nhập:"
-            value="01/06/2025"
+            value="Chưa có dữ liệu"
           />
 
           <Info
             label="Tổng nhật ký đã đăng:"
-            value="3 nhật ký"
+            value="Chưa có dữ liệu"
             green
           />
 
           <Info
             label="Nhiệm vụ hoàn thành:"
-            value="1 nhiệm vụ"
+            value={`${completedTasks} nhiệm vụ`}
             green
           />
         </Section>
 
         <Section title="⚙️ Cài đặt & Tiện ích">
-          {settings.map((setting) => (
+          {utilities.map((setting) => (
             <Pressable
               key={setting.label}
               style={styles.setting}

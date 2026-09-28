@@ -3,7 +3,8 @@ import { Status } from '@/components/common/role-ui';
 import { colors } from '@/styles/theme';
 import { sharedStyles as shared } from '@/styles/role-styles';
 import { type Href, router } from 'expo-router';
-import { useState } from 'react';
+import { useCallback } from 'react';
+import { useFocusEffect } from 'expo-router';
 import {
   Pressable,
   ScrollView,
@@ -16,62 +17,27 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useReports } from '@/contexts/report-context';
 import { WorkerHeader } from '@/components/worker/worker-header';
 
-type TaskStatus = 'todo' | 'doing';
-
-type Task = {
-  id: number;
-  title: string;
-  area: string;
-  due: string;
-  status: TaskStatus;
-  priority: 'high' | 'normal';
-};
-
-const initialTasks: Task[] = [
-  {
-    id: 1,
-    title: 'Kiểm tra sâu bệnh',
-    area: 'KV-B',
-    due: '17/09',
-    status: 'doing',
-    priority: 'high'
-  },
-  {
-    id: 2,
-    title: 'Tưới nước hằng ngày',
-    area: 'KV-A',
-    due: '17/09',
-    status: 'todo',
-    priority: 'high'
-  },
-  {
-    id: 3,
-    title: 'Phun thuốc trừ sâu',
-    area: 'KV-A',
-    due: '20/09',
-    status: 'todo',
-    priority: 'normal'
-  },
-];
+function localDateKey(value: string | null | undefined) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
 
 export default function WorkerHome() {
-  const [tasks, setTasks] = useState(initialTasks);
   const { reports } = useReports();
-  const { workerTasks } = useWorkSchedule();
+  const { workerTasks, loadWorkerTasks } = useWorkSchedule();
+  useFocusEffect(useCallback(() => {
+    void loadWorkerTasks();
+    const timer = setInterval(() => { void loadWorkerTasks(); }, 10000);
+    return () => clearInterval(timer);
+  }, [loadWorkerTasks]));
+  const today = localDateKey(new Date().toISOString());
+  const tasks = workerTasks.filter(task => task.status !== 'done');
+  const completedToday = workerTasks.filter(task => task.status === 'done' && localDateKey(task.updatedAt) === today);
+  const reportsToday = reports.filter(report => localDateKey(report.completedAt) === today);
   const rework = workerTasks.filter(t => reports.find(r => r.taskId === t.id)?.review === 'rejected');
 
-  const doing = tasks.filter(
-    (task) => task.status === 'doing'
-  ).length;
-
-  const startTask = (id: number) =>
-    setTasks((items) =>
-      items.map((task) =>
-        task.id === id
-          ? { ...task, status: 'doing' }
-          : task
-      )
-    );
 
   return (
     <SafeAreaView style={styles.page} edges={['top']}>
@@ -90,21 +56,17 @@ export default function WorkerHome() {
         </View>}
         <View style={styles.summaryRow}>
           <Summary
-            number={
-              tasks.filter(
-                (task) => task.status === 'todo'
-              ).length
-            }
-            label="Cần làm"
+            number={tasks.length}
+            label="Việc cần làm"
           />
 
           <Summary
-            number={doing}
-            label="Đang làm"
+            number={tasks.length}
+            label="Chưa làm"
           />
 
           <Summary
-            number={1}
+            number={completedToday.length}
             label="Đã xong"
           />
         </View>
@@ -116,7 +78,7 @@ export default function WorkerHome() {
             </Text>
 
             <Text style={styles.count}>
-              3 nhiệm vụ
+              {tasks.length} nhiệm vụ
             </Text>
           </View>
 
@@ -127,14 +89,7 @@ export default function WorkerHome() {
             >
               <View style={styles.taskTop}>
                 <Text style={styles.taskName}>
-                  <Text
-                    style={{
-                      color:
-                        task.priority === 'high'
-                          ? colors.danger
-                          : colors.warning
-                    }}
-                  >
+                  <Text style={{ color: colors.warning }}>
                     ●{' '}
                   </Text>
 
@@ -156,17 +111,13 @@ export default function WorkerHome() {
                       styles.completeButton
                   ]}
                   onPress={() =>
-                    task.status === 'doing'
-                      ? router.push(
-                          { pathname: '/(worker)/report-note', params: { taskTitle: task.title, area: task.area } } as Href
-                        )
-                      : startTask(task.id)
+                    router.push(
+                      { pathname: '/(worker)/report-note', params: { taskId: String(task.id), taskTitle: task.title, area: task.area } } as Href
+                    )
                   }
                 >
                   <Text style={styles.actionText}>
-                    {task.status === 'doing'
-                      ? '✓ Hoàn thành (Chụp ảnh)'
-                      : '▶ Bắt đầu làm'}
+                    ✓ Hoàn thành (Chụp ảnh)
                   </Text>
                 </Pressable>
 
@@ -174,7 +125,7 @@ export default function WorkerHome() {
                   style={styles.detailButton}
                   onPress={() =>
                     router.push(
-                      '/(worker)/task-detail' as Href
+                      { pathname: '/(worker)/task-detail', params: { id: task.id } } as Href
                     )
                   }
                 >
@@ -190,12 +141,12 @@ export default function WorkerHome() {
         <View style={styles.section}>
           <View style={styles.sectionHeading}>
             <Text style={styles.sectionTitle}>
-              ✅ Báo cáo đã ghi nhận ({reports.length})
+              ✅ Báo cáo đã ghi nhận hôm nay ({reportsToday.length})
             </Text>
           </View>
 
-          {!reports.length && <Text style={styles.meta}>Chưa có báo cáo được ghi nhận.</Text>}
-          {reports.map(report => (
+          {!reportsToday.length && <Text style={styles.meta}>Hôm nay chưa có báo cáo được ghi nhận.</Text>}
+          {reportsToday.map(report => (
             <Pressable key={report.id} style={styles.completedRow}
               onPress={() => router.push({ pathname: '/(worker)/diary-detail', params: { id: report.id } } as Href)}>
               <View style={{ flex: 1 }}>

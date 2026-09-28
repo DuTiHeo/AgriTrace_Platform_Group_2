@@ -1,6 +1,7 @@
 import { colors } from '@/styles/theme';
 import { sharedStyles as shared } from '@/styles/role-styles';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useWorkSchedule } from '@/contexts/work-schedule-context';
 import {
   Pressable,
   ScrollView,
@@ -11,6 +12,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function WorkerTaskDetailScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { workerTasks } = useWorkSchedule();
+  const task = workerTasks.find(item => item.id === id);
+  const dueDate = task?.due ? new Date(`${task.due}T00:00:00`) : null;
+  const dueLabel = dueDate && !Number.isNaN(dueDate.getTime()) ? dueDate.toLocaleDateString('vi-VN') : 'Chưa có dữ liệu';
+
   return (
     <SafeAreaView style={styles.page} edges={['top']}>
       <View style={styles.header}>
@@ -28,38 +35,34 @@ export default function WorkerTaskDetailScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <View style={shared.card}>
         <Text style={styles.status}>
-          Đang làm
+          {task?.status === 'done' ? 'Đã xong' : 'Đang làm'}
         </Text>
 
         <Text style={styles.title}>
-          Kiểm tra sâu bệnh
+          {task?.title ?? 'Không tìm thấy công việc'}
         </Text>
 
         <Text style={styles.description}>
-          Kiểm tra toàn bộ cây trồng trong khu vực, ghi nhận dấu hiệu sâu bệnh bất thường.
+          {task?.instructions || 'Chưa có mô tả công việc.'}
         </Text>
 
         </View>
         <View style={styles.section}>
           <Row
             label="Khu vực"
-            value="KV-B"
+            value={task?.area || 'Chưa có dữ liệu'}
           />
 
           <Row
             label="Hạn hoàn thành"
-            value="17/09/2026"
+            value={dueLabel}
           />
 
           <Row
             label="Người giao"
-            value="Tổ trưởng Lê Văn Hùng"
+            value={task?.teamName ? `Tổ trưởng ${task.teamName}` : 'Chưa có dữ liệu'}
           />
 
-          <Row
-            label="Mức ưu tiên"
-            value="Cao"
-          />
         </View>
 
         <View style={styles.note}>
@@ -68,7 +71,7 @@ export default function WorkerTaskDetailScreen() {
           </Text>
 
           <Text style={styles.noteText}>
-            Chụp rõ ảnh vị trí phát hiện sâu bệnh nếu có.
+            {task?.instructions || 'Chưa có lưu ý.'}
           </Text>
         </View>
       </ScrollView>

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Text, View } from "react-native";
+import { useRef, useState } from "react";
+import { Text, TextInput, View } from "react-native";
 import { useAuth } from "@/contexts/auth-context";
 import { useLeader, type Diary } from "@/contexts/leader-context";
 import { Button, dateText, Input, s } from "./ui";
@@ -14,6 +14,7 @@ export function Comments({
   const [text, setText] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const inputRef = useRef<TextInput>(null);
 
   return (
     <View
@@ -59,10 +60,11 @@ export function Comments({
       ))}
 
       <Input
+        ref={inputRef}
         label="Thêm đánh giá"
         placeholder="Viết nhận xét về công việc…"
         value={text}
-        onChangeText={setText}
+        onChangeText={value => { setText(value); if (value.trim()) setError(''); }}
         multiline
         maxLength={1000}
       />
@@ -70,8 +72,9 @@ export function Comments({
       {!!error && <Text accessibilityRole="alert">{error}</Text>}
       <Button
         title="Gửi nhận xét"
-        disabled={!text.trim() || saving}
+        disabled={saving}
         onPress={async () => {
+          if (!text.trim()) { setError('Vui lòng nhập nhận xét.'); inputRef.current?.focus(); return; }
           setSaving(true); setError('');
           try { await addComment(
             diary.id,

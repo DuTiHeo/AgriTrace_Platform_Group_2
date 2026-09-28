@@ -24,6 +24,8 @@ export default function LoginScreen() {
   const { setAuth } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const phoneRef = useRef<TextInput>(null), passwordRef = useRef<TextInput>(null);
   const submitting = useRef(false);
 
   async function signIn() {
@@ -33,8 +35,12 @@ export default function LoginScreen() {
 
     setError(null);
 
-    if (!phone.trim() || !password.trim()) {
-      setError('Vui lòng nhập số điện thoại và mật khẩu.');
+    const errors: Record<string, string> = {};
+    if (!phone.trim()) errors.phone = 'Vui lòng nhập số điện thoại.';
+    if (!password) errors.password = 'Vui lòng nhập mật khẩu.';
+    setFieldErrors(errors);
+    if (errors.phone || errors.password) {
+      (errors.phone ? phoneRef : passwordRef).current?.focus();
       return;
     }
 
@@ -98,20 +104,23 @@ export default function LoginScreen() {
             <Text style={styles.label}>Số điện thoại</Text>
 
             <TextInput
+              ref={phoneRef}
               value={phone}
-              onChangeText={setPhone}
+              onChangeText={value => { setPhone(value); if (value.trim()) setFieldErrors(old => ({ ...old, phone: '' })); }}
               editable={!loading}
               autoCapitalize="none"
               keyboardType="phone-pad"
-              style={styles.input}
+              style={[styles.input, fieldErrors.phone && styles.invalid]}
             />
+            {!!fieldErrors.phone && <Text accessibilityRole="alert" style={styles.fieldError}>{fieldErrors.phone}</Text>}
 
             <Text style={styles.label}>Mật khẩu</Text>
 
             <View style={styles.passwordRow}>
               <TextInput
+                ref={passwordRef}
                 value={password}
-                onChangeText={setPassword}
+                onChangeText={value => { setPassword(value); if (value) setFieldErrors(old => ({ ...old, password: '' })); }}
                 editable={!loading}
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -131,6 +140,7 @@ export default function LoginScreen() {
                 </Text>
               </Pressable>
             </View>
+            {!!fieldErrors.password && <Text accessibilityRole="alert" style={styles.fieldError}>{fieldErrors.password}</Text>}
 
             <Pressable
               style={styles.forgot}
@@ -282,5 +292,7 @@ const styles = StyleSheet.create({
     color: '#2F8437',
     fontSize: 13,
     fontWeight: '700'
-  }
+  },
+  invalid: { borderColor: '#B42318' },
+  fieldError: { color: '#B42318', fontSize: 12, marginTop: 5 }
 });

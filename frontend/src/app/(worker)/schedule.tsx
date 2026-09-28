@@ -5,7 +5,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/auth-context';
 import { useWorkSchedule } from '@/contexts/work-schedule-context';
 import { useReports } from '@/contexts/report-context';
-import { PriorityBadge, priorityOrder } from '@/components/common/task-priority';
 import { Button } from '@/components/common/role-ui';
 import { sharedStyles as shared } from '@/styles/role-styles';
 import { colors } from '@/styles/theme';
@@ -14,6 +13,10 @@ function dateKey(date: Date) { return `${date.getFullYear()}-${String(date.getMo
 function shift(date: Date, days: number) { const next = new Date(date); next.setDate(next.getDate() + days); return next; }
 function weekStart(date: Date) { return shift(date, -((date.getDay() + 6) % 7)); }
 const dayLabels = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+function occursOn(task: { startDate?: string; due: string }, day: string) {
+  const start = task.startDate || task.due;
+  return !!start && !!task.due && start <= day && day <= task.due;
+}
 export default function WorkerScheduleScreen() {
   const { date, taskId } = useLocalSearchParams<{ date?: string; taskId?: string }>();
   const { user } = useAuth();
@@ -28,8 +31,8 @@ export default function WorkerScheduleScreen() {
   }, [date]);
   const days = Array.from({ length: 7 }, (_, index) => shift(weekStart(selected), index));
   const selectedKey = dateKey(selected);
-  const jobs = workerTasks.filter(task => task.due === selectedKey || reports.find(r => r.taskId === task.id)?.review === 'rejected')
-    .sort((a, b) => (a.startTime || '99:99').localeCompare(b.startTime || '99:99') || priorityOrder[a.priority] - priorityOrder[b.priority]);
+  const jobs = workerTasks.filter(task => task.status !== 'done' && occursOn(task, selectedKey))
+    .sort((a, b) => (a.startTime || '99:99').localeCompare(b.startTime || '99:99'));
   return <SafeAreaView style={shared.page} edges={['top']}>
     <View style={shared.header}>
       <Pressable accessibilityLabel="Quay lại" hitSlop={10} onPress={() => router.back()}><Text style={shared.backText}>‹</Text></Pressable>
@@ -44,7 +47,7 @@ export default function WorkerScheduleScreen() {
       </View>
       <View style={s.week}>{days.map((day, index) => {
         const key = dateKey(day), active = key === selectedKey;
-        const hasWork = workerTasks.some(task => task.due === key);
+        const hasWork = workerTasks.some(task => task.status !== 'done' && occursOn(task, key));
         return <Pressable key={key} accessibilityRole="button" accessibilityState={{ selected: active }} accessibilityLabel={`${dayLabels[index]}, ${day.toLocaleDateString('vi-VN')}${hasWork ? ', có công việc' : ''}`}
           style={[s.day, active && s.selected]} onPress={() => setSelected(day)}>
           <Text style={[shared.muted, active && s.white]}>{dayLabels[index]}</Text>
@@ -68,7 +71,7 @@ export default function WorkerScheduleScreen() {
             onPress={() => router.push(report
               ? { pathname: '/(worker)/diary-detail', params: { id: report.id } } as Href
               : { pathname: '/(worker)/report-note', params: { taskId: task.id, taskTitle: task.title, area: task.area } } as Href)}>
-            <View style={shared.row}><Text style={[shared.link, { flex: 1 }]}>{task.startTime && task.endTime ? `${task.startTime} – ${task.endTime}` : 'Chưa đặt giờ làm việc'}</Text><PriorityBadge priority={task.priority} /></View>
+            <View style={shared.row}><Text style={[shared.link, { flex: 1 }]}>{task.startTime && task.endTime ? `${task.startTime} – ${task.endTime}` : 'Chưa đặt giờ làm việc'}</Text></View>
             <Text style={shared.section}>{task.title}</Text>
             {latest?.review === 'rejected' && <Text style={{ color: colors.danger }}>Không đạt · Cần làm lại và gửi báo cáo mới</Text>}
             <Text style={shared.muted}>⌖ {task.area}</Text>

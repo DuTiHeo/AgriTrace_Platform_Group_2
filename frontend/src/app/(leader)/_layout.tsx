@@ -9,6 +9,7 @@ export default function LeaderLayout() {
   return <LeaderProvider key={accessToken}><Tabs initialRouteName="index" backBehavior="fullHistory" screenOptions={{ headerShown: false }} tabBar={props => <LeaderBottomNav {...props} />}>
     <Tabs.Screen name="index" options={{ title: 'Trang chủ' }} />
     <Tabs.Screen name="assignments" options={{ title: 'Giao việc' }} />
+    <Tabs.Screen name="create-assignment" options={{ href: null }} />
     <Tabs.Screen name="diary" options={{ title: 'Nhật ký' }} />
     <Tabs.Screen name="members" options={{ title: 'Thành viên' }} />
     <Tabs.Screen name="profile" options={{ title: 'Cá nhân' }} />

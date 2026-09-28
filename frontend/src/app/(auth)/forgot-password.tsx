@@ -20,6 +20,7 @@ export default function ForgotPasswordScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const pending = useRef(false);
+  const phoneRef = useRef<TextInput>(null);
   const { setRecovery } = useRecovery();
 
   async function submit() {
@@ -31,6 +32,7 @@ export default function ForgotPasswordScreen() {
 
     if (!phone.trim()) {
       setError('Vui lòng nhập số điện thoại.');
+      phoneRef.current?.focus();
       return;
     }
 
@@ -91,12 +93,13 @@ export default function ForgotPasswordScreen() {
             <Text style={styles.label}>Số điện thoại</Text>
 
             <TextInput
+              ref={phoneRef}
               value={phone}
-              onChangeText={setPhone}
+              onChangeText={value => { setPhone(value); if (value.trim()) setError(''); }}
               keyboardType="phone-pad"
               placeholder="Nhập số điện thoại khôi phục"
               placeholderTextColor="#A6B1A7"
-              style={styles.input}
+              style={[styles.input, error && !phone.trim() && { borderColor: '#B42318' }]}
             />
 
             {error ? (

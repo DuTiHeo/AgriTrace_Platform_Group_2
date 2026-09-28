@@ -1,4 +1,4 @@
-import { type PropsWithChildren } from 'react';
+import { forwardRef, type PropsWithChildren } from 'react';
 import { Keyboard, Pressable, Text, TextInput, View, type TextInputProps } from 'react-native';
 import { sharedStyles as s } from '@/styles/role-styles';
 import { colors } from '@/styles/theme';
@@ -109,12 +109,7 @@ export function Button({
   );
 }
 
-export function Input({
-  label,
-  ...props
-}: TextInputProps & {
-  label: string
-}) {
+export const Input = forwardRef<TextInput, TextInputProps & { label: string }>(function Input({ label, ...props }, ref) {
   return (
     <View style={{ gap: 8 }}>
       <Text style={s.label}>
@@ -122,6 +117,7 @@ export function Input({
       </Text>
 
       <TextInput
+        ref={ref}
         placeholderTextColor="#9AA99E"
         autoCapitalize="sentences"
         {...props}
@@ -136,7 +132,7 @@ export function Input({
       />
     </View>
   );
-}
+});
 
 export function Chip({
   text,

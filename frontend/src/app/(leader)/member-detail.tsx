@@ -1,126 +1,86 @@
-import { useEffect, useState } from "react";
-import { useLocalSearchParams } from "expo-router";
-import { Keyboard, Switch, Text, View } from "react-native";
-import { useLeader } from "@/contexts/leader-context";
-import { Avatar, Button, Card, dateText, Empty, Input, Row, Screen, Section, s, Status } from "@/components/leader/ui";
-import { Feedback } from "@/components/leader/feedback";
+import { useCallback, useEffect, useState } from 'react';
+import { useLocalSearchParams } from 'expo-router';
+import { ActivityIndicator, Text, View } from 'react-native';
+import { useLeader } from '@/contexts/leader-context';
+import { Avatar, Button, Card, Empty, Row, Screen, s } from '@/components/leader/ui';
+import { Feedback } from '@/components/leader/feedback';
+import { useAuth } from '@/contexts/auth-context';
+import { getUserDetail, type UserDetail } from '@/sevices/farming-log.service';
+import { colors } from '@/styles/theme';
 
-export default function MemberDetailScreen() {
-    const { id } = useLocalSearchParams<{
-        id: string;
-    }>();
-    const { members, tasks, diaries, updateMember } = useLeader();
-    const member = members.find(m => m.id === id);
-    const [phone, setPhone] = useState(member?.phone ?? ''), [active, setActive] = useState(member?.active ?? true), [message, setMessage] = useState('');
-    useEffect(() => { setPhone(member?.phone ?? ''); setActive(member?.active ?? true); setMessage(''); }, [id, member?.phone, member?.active]);
-    const work = tasks.filter(t => t.memberIds.includes(id));
-    const logs = diaries.filter(d => d.memberId === id);
-    function save() { if (!/^\+?\d{9,15}$/.test(phone.trim())) {
-        setMessage('Số điện thoại phải gồm 9–15 chữ số.');
-        return;
-    } if (members.some(m => m.id !== id && m.phone === phone.trim())) {
-        setMessage('Số điện thoại đã có trong tổ.');
-        return;
-    } updateMember(id, phone.trim(), active);
-setMessage('Đã lưu thay đổi.');
+const roleLabel: Record<string, string> = {
+  worker: 'Công nhân', leader: 'Tổ trưởng', owner: 'Chủ nông trại', admin: 'Quản trị viên',
+};
+
+function dateLabel(value: string | null | undefined) {
+  if (!value) return 'Chưa có dữ liệu';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString('vi-VN');
 }
 
-return (
-  <Screen title="Chỉnh sửa thành viên" back>
-    {member ? (
-      <>
-        <Card>
-          <View style={s.row}>
-            <Avatar name={member.name} />
+export default function MemberDetailScreen() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const { members } = useLeader();
+  const { accessToken } = useAuth();
+  const summary = members.find(member => member.id === id);
+  const [detail, setDetail] = useState<UserDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-            <View>
-              <Text style={s.section}>
-                {member.name}
-              </Text>
+  const load = useCallback(async () => {
+    if (!accessToken || !id) {
+      setError('Không xác định được thành viên cần xem.');
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setError('');
+    try {
+      const userDetail = await getUserDetail(accessToken, id);
+      setDetail(userDetail);
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : 'Không tải được thông tin thành viên.');
+    } finally {
+      setLoading(false);
+    }
+  }, [accessToken, id]);
 
-              <Text style={s.muted}>
-                Công nhân · {member.area}
-              </Text>
+  useEffect(() => { void load(); }, [load]);
+
+  return (
+    <Screen title="Thông tin thành viên" back>
+      {loading ? (
+        <Card><ActivityIndicator color={colors.primary} /></Card>
+      ) : detail ? (
+        <>
+          <Card>
+            <View style={s.row}>
+              <Avatar name={detail.full_name} />
+              <View style={{ flex: 1 }}>
+                <Text style={s.section}>{detail.full_name}</Text>
+                <Text style={s.muted}>{roleLabel[detail.role] ?? detail.role}</Text>
+              </View>
             </View>
-          </View>
-
-          <Row
-            label="Ngày tham gia"
-            value={dateText(member.joined)}
-          />
-
-          <Input
-            label="Số điện thoại"
-            value={phone}
-            onChangeText={setPhone}
-            keyboardType="phone-pad"
-          />
-
-          <View style={s.row}>
-            <View style={{ flex: 1 }}>
-              <Text style={s.label}>
-                Tài khoản hoạt động
-              </Text>
-
-              <Text style={s.muted}>
-                Tắt để khóa tài khoản
-              </Text>
-            </View>
-
-            <Switch
-              value={active}
-              onValueChange={v => {
-                Keyboard.dismiss();
-                setActive(v);
-              }}
-              trackColor={{ true: '#72AF78' }}
-            />
-          </View>
-
-          <Feedback text={message} />
-
-          <Button
-            title="Lưu thông tin"
-            onPress={save}
-          />
-        </Card>
-
-        <Section title="Thành tích & hoạt động" />
-
-        <Card>
-          <Row
-            label="Công việc hoàn thành"
-            value={`${work.filter(t => t.status === 'done').length} / ${work.length}`}
-          />
-
-          <Row
-            label="Nhật ký đã đăng"
-            value={`${logs.length} nhật ký`}
-          />
-
-          <Row
-            label="Ảnh minh chứng"
-            value={`${logs.reduce((sum, d) => sum + d.photos.length, 0)} ảnh`}
-          />
-        </Card>
-
-        {work.map(t => (
-          <Card key={t.id}>
-            <Text style={s.section}>
-              {t.title}
-            </Text>
-
-            <Text style={s.muted}>
-              {t.area} · Hạn {dateText(t.due)}
-            </Text>
-
-            <Status status={t.status} />
+            <Row label="Số điện thoại" value={detail.phone} />
+            <Row label="Trạng thái tài khoản" value={detail.status === 'active' ? 'Đang hoạt động' : 'Đã khóa'} />
+            <Row label="CCCD" value={detail.national_id || 'Chưa có dữ liệu'} />
+            <Row label="Ngày sinh" value={dateLabel(detail.date_of_birth)} />
+            <Row label="Địa chỉ" value={detail.address || 'Chưa có dữ liệu'} />
+            <Row label="Ngày tham gia" value={dateLabel(detail.created_at)} />
           </Card>
-        ))}
-      </>
-    ) : (
-      <Empty text="Không tìm thấy thành viên." />
-    )}
-  </Screen>
-);
+        </>
+      ) : summary ? (
+        <Card>
+          <Text style={s.section}>{summary.name}</Text>
+          <Feedback text={error} />
+          <Button title="Thử tải lại" onPress={() => void load()} />
+        </Card>
+      ) : (
+        <>
+          <Empty text="Không tìm thấy thành viên trong tổ." />
+          {!!error && <Feedback text={error} />}
+        </>
+      )}
+    </Screen>
+  );
 }

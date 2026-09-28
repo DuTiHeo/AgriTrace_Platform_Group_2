@@ -10,7 +10,7 @@ import { colors } from '@/styles/theme';
 
 const normalize = (text: string) => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase().trim();
 export default function MembersScreen() {
-  const { members } = useLeader();
+  const { members, membersError, loadMembers } = useLeader();
   const [query, setQuery] = useState('');
   const [activeOnly, setActiveOnly] = useState(true);
   const activeCount = members.filter(member => member.active).length;
@@ -49,8 +49,13 @@ export default function MembersScreen() {
       </TouchableWithoutFeedback>
       <FlatList data={visible} keyExtractor={member => member.id} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
         contentContainerStyle={s.list}
-        ListEmptyComponent={<View style={s.empty}><Text style={shared.empty}>{query.trim() ? 'Không tìm thấy thành viên phù hợp.' : activeOnly ? 'Chưa có thành viên đang hoạt động.' : 'Không có thành viên bị khóa.'}</Text></View>}
-        renderItem={({ item: member }) => <Pressable accessibilityRole="button" accessibilityLabel={`Chỉnh sửa thông tin ${member.name}`}
+        ListEmptyComponent={<View style={s.empty}>
+          <Text accessibilityRole={membersError ? 'alert' : undefined} style={membersError ? { color: colors.danger } : shared.empty}>
+            {membersError || (query.trim() ? 'Không tìm thấy thành viên phù hợp.' : activeOnly ? 'Chưa có thành viên đang hoạt động.' : 'Không có thành viên bị khóa.')}
+          </Text>
+          {!!membersError && <Pressable accessibilityRole="button" onPress={() => void loadMembers()} style={s.retry}><Text style={s.retryText}>Thử tải lại</Text></Pressable>}
+        </View>}
+        renderItem={({ item: member }) => <Pressable accessibilityRole="button" accessibilityLabel={`Xem thông tin ${member.name}`}
           onPress={() => { Keyboard.dismiss(); go('member-detail', member.id); }} style={({ pressed }) => [s.card, pressed && { opacity: 0.65 }]}>
           <View style={s.avatar}><Text style={s.initials}>{member.name.trim().split(/\s+/).slice(-2).map(part => part[0]).join('').toUpperCase()}</Text></View>
           <View style={s.member}>
@@ -89,4 +94,6 @@ const s = StyleSheet.create({
   inactiveBadge: { backgroundColor: colors.warningSoft },
   inactiveText: { color: colors.warning },
   empty: { ...shared.card },
+  retry: { marginTop: 12, borderRadius: 9, backgroundColor: colors.primary, paddingHorizontal: 16, paddingVertical: 10, alignSelf: 'center' },
+  retryText: { color: colors.white, fontWeight: '700' },
 });

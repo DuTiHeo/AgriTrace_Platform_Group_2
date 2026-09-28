@@ -1,13 +1,14 @@
 import { Keyboard, Pressable, Text, View } from "react-native";
-import { areas } from "@/contexts/leader-context";
 import { s } from "./ui";
 
 export function AreaPicker({
   value,
-  onChange
+  onChange,
+  options = [],
 }: {
   value: string;
   onChange: (v: string) => void;
+  options?: string[];
 }) {
   return (
     <View style={{ gap: 10 }}>
@@ -22,7 +23,7 @@ export function AreaPicker({
           gap: 8
         }}
       >
-        {areas.map(area => (
+        {options.map(area => (
           <Pressable
             key={area}
             onPress={() => {
