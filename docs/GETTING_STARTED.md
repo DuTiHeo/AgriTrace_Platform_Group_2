@@ -77,7 +77,10 @@ Mở PowerShell hoặc CMD và gõ:
 ```powershell
 ipconfig
 ```
-
+Còn nếu cho Mac
+```powershell
+ipconfig getifaddr en0
+```
 Cuộn tìm card mạng đang dùng:
 
 - Nếu dùng Wi-Fi: Tìm mục `Wireless LAN adapter Wi-Fi`

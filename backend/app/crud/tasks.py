@@ -60,12 +60,14 @@ def get_task(db: Session, task_id: UUID) -> Optional[dict]:
 
     query = text("""
         SELECT t.task_id, t.team_id, tm.name AS team_name, tm.org_id, o.name AS org_name,
+             leader.full_name AS team_leader_name,
                t.worker_id, u.full_name AS worker_name, u.phone AS worker_phone,
                t.plot_id, p.code AS plot_code,
                t.content, t.start_at, t.due_at, t.status, t.created_at, t.updated_at
         FROM tasks t
         JOIN teams tm ON t.team_id = tm.team_id
         JOIN organizations o ON tm.org_id = o.org_id
+        LEFT JOIN users leader ON leader.user_id = tm.team_leader_id
         JOIN users u ON t.worker_id = u.user_id
         JOIN plots p ON t.plot_id = p.plot_id
         WHERE t.task_id = :task_id;
@@ -123,12 +125,14 @@ def list_tasks(
     where_clause = " AND ".join(conditions)
     query = text(f"""
         SELECT t.task_id, t.team_id, tm.name AS team_name, tm.org_id, o.name AS org_name,
+               leader.full_name AS team_leader_name,
                t.worker_id, u.full_name AS worker_name, u.phone AS worker_phone,
                t.plot_id, p.code AS plot_code,
                t.content, t.start_at, t.due_at, t.status, t.created_at, t.updated_at
         FROM tasks t
         JOIN teams tm ON t.team_id = tm.team_id
         JOIN organizations o ON tm.org_id = o.org_id
+        LEFT JOIN users leader ON leader.user_id = tm.team_leader_id
         JOIN users u ON t.worker_id = u.user_id
         JOIN plots p ON t.plot_id = p.plot_id
         WHERE {where_clause}
