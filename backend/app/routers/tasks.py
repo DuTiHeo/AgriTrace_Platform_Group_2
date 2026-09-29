@@ -135,7 +135,8 @@ def create_task(
         worker_id=payload.worker_id,
         plot_id=payload.plot_id,
         content=payload.content,
-        due_date=payload.due_date,
+        start_at=payload.start_at,
+        due_at=payload.due_at,
     )
     return new_task
 
@@ -148,7 +149,6 @@ def update_task(
     current_user: dict = Depends(require_role("admin", "owner", "leader")),
     db: Session = Depends(get_db),
 ):
-
     task = crud_tasks.get_task(db, task_id)
     if not task:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Không tìm thấy nhiệm vụ")
@@ -164,6 +164,11 @@ def update_task(
     if not data:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Không có dữ liệu cập nhật")
 
+    # --- Kiểm tra khoảng thời gian TRƯỚC khi đụng DB, tránh lỗi 500 từ CHECK constraint ---
+    new_start_at = data.get("start_at", task["start_at"])
+    new_due_at = data.get("due_at", task["due_at"])
+    if new_due_at <= new_start_at:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "due_at phải sau start_at")
 
     new_team_id = data.get("team_id", task["team_id"])
     new_worker_id = data.get("worker_id", task["worker_id"])
@@ -174,22 +179,17 @@ def update_task(
 
     if any(k in data for k in ("team_id", "worker_id", "plot_id")):
         is_valid, err_msg, org_id = crud_tasks.validate_task_context(
-            db,
-            team_id=new_team_id,
-            worker_id=new_worker_id,
-            plot_id=new_plot_id,
+            db, team_id=new_team_id, worker_id=new_worker_id, plot_id=new_plot_id,
         )
         if not is_valid:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, err_msg)
         if role == "owner":
             ensure_owns_org(db, current_user, org_id)
 
-
     if "status" in data and isinstance(data["status"], TaskStatus):
         data["status"] = data["status"].value
 
-    updated = crud_tasks.update_task(db, task_id, data)
-    return updated
+    return crud_tasks.update_task(db, task_id, data)
 
 
 @router.patch("/{task_id}/status", response_model=TaskDetail)
