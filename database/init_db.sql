@@ -306,11 +306,13 @@ CREATE TABLE tasks (
     worker_id           UUID NOT NULL REFERENCES users(user_id),
     plot_id             UUID NOT NULL REFERENCES plots(plot_id),
     content             TEXT NOT NULL,
-    due_date            DATE,
+    start_at            TIMESTAMPTZ NOT NULL,
+    due_at              TIMESTAMPTZ NOT NULL,
     status              VARCHAR(20) NOT NULL DEFAULT 'in_progress'
                         CHECK (status IN ('in_progress', 'completed', 'cancelled')),
     created_at          TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at          TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    updated_at          TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT chk_tasks_time_range CHECK (due_at > start_at)
 );
 
 COMMENT ON TABLE tasks IS 'Nhiệm vụ do Tổ trưởng giao cho công nhân';
