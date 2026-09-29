@@ -157,3 +157,109 @@ ALTER TABLE log_notes
 ```
 
 Notification khi có note mới tạm bỏ qua ở đợt 2: không insert vào bảng `notifications`.
+Đợt 2: Module Tasks (Nhiệm vụ công việc)
+Usecase | Method | Endpoint | Mo ta | Trang thai |
+|---|---|---|---|---|
+|UC-SH04.1| GET | /tasks | Danh sách + tìm kiếm nhiệm vụ, lọc theo org/team/worker/plot/status/keyword/include_cancelled. Scope theo role (Admin: all, Owner: theo org, Leader: chỉ xem tổ mình, Worker: chỉ xem việc của mình) | Đã xong |
+|UC-SH04.1| GET | /tasks/{task_id} | Xem chi tiết nhiệm vụ kèm thông tin mở rộng của team, công nhân phụ trách, mã lô và nông trại | Đã xong |
+|UC-T01.3 + UC-O06.1| POST | /tasks | Admin/Owner/Leader tạo nhiệm vụ mới. Leader chỉ được giao việc cho tổ của mình. Ràng buộc: worker và plot phải thuộc cùng nông trại của team, worker phải active và thuộc đúng tổ phụ trách | Đã xong |
+|UC-T01.3| PUT / PATCH | /tasks/{task_id} | Admin/Owner/Leader cập nhật thông tin nhiệm vụ. Leader không được chuyển nhiệm vụ sang tổ khác. Tự động kiểm tra lại tính hợp lệ nếu thay đổi team, worker hoặc plot | Đã xong |
+|UC-W01.1 + UC-T01.3| PATCH | /tasks/{task_id}/status | Cập nhật nhanh trạng thái nhiệm vụ (in_progress, completed, cancelled). Worker chỉ được cập nhật việc của mình và KHÔNG có quyền hủy (cancelled); Leader/Owner/Admin có quyền cập nhật trong phạm vi quản lý | Đã xong |
+|-| DELETE | /tasks/{task_id} | Hủy/Xóa mềm nhiệm vụ (chuyển status=cancelled). Chỉ Admin, Owner và Leader phụ trách tổ mới có quyền thực hiện | Đã xong |
+
+Ghi chú request/response chính cho Tasks:
+```json
+POST /tasks
+{
+  "team_id": "50000000-0000-0000-0000-000000000001",
+  "worker_id": "10000000-0000-0000-0000-000000000003",
+  "plot_id": "40000000-0000-0000-0000-000000000001",
+  "content": "Kiem tra sau benh va phun thuoc luong 1-3",
+  "due_date": "2026-10-05"
+}
+```
+
+```json
+PATCH /tasks/{task_id}/status
+{
+  "status": "completed"
+}
+```
+Schema DB bổ sung cho Tasks (Migration 001):
+
+```sql
+ALTER TABLE tasks DROP CONSTRAINT IF EXISTS tasks_status_check;
+ALTER TABLE tasks ADD CONSTRAINT tasks_status_check 
+    CHECK (status IN ('in_progress', 'completed', 'cancelled'));
+```
+
+Đợt 2: Module HarvestBatches (Lô thu hoạch & Tem nhãn QR)
+Usecase | Method | Endpoint | Mo ta | Trang thai |
+|---|---|---|---|---|
+|UC-SH04.1| GET | /harvest-batches | Danh sách + tìm kiếm lô thu hoạch, lọc theo org_id/status/keyword/date_from/date_to. Admin xem all/lọc org; Owner xem các farm mình sở hữu; Leader/Worker xem farm trực thuộc | Đã xong |
+|UC-SH04.1| GET | /harvest-batches/{batch_id} | Xem chi tiết lô thu hoạch kèm tổng số và danh sách chi tiết các mùa vụ đóng góp (seasons[]) | Đã xong |
+|UC-O04.1| POST | /harvest-batches | Admin/Owner khởi tạo lô thu hoạch. Bắt buộc có initial_seasons (ít nhất 1 mùa vụ). Tự tính tổng sản lượng (quantity) ban đầu từ các mùa vụ đóng góp. Tự sinh batch_code chuẩn AGT-xxxx-YYYYMMDD-xxxx nếu để trống | Đã xong |
+|UC-O04.2| PUT / PATCH | /harvest-batches/{batch_id} | Cập nhật ngày thu hoạch, mã lô, trạng thái. Chặn sửa trực tiếp quantity nếu lô đã có mùa vụ đóng góp (phải sửa qua /batch-seasons để đồng bộ) | Đã xong |
+|UC-O04.3| POST | /harvest-batches/{batch_id}/generate-qr | Chủ nông trại kích hoạt lệnh tạo mã QR / Tem nhãn tra cứu truy xuất nguồn gốc. Tự động chuyển status sang ready | Đã xong |
+|-| DELETE | /harvest-batches/{batch_id} | Xóa mềm lô thu hoạch (chuyển status=cancelled). Chặn xóa cứng vì mã QR có thể đã được in ấn hoặc quét bên ngoài | Đã xong |
+Ghi chú request/response chính cho HarvestBatches:
+
+```json
+POST /harvest-batches
+{
+  "org_id": "20000000-0000-0000-0000-000000000001",
+  "harvest_date": "2026-10-01",
+  "status": "pending",
+  "initial_seasons": [
+    {
+      "season_id": "70000000-0000-0000-0000-000000000001",
+      "contributed_quantity": 250.5
+    }
+  ]
+}
+```
+
+```json
+POST /harvest-batches/{batch_id}/generate-qr
+// Response tra ve thong tin lo kem qr_url va status da chuyen sang ready:
+{
+  "batch_id": "80000000-0000-0000-0000-000000000001",
+  "batch_code": "AGT-2000-20261001-A1B2",
+  "status": "ready",
+  "qr_url": "https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=AGT-2000-20261001-A1B2"
+}
+```
+Đợt 2: Module BatchSeasons (Liên kết Mùa vụ ↔ Lô thu hoạch)
+Usecase | Method | Endpoint | Mo ta | Trang thai |
+|---|---|---|---|---|
+|UC-O04.1| POST | /batch-seasons | Gán thêm mùa vụ vào lô thu hoạch (hoặc kích hoạt lại liên kết nếu đã xóa mềm). Ràng buộc: mùa vụ phải cùng nông trại, status là ready_to_harvest hoặc completed, và bắt buộc phải cùng giống cây (crop_id) với các mùa vụ đã có trong lô. Tự động tính lại tổng quantity của lô | Đã xong |
+|UC-SH04.1| GET | /batch-seasons/by-batch/{batch_id} | Danh sách các mùa vụ đã đóng góp sản lượng vào 1 lô thu hoạch (hỗ trợ query include_cancelled) | Đã xong |
+|UC-SH04.1| GET | /batch-seasons/by-season/{season_id} | Tra cứu ngược: Mùa vụ này đã đóng góp sản lượng vào những lô thu hoạch nào | Đã xong |
+|UC-SH04.1| GET | /batch-seasons/{batch_id}/{season_id} | Xem chi tiết 1 liên kết giữa lô thu hoạch và mùa vụ | Đã xong |
+|UC-O04.2| PUT / PATCH | /batch-seasons/{batch_id}/{season_id} | Cập nhật sản lượng đóng góp (contributed_quantity > 0). Tự động đồng bộ lại tổng quantity của lô thu hoạch | Đã xong |
+|UC-O04.2| DELETE | /batch-seasons/{batch_id}/{season_id} | Xóa mềm liên kết (chuyển status=cancelled), tự động trừ sản lượng và cập nhật lại quantity của lô thu hoạch | Đã xong |
+Ghi chú request/response chính cho BatchSeasons:
+
+```json
+POST /batch-seasons
+{
+  "batch_id": "80000000-0000-0000-0000-000000000001",
+  "season_id": "70000000-0000-0000-0000-000000000002",
+  "contributed_quantity": 180.0
+}
+```
+
+```json
+PATCH /batch-seasons/{batch_id}/{season_id}
+{
+  "contributed_quantity": 200.0
+}
+```
+
+Schema DB bổ sung cho BatchSeasons (Migration 001):
+
+```sql
+ALTER TABLE batch_seasons 
+    ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'active'
+    CHECK (status IN ('active', 'cancelled'));
+```
