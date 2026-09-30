@@ -156,7 +156,7 @@ def create_task(
 ) -> dict:
 
     query = text("""
-        INSERT INTO tasks (team_id, worker_id, plot_id, content, due_at, status)
+        INSERT INTO tasks (team_id, worker_id, plot_id, content, start_at, due_at, status)
         VALUES (:team_id, :worker_id, :plot_id, :content, :start_at, :due_at, :status)
         RETURNING task_id;
     """)

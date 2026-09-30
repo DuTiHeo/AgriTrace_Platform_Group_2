@@ -41,8 +41,8 @@ class TaskUpdate(BaseModel):
     worker_id: Optional[UUID] = None
     plot_id: Optional[UUID] = None
     content: Optional[str] = Field(None, min_length=1)
-    start_at: Optional[date] = None
-    due_at: Optional[date] = None
+    start_at: Optional[datetime] = None
+    due_at: Optional[datetime] = None
     status: Optional[TaskStatus] = None
     
     @field_validator("start_at", "due_at")
@@ -70,8 +70,8 @@ class TaskSummary(BaseModel):
     org_id: Optional[UUID] = None
     org_name: Optional[str] = None
     content: str
-    start_at: Optional[date] = None
-    due_at: Optional[date] = None
+    start_at: Optional[datetime] = None
+    due_at: Optional[datetime] = None
     status: str
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
