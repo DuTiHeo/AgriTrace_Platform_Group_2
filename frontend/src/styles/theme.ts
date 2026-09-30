@@ -9,5 +9,5 @@ export const colors = {
   danger: '#D93535', dangerBorder: '#E64A4A', dangerSoft: '#FFF1F1',
   navInactive: '#728273', capture: '#00A947', white: '#FFFFFF',
 } as const;
-export const radius = { card: 20, control: 13, chip: 8, avatar: 18 } as const;
+export const radius = { card: 0, control: 6, chip: 4, avatar: 18 } as const;
 export const spacing = { page: 20, section: 18, card: 17, row: 12 } as const;

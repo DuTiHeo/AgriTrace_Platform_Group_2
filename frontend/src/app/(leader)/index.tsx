@@ -1,6 +1,13 @@
-import { useLocalSearchParams, router } from 'expo-router';
-import { Pressable, ScrollView, Text, View } from "react-native";
-import { useLeader, blankDraft } from "@/contexts/leader-context";
+import { useLocalSearchParams, router, useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
+import { AppState, Pressable, ScrollView, Text, View } from "react-native";
+import { useLeader } from "@/contexts/leader-context";
+import { useWorkSchedule } from '@/contexts/work-schedule-context';
+import { colors } from '@/styles/theme';
+import { useAuth } from '@/contexts/auth-context';
+import { localToday } from '@/contexts/notification-context';
+import { listLogs, type FarmingLog } from '@/sevices/farming-log.service';
+import { inJournalPeriod } from '@/sevices/journal-filter';
 import {
   Avatar,
   Button,
@@ -16,7 +23,34 @@ import {
 
 export default function HomeScreen() {
   const { taskId } = useLocalSearchParams<{ taskId?: string }>();
-  const { members, tasks, diaries, draft, setDraft } = useLeader();
+  const { members, tasks, draft, loadMembers } = useLeader();
+  const { startTask, loadTasks, leaderTasks, error } = useWorkSchedule();
+  const { accessToken } = useAuth();
+  const [today, setToday] = useState(localToday);
+  const [summaryLogs, setSummaryLogs] = useState<FarmingLog[]>([]);
+  const [summaryError, setSummaryError] = useState('');
+  useFocusEffect(useCallback(() => {
+    let active = true;
+    let refreshing = false;
+    setSummaryLogs([]);
+    const refreshSummary = async () => {
+      setToday(localToday());
+      if (refreshing || !accessToken) return;
+      refreshing = true;
+      try {
+        const [logs] = await Promise.all([listLogs(accessToken), loadTasks(), loadMembers()]);
+        if (active) { setSummaryLogs(logs); setSummaryError(''); }
+      } catch {
+        if (active) setSummaryError('Không tải được số nhật ký hôm nay.');
+      } finally { refreshing = false; }
+    };
+    void refreshSummary();
+    const timer = setInterval(() => { void refreshSummary(); }, 30000);
+    const subscription = AppState.addEventListener('change', state => {
+      if (state === 'active') void refreshSummary();
+    });
+    return () => { active = false; clearInterval(timer); subscription.remove(); };
+  }, [accessToken, loadTasks, loadMembers]));
   const ownerTasks = tasks.filter(t => t.owner && (!taskId || t.id === taskId));
   const active = members.filter(m => m.active);
 
@@ -28,23 +62,21 @@ export default function HomeScreen() {
       path: 'members'
     },
     {
-      n: diaries.filter(
-        d => new Date(d.time).toDateString() === new Date().toDateString()
-      ).length,
+      n: summaryError ? '—' : summaryLogs.filter(log => inJournalPeriod(log.logged_at, 'today', new Date(`${today}T12:00:00`))).length,
       label: 'Nhật ký hôm nay',
       sub: 'Cập nhật từ tổ',
       path: 'diary'
     },
     {
-      n: tasks.filter(t => t.status !== 'done').length,
+      n: tasks.filter(t => t.status !== 'done' && (t.startDate || t.due) <= today && t.due >= today).length,
       label: 'Việc cần làm',
-      sub: 'Đang theo dõi',
+      sub: 'Trong hôm nay',
       path: 'assignments'
     },
     {
-      n: tasks.filter(t => t.status === 'done').length,
+      n: leaderTasks.filter(t => t.status === 'done' && !!t.updatedAt && inJournalPeriod(t.updatedAt, 'today', new Date(`${today}T12:00:00`))).length,
       label: 'Đã hoàn thành',
-      sub: 'Trong danh sách',
+      sub: 'Hoàn thành hôm nay',
       path: 'assignments'
     }
   ];
@@ -54,12 +86,13 @@ export default function HomeScreen() {
       {!!taskId && <Card><Text style={s.section}>Công việc từ thông báo</Text><Text style={s.muted}>{ownerTasks[0]?.title ?? 'Công việc không còn trong danh sách.'}</Text><Button secondary title="Xem tất cả công việc" onPress={() => router.setParams({ taskId: '' })} /></Card>}
       <View>
         <Text style={s.title}>
-          Một ngày làm việc tốt lành 🌱
+          Một ngày làm việc tốt lành
         </Text>
 
         <Text style={[s.muted, { marginTop: 6 }]}>
           Theo dõi công việc, đồng hành cùng tổ của bạn.
         </Text>
+        {!!summaryError && <Text accessibilityRole="alert" style={{ color: colors.danger }}>{summaryError}</Text>}
       </View>
 
       <ScrollView
@@ -94,28 +127,13 @@ export default function HomeScreen() {
         onPress={() => go('capture')}
         style={{
           backgroundColor: '#E4F0DE',
-          borderRadius: 20,
+          borderRadius: 0,
           padding: 19,
           flexDirection: 'row',
           alignItems: 'center',
           gap: 16
         }}
       >
-        <View
-          style={{
-            width: 48,
-            height: 48,
-            backgroundColor: '#FFF',
-            borderRadius: 15,
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-        >
-          <Text style={{ fontSize: 27 }}>
-            📷
-          </Text>
-        </View>
-
         <View style={{ flex: 1 }}>
           <Text style={s.section}>
             {draft.photos.length
@@ -134,6 +152,7 @@ export default function HomeScreen() {
       </Pressable>
 
       <Section title="Công việc chủ nông trại giao" />
+      {!!error && <Text accessibilityRole="alert" style={{ color: colors.danger }}>{error}</Text>}
 
       {ownerTasks.map(t => (
         <Card key={t.id}>
@@ -142,7 +161,7 @@ export default function HomeScreen() {
 
             <View style={{ flex: 1 }} />
 
-            <Status status={t.status} />
+            {t.status === 'done' ? <Status status={t.displayStatus} /> : t.started ? <Text style={[s.chip, s.chipText, { color: colors.warning, backgroundColor: colors.warningSoft }]}>Đang làm</Text> : null}
           </View>
 
           <Text style={s.section}>
@@ -165,21 +184,10 @@ export default function HomeScreen() {
 
           {t.status !== 'done' && (
             <Button
-              title={
-                draft.photos.length
-                  ? 'Tiếp tục bản nháp hiện tại'
-                  : 'Chụp ảnh báo cáo'
-              }
+              title={t.started ? 'Gửi nhật ký hoàn thành' : 'Bắt đầu'}
               onPress={() => {
-                if (!draft.photos.length)
-                  setDraft({
-                    ...blankDraft(),
-                    title: t.title,
-                    area: t.area,
-                    taskId: t.id
-                  });
-
-                go('capture');
+                if (!t.started) { void startTask(t.id); return; }
+                router.push({ pathname: '/(leader)/capture', params: { taskId: t.id, plotId: t.plotId, taskTitle: t.title, area: t.area } });
               }}
             />
           )}

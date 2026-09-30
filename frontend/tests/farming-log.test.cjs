@@ -16,6 +16,17 @@ function load(name, mocks = {}, globals = {}) {
 const response = (body, status = 200) => ({ ok: status >= 200 && status < 300, status, json: async () => body });
 const service = fetch => load('farming-log.service', { '@/constants/api': { API_BASE_URL: 'http://backend.test:8000' }, 'expo/fetch': { fetch } }, { fetch });
 
+test('task execution allows both boundary days and blocks dates outside the assignment', () => {
+  const { taskExecutionError } = load('journal-filter');
+  const task = { startDate: '2026-10-01', due: '2026-10-10' };
+  assert.equal(taskExecutionError(task, new Date(2026, 8, 30, 23, 59)), 'Chưa đến ngày bắt đầu thực hiện công việc');
+  assert.equal(taskExecutionError(task, new Date(2026, 9, 1, 0, 0)), '');
+  assert.equal(taskExecutionError(task, new Date(2026, 9, 5, 12, 0)), '');
+  assert.equal(taskExecutionError(task, new Date(2026, 9, 10, 23, 59)), '');
+  assert.equal(taskExecutionError(task, new Date(2026, 9, 11, 0, 0)), 'Đã quá ngày kết thúc thực hiện công việc.');
+  assert.equal(taskExecutionError({ due: '' }, new Date(2026, 9, 1)), 'Chưa có thời gian thực hiện công việc.');
+});
+
 test('farming-log API uses backend paths and bearer authentication', async () => {
   const calls = [];
   const api = service(async (url, options) => { calls.push({ url, options }); return response({}); });

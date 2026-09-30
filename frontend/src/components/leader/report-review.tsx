@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
-import { useReports, reviewLabel } from '@/contexts/report-context';
+import { useReports } from '@/contexts/report-context';
 import { useAuth } from '@/contexts/auth-context';
 import { getLogAuthor } from '@/sevices/farming-log.service';
 import { Button, s } from './ui';
-export function ReportReview({ id }: { id: string }) {
+export function ReportReview({ id, onReviewed }: { id: string; onReviewed?: () => void }) {
   const { getReport, reviewReport } = useReports();
   const { accessToken } = useAuth();
   const report = getReport(id);
@@ -27,15 +27,13 @@ export function ReportReview({ id }: { id: string }) {
     if (pending.current) return;
     pending.current = true;
     setBusy(true); setError('');
-    try { await reviewReport(id, value); }
+    try { await reviewReport(id, value); onReviewed?.(); }
     catch (e) { setError(e instanceof Error ? e.message : 'Không lưu được đánh giá.'); }
     finally { pending.current = false; setBusy(false); }
   }
-  return <View style={{ gap: 10 }}>
-    <Text style={s.section}>Đánh giá: {report.review ? reviewLabel(report) : 'Chưa đánh giá'}</Text>
-    {!!report.reviewedBy && <Text style={s.muted}>Người đánh giá: {report.reviewedBy}</Text>}
-    <Text style={s.muted}>Kết quả được lưu dưới dạng ghi chú đánh giá. Trạng thái nhiệm vụ không thay đổi.</Text>
-    <View style={s.row}>
+  return <View style={[s.row, { flexWrap: 'wrap', alignItems: 'center' }]}>
+    <Text style={[s.section, { flex: 1, minWidth: 150 }]}>Nhận xét từ tổ trưởng</Text>
+    <View style={[s.row, { flexWrap: 'wrap' }]}>
       <Button title="Đạt" disabled={busy || report.review === 'passed'} onPress={() => submit('passed')} />
       <Button title="Không đạt" danger disabled={busy || report.review === 'rejected'} onPress={() => submit('rejected')} />
     </View>

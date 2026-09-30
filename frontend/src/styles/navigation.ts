@@ -8,5 +8,5 @@ export const navStyles = StyleSheet.create({
   icon: { height: 27, alignItems: 'center', justifyContent: 'center' },
   label: { fontSize: 11, fontWeight: '600', textAlign: 'center' },
   activeLabel: { fontWeight: '800' },
-  primaryCircle: { width: 52, height: 52, marginTop: -30, borderRadius: 27, backgroundColor: colors.capture, alignItems: 'center', justifyContent: 'center', borderWidth: 5, borderColor: colors.surface, shadowColor: colors.title, shadowOpacity: 0.18, shadowRadius: 5, shadowOffset: { width: 0, height: 3 }, elevation: 5 },
+  primaryCircle: { width: 68, height: 68, marginTop: -38, borderRadius: 34, backgroundColor: colors.capture, alignItems: 'center', justifyContent: 'center', borderWidth: 5, borderColor: colors.surface, shadowColor: colors.title, shadowOpacity: 0.18, shadowRadius: 5, shadowOffset: { width: 0, height: 3 }, elevation: 5 },
 });

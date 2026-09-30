@@ -83,7 +83,7 @@ const s = StyleSheet.create({
   filterText: { fontSize: 12, color: colors.muted, fontWeight: '600' },
   selectedText: { color: colors.white },
   list: { padding: 16, paddingBottom: 35, gap: 10, flexGrow: 1 },
-  card: { backgroundColor: colors.surface, borderRadius: 13, borderWidth: 1, borderColor: colors.border, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  card: { backgroundColor: colors.surface, borderRadius: 0, borderWidth: 1, borderColor: colors.border, padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10 },
   avatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.successSoft, alignItems: 'center', justifyContent: 'center' },
   initials: { color: colors.primary, fontWeight: '800', fontSize: 15 },
   member: { flex: 1, gap: 2 },

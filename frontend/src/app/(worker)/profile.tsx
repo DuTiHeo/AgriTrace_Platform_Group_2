@@ -1,8 +1,8 @@
 import { Avatar } from '@/components/common/role-ui';
 import { colors } from '@/styles/theme';
 import { sharedStyles as shared } from '@/styles/role-styles';
-import { type Href, router } from 'expo-router';
-import { useRef, useState } from 'react';
+import { type Href, router, useFocusEffect } from 'expo-router';
+import { useCallback, useRef, useState } from 'react';
 import {
   Keyboard,
   Pressable,
@@ -16,24 +16,32 @@ import { WorkerHeader } from '@/components/worker/worker-header';
 import { useAuth } from '@/contexts/auth-context';
 import { logout } from '@/sevices/auth.sevice';
 import { useWorkSchedule } from '@/contexts/work-schedule-context';
+import { useReports } from '@/contexts/report-context';
 
 const utilities = [
-  { label: '⚠️  Báo cáo sự cố / Lỗi kỹ thuật', route: '/account/issues' },
-  { label: '🔒  Đổi mật khẩu', route: '/account/change-password' },
-  { label: '🔔  Cài đặt thông báo', route: '/account/notification-settings' },
-  { label: '🌐  Ngôn ngữ (Tiếng Việt)', route: '/account/language' },
+  { label: 'Báo cáo sự cố / Lỗi kỹ thuật', route: '/account/issues' },
+  { label: 'Đổi mật khẩu', route: '/account/change-password' },
+  { label: 'Cài đặt thông báo', route: '/account/notification-settings' },
+  { label: 'Ngôn ngữ (Tiếng Việt)', route: '/account/language' },
 ];
 
 export default function WorkerProfileScreen() {
   const { user, accessToken, clearAuth } = useAuth();
   const { workerTasks } = useWorkSchedule();
+  const { seasons, refresh, seasonsError } = useReports();
+  useFocusEffect(useCallback(() => {
+    void refresh({ skipIfFresh: true });
+  }, [refresh]));
   const [loggingOut, setLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState<string | null>(null);
   const submitting = useRef(false);
-  const assignedAreas = [...new Set(workerTasks.map(task => task.area).filter(Boolean))];
+  const assignedPlotIds = new Set(workerTasks.map(task => task.plotId));
+  const assignedAreas = [...new Set(seasons
+    .filter(season => assignedPlotIds.has(season.plot_id)
+      && ['growing', 'ready_to_harvest'].includes(season.status))
+    .map(season => season.plot_code).filter(Boolean))];
   const completedTasks = workerTasks.filter(task => task.status === 'done').length;
   const roleName = user?.role === 'worker' ? 'Công nhân' : user?.role ?? 'Chưa có dữ liệu';
-  const teamText = user?.team_id ? `Mã tổ ${user.team_id}` : 'Chưa được phân tổ';
 
   async function signOut() {
     if (submitting.current) return;
@@ -67,7 +75,7 @@ export default function WorkerProfileScreen() {
             </Text>
 
             <Text style={styles.role}>
-              {roleName} · {teamText}
+              {roleName}
             </Text>
 
             <Text style={styles.active}>
@@ -76,7 +84,7 @@ export default function WorkerProfileScreen() {
           </View>
         </View>
 
-        <Section title="📋 Thông tin hồ sơ">
+        <Section title="Thông tin hồ sơ">
           <Info
             label="Số điện thoại:"
             value={user?.phone ?? 'Chưa cập nhật'}
@@ -84,7 +92,7 @@ export default function WorkerProfileScreen() {
 
           <Info
             label="Khu vực phụ trách:"
-            value={assignedAreas.length ? assignedAreas.join(', ') : 'Chưa có dữ liệu'}
+            value={seasonsError ? 'Không tải được khu vực canh tác' : assignedAreas.length ? assignedAreas.join(', ') : 'Chưa có khu vực đang canh tác'}
           />
 
           <Info
@@ -105,7 +113,7 @@ export default function WorkerProfileScreen() {
           />
         </Section>
 
-        <Section title="⚙️ Cài đặt & Tiện ích">
+        <Section title="Cài đặt & Tiện ích">
           {utilities.map((setting) => (
             <Pressable
               key={setting.label}

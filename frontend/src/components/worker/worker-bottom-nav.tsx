@@ -9,5 +9,7 @@ const items = [
 ] as const satisfies readonly NavItem[];
 
 export function WorkerBottomNav(props: RoleNavProps) {
+  const current = props.state.routes[props.state.index]?.name;
+  if (['create-log', 'report-note', 'camera-report'].includes(current)) return null;
   return <RoleBottomNav {...props} items={items} />;
 }

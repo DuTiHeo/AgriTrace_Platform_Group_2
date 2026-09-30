@@ -12,7 +12,7 @@ export function AccountScreen({ title, children }: PropsWithChildren<{ title: st
       <Pressable accessibilityRole="button" accessibilityLabel="Quay lại" hitSlop={10} onPress={() => { Keyboard.dismiss(); router.back(); }}><Text style={s.backText}>‹</Text></Pressable>
       <Text style={[s.section, { flex: 1 }]}>{title}</Text>
     </View></TouchableWithoutFeedback>
-    <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={[s.content, { flexGrow: 1 }]}>
+    <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" automaticallyAdjustKeyboardInsets contentContainerStyle={[s.content, { flexGrow: 1, paddingBottom: 48 }]}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}><View style={{ gap: 18, flexGrow: 1 }}>{children}</View></TouchableWithoutFeedback>
     </ScrollView>
   </KeyboardAvoidingView></SafeAreaView>;

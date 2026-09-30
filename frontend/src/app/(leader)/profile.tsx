@@ -58,11 +58,11 @@ export default function ProfileScreen() {
   }
 
   const links = [
-    ['members', '👥', 'Quản lý thành viên tổ'],
-    ['areas', '🗺️', 'Danh mục vùng trồng'],
-    ['change-password', '🔒', 'Đổi mật khẩu'],
-    ['settings', '🔔', 'Cài đặt thông báo & ngôn ngữ'],
-    ['issues', '⚠️', 'Báo cáo sự cố / Lỗi kỹ thuật']
+    ['members', 'Quản lý thành viên tổ'],
+    ['areas', 'Danh mục vùng trồng'],
+    ['change-password', 'Đổi mật khẩu'],
+    ['settings', 'Cài đặt thông báo & ngôn ngữ'],
+    ['issues', 'Báo cáo sự cố / Lỗi kỹ thuật']
   ];
 
   return (
@@ -77,8 +77,12 @@ export default function ProfileScreen() {
             </Text>
 
             <Text style={s.muted}>
-              Tổ trưởng · {user?.team_id ? `Mã tổ ${user.team_id}` : 'Chưa được phân tổ'}
+              Tổ trưởng
             </Text>
+
+            <View style={[s.chip, { alignSelf: 'flex-start', marginTop: 8 }]}>
+              <Text style={s.chipText}>Đang làm việc</Text>
+            </View>
           </View>
         </View>
       </Card>
@@ -113,18 +117,14 @@ export default function ProfileScreen() {
       </Card>
 
       <Card>
-        <Section title="⚙️ Quản lý & tiện ích" />
+        <Section title="Quản lý & tiện ích" />
 
-        {links.map(([path, icon, label]) => (
+        {links.map(([path, label]) => (
           <Pressable
             key={path}
             onPress={() => { Keyboard.dismiss(); if (['issues', 'settings', 'change-password'].includes(path)) router.push(`/account/${path}` as Href); else go(path); }}
             style={[s.infoRow, { alignItems: 'center' }]}
           >
-            <Text style={s.label}>
-              {icon}
-            </Text>
-
             <Text style={[s.label, { flex: 1 }]}>
               {label}
             </Text>

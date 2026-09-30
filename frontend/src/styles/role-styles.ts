@@ -110,14 +110,7 @@ export const sharedStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     gap: 12,
-    shadowColor: '#2F5036',
-    shadowOpacity: 0.035,
-    shadowRadius: 8,
-    shadowOffset: {
-      width: 0,
-      height: 3
-    },
-    elevation: 1
+    elevation: 0
   },
 
   row: {
@@ -172,7 +165,7 @@ export const sharedStyles = StyleSheet.create({
   },
 
   chip: {
-    borderRadius: 8,
+    borderRadius: radius.chip,
     backgroundColor: colors.successSoft,
     paddingHorizontal: 9,
     paddingVertical: 5,
@@ -221,7 +214,7 @@ export const sharedStyles = StyleSheet.create({
 
   calendar: {
     backgroundColor: colors.surface,
-    borderRadius: 24,
+    borderRadius: radius.card,
     padding: 20,
     gap: 16
   },
@@ -244,6 +237,6 @@ export const sharedStyles = StyleSheet.create({
     height: 42,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 12
+    borderRadius: 0
   },
 });

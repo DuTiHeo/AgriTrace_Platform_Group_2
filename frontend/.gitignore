@@ -8,5 +8,13 @@ node_modules
 .leader-preview/
 .leader-preview-android/
 .env
-.env.example
+.env.*
+!.env.example
+!.env.sample
 .expo
+android/
+ios/
+dist/
+web-build/
+coverage/
+*.log

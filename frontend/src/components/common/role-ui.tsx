@@ -139,7 +139,7 @@ export function Chip({
   tone = 'green'
 }: {
   text: string;
-  tone?: 'green' | 'amber' | 'gray'
+  tone?: 'green' | 'amber' | 'gray' | 'danger'
 }) {
   return (
     <View
@@ -150,6 +150,9 @@ export function Chip({
         },
         tone === 'gray' && {
           backgroundColor: '#EFF2F0'
+        },
+        tone === 'danger' && {
+          backgroundColor: colors.dangerSoft
         }
       ]}
     >
@@ -160,6 +163,8 @@ export function Chip({
           color:
             tone === 'amber'
               ? '#A66B16'
+              : tone === 'danger'
+                ? colors.danger
               : tone === 'gray'
                 ? '#728078'
                 : '#278046'
@@ -179,18 +184,22 @@ export function Status({
   return (
     <Chip
       text={
-        status === 'done'
-          ? 'Hoàn thành'
-          : status === 'doing'
+        status === 'completed_late'
+          ? 'Hoàn thành muộn'
+          : status === 'completed' || status === 'done'
+          ? 'Đã hoàn thành'
+          : status === 'in_progress' || status === 'doing'
             ? 'Đang làm'
-            : 'Cần làm'
+          : status === 'incomplete'
+            ? 'Chưa hoàn thành'
+            : 'Chưa hoàn thành'
       }
       tone={
-        status === 'done'
+        status === 'completed' || status === 'done'
           ? 'green'
-          : status === 'doing'
+          : status === 'completed_late' || status === 'incomplete'
             ? 'amber'
-            : 'gray'
+            : status === 'in_progress' || status === 'doing' ? 'amber' : 'gray'
       }
     />
   );

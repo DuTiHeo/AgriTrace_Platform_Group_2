@@ -12,10 +12,10 @@ export async function getLogLocation(): Promise<GPSPoint> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     const position = await Promise.race([
-      Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced }),
+      Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Highest }),
       new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error('Chưa lấy được GPS. Hãy ra nơi thoáng và thử lại.')), 20000); }),
     ]);
-    return { latitude: position.coords.latitude, longitude: position.coords.longitude };
+    return { latitude: position.coords.latitude, longitude: position.coords.longitude, accuracy: position.coords.accuracy };
   } finally { clearTimeout(timer); }
 }
 

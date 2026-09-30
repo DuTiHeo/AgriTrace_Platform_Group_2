@@ -1,5 +1,14 @@
 export type JournalPeriod = 'all' | 'today' | 'week' | 'month';
 
+export function taskExecutionError(task: { startDate?: string; due: string }, now = new Date()) {
+  const today = localDay(now);
+  const start = task.startDate || task.due;
+  if (!today || !start || !task.due) return 'Chưa có thời gian thực hiện công việc.';
+  if (today < start) return 'Chưa đến ngày bắt đầu thực hiện công việc';
+  if (today > task.due) return 'Đã quá ngày kết thúc thực hiện công việc.';
+  return '';
+}
+
 function localDay(value: string | Date) {
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return '';

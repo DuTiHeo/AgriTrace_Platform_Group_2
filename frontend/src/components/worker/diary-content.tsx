@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Image, Keyboard, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { FullScreenImageViewer } from '@/components/common/full-screen-image-viewer';
 import { type WorkReport } from '@/contexts/report-context';
+import { noticeTime } from '@/contexts/notification-context';
 
 export function ReportPhotos({ photos }: { photos: string[] }) {
   const [selected, setSelected] = useState<string | null>(null);
@@ -18,13 +19,15 @@ export function ReportPhotos({ photos }: { photos: string[] }) {
 
 // Worker chỉ đọc nhận xét; không có ô nhập hoặc thao tác gửi/sửa/xóa.
 export function ReportComments({ comments = [] }: { comments?: WorkReport['comments'] }) {
-  return <View style={{ gap: 10 }}>
-    <Text style={s.section}>Đánh giá của tổ trưởng ({comments.length})</Text>
-    {comments.length ? comments.map(comment => <View key={comment.id} style={s.comment}>
+  const remarks = comments.filter(comment => !['Đánh giá: Đạt', 'Đánh giá: Không đạt'].includes(comment.text))
+    .sort((a, b) => Date.parse(b.time) - Date.parse(a.time));
+  return <View style={[s.comment, { gap: 10 }]}>
+    <Text style={s.section}>Nhận xét từ tổ trưởng</Text>
+    {remarks.length ? remarks.map(comment => <View key={comment.id} style={{ gap: 5, paddingTop: 4 }}>
       <Text style={s.label}>{comment.author}</Text>
-      <Text style={s.muted}>{comment.time}</Text>
+      <Text style={s.muted}>{noticeTime(comment.time)}</Text>
       <Text style={s.text}>{comment.text}</Text>
-    </View>) : <Text style={s.muted}>Chưa có đánh giá từ tổ trưởng.</Text>}
+    </View>) : <Text style={s.muted}>Chưa có nhận xét từ tổ trưởng.</Text>}
   </View>;
 }
 
@@ -42,7 +45,7 @@ export const s = StyleSheet.create({
   input: { ...shared.input },
   photos: { ...shared.photoList },
   photo: { ...shared.photo },
-  comment: { ...shared.secondary, padding: 12, borderRadius: 13, gap: 5 },
+  comment: { ...shared.secondary, padding: 12, borderRadius: 0, gap: 5 },
   linkButton: { ...shared.button, ...shared.secondary },
   link: { ...shared.link },
   header: { ...shared.header },

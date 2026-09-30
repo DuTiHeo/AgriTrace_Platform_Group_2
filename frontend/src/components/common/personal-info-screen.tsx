@@ -42,21 +42,23 @@ export function PersonalInfoScreen() {
           <Field label="Số điện thoại" value={information.phone} />
           <Field label="CCCD" value={information.national_id} />
           <Field label="Địa chỉ" value={information.address} />
-          <Field label="Vai trò" value={`${roleNames[information.role] ?? information.role}${information.team_id ? ` · Mã tổ ${information.team_id}` : ''}`} />
+          <Field label="Vai trò" value={roleNames[information.role] ?? information.role} />
+          <Field label="Mã tổ" value={information.team_id ?? 'Chưa được phân tổ'} code />
         </>}
     </ScrollView>
   </SafeAreaView>;
 }
 // Dùng Text thay vì ô nhập: không mở bàn phím và không cho sửa dữ liệu.
-function Field({ label, value }: { label: string; value: string | null }) {
+function Field({ label, value, code = false }: { label: string; value: string | null; code?: boolean }) {
   return <View style={{ gap: 8 }}><Text style={shared.label}>{label}</Text>
-    <View style={s.field}><Text selectable style={[shared.body, !value?.trim() && shared.muted]}>{value?.trim() || 'Chưa có dữ liệu'}</Text></View>
+    <View style={s.field}><Text selectable style={[shared.body, code && s.code, !value?.trim() && shared.muted]}>{value?.trim() || 'Chưa có dữ liệu'}</Text></View>
   </View>;
 }
 const s = StyleSheet.create({
   identity: { alignItems: 'center', gap: 14, paddingVertical: 12 },
   avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: colors.successSoft, alignItems: 'center', justifyContent: 'center' },
   initials: { fontSize: 28, fontWeight: '800', color: colors.primary },
-  field: { backgroundColor: colors.input, borderColor: colors.inputBorder, borderWidth: 1, borderRadius: 13, paddingHorizontal: 13, paddingVertical: 12, minHeight: 48, justifyContent: 'center' },
+  field: { backgroundColor: colors.input, borderColor: colors.inputBorder, borderWidth: 1, borderRadius: 0, paddingHorizontal: 13, paddingVertical: 12, minHeight: 48, justifyContent: 'center' },
+  code: { fontSize: 13, lineHeight: 19, flexShrink: 1 },
   message: { paddingVertical: 40, gap: 14, alignItems: 'center' },
 });

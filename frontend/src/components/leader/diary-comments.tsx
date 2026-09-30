@@ -15,6 +15,7 @@ export function Comments({
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const inputRef = useRef<TextInput>(null);
+  const remarks = diary.comments.filter(comment => !['Đánh giá: Đạt', 'Đánh giá: Không đạt'].includes(comment.text));
 
   return (
     <View
@@ -25,17 +26,13 @@ export function Comments({
         paddingTop: 14
       }}
     >
-      <Text style={s.label}>
-        Nhận xét của tổ trưởng · {diary.comments.length}
-      </Text>
-
-      {diary.comments.map((c, i) => (
+      {remarks.map((c, i) => (
         <View
           key={i}
           style={{
             padding: 12,
             backgroundColor: '#F0F7EF',
-            borderRadius: 12,
+            borderRadius: 0,
             gap: 5
           }}
         >
@@ -61,7 +58,7 @@ export function Comments({
 
       <Input
         ref={inputRef}
-        label="Thêm đánh giá"
+        label="Viết nhận xét"
         placeholder="Viết nhận xét về công việc…"
         value={text}
         onChangeText={value => { setText(value); if (value.trim()) setError(''); }}

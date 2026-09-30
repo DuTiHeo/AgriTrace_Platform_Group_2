@@ -1,70 +1,128 @@
-import { router, useNavigation } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Keyboard, Pressable, ScrollView, Text, View } from 'react-native';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Keyboard, Pressable, ScrollView, Text, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
 import { useLeader } from '@/contexts/leader-context';
 import { useWorkSchedule } from '@/contexts/work-schedule-context';
 import { useAuth } from '@/contexts/auth-context';
 import { AreaPicker } from '@/components/leader/area-picker';
 import { Feedback } from '@/components/leader/feedback';
 import { Button, Calendar, Card, Input, Screen, s } from '@/components/leader/ui';
-import { listPlots, type Plot } from '@/sevices/farming-log.service';
+import { listPlots, listTaskTypes, type Plot } from '@/sevices/farming-log.service';
+import { useDiscardWarning } from '@/hooks/use-discard-warning';
+
+function localDateKey(date = new Date()) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
 
 export default function CreateAssignmentScreen() {
-  const navigation = useNavigation();
   const { members, addTask } = useLeader();
   const { accessToken } = useAuth();
   const { ready, error: storageError, retry } = useWorkSchedule();
   const [plots, setPlots] = useState<Plot[]>([]);
+  const [taskTypes, setTaskTypes] = useState<string[]>([]);
   const [title, setTitle] = useState('');
+  const [taskPickerOpen, setTaskPickerOpen] = useState(false);
+  const [customTitle, setCustomTitle] = useState(false);
   const [instructions, setInstructions] = useState('');
   const [selected, setSelected] = useState<string[]>([]);
   const [area, setArea] = useState('');
+  const [startDate, setStartDate] = useState('');
   const [due, setDue] = useState('');
-  const [startTime, setStartTime] = useState('');
-  const [endTime, setEndTime] = useState('');
   const [tools, setTools] = useState('');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const scrollRef = useRef<ScrollView>(null);
+  const submitAreaRef = useRef<View>(null);
+  const scrollY = useRef(0);
+  const keyboardTop = useRef<number | null>(null);
+  const focusedInput = useRef<'tools' | 'instructions' | null>(null);
   const fields = useRef<Record<string, View | null>>({});
   const allowLeave = useRef(false);
+  useFocusEffect(useCallback(() => {
+    allowLeave.current = false;
+  }, []));
+  const activeMemberIds = useMemo(() => members.filter(member => member.active).map(member => member.id), [members]);
+  const selectedActiveCount = activeMemberIds.filter(id => selected.includes(id)).length;
+  const allActiveSelected = activeMemberIds.length > 0 && selectedActiveCount === activeMemberIds.length;
 
   const dirty = useMemo(() => !!(
-    title.trim() || instructions.trim() || selected.length || area || due || startTime || endTime || tools.trim()
-  ), [area, due, endTime, instructions, selected.length, startTime, title, tools]);
+    title.trim() || instructions.trim() || selected.length || area || startDate || due || tools.trim()
+  ), [area, due, instructions, selected.length, startDate, title, tools]);
+
+  const clearAssignmentForm = useCallback(() => {
+    setTitle('');
+    setTaskPickerOpen(false);
+    setCustomTitle(false);
+    setInstructions('');
+    setSelected([]);
+    setArea('');
+    setStartDate('');
+    setDue('');
+    setTools('');
+    setMessage('');
+    setFieldErrors({});
+    focusedInput.current = null;
+    keyboardTop.current = null;
+    scrollY.current = 0;
+  }, []);
 
   useEffect(() => {
     if (!accessToken) return;
-    void listPlots(accessToken)
-      .then(setPlots)
+    void Promise.all([listPlots(accessToken), listTaskTypes(accessToken)])
+      .then(([plotList, typeList]) => { setPlots(plotList); setTaskTypes(typeList); })
       .catch(error => setMessage(error instanceof Error ? error.message : 'Không tải được danh sách lô đất.'));
   }, [accessToken]);
 
-  useEffect(() => navigation.addListener('beforeRemove', event => {
-    if (!dirty || allowLeave.current) return;
-    event.preventDefault();
-    Alert.alert(
-      'Chưa hoàn thành giao việc',
-      'Bạn chưa giao việc xong. Bạn có muốn thoát và bỏ nội dung đã nhập không?',
-      [
-        { text: 'Ở lại', style: 'cancel' },
-        { text: 'Thoát', style: 'destructive', onPress: () => {
-          allowLeave.current = true;
-          navigation.dispatch(event.data.action);
-        } },
-      ],
-    );
-  }), [dirty, navigation]);
+  const requestLeave = useDiscardWarning({
+    dirty,
+    onDiscard: clearAssignmentForm,
+    bypassRef: allowLeave,
+    title: 'Chưa hoàn thành giao việc',
+    message: 'Bạn chưa giao việc xong. Bạn có xác nhận thoát không? Toàn bộ nội dung đã nhập sẽ bị xóa.',
+  });
+
+  useEffect(() => {
+    const shown = Keyboard.addListener('keyboardDidShow', event => {
+      keyboardTop.current = event.endCoordinates.screenY;
+      if (focusedInput.current) setTimeout(alignSubmitButtonWithKeyboard, 160);
+    });
+    const hidden = Keyboard.addListener('keyboardDidHide', () => { keyboardTop.current = null; });
+    return () => { shown.remove(); hidden.remove(); };
+  }, []);
+
+  function alignSubmitButtonWithKeyboard() {
+    const submitArea = submitAreaRef.current;
+    const top = keyboardTop.current;
+    if (!submitArea || top == null || !focusedInput.current) return;
+    submitArea.measureInWindow((_x, y, _width, height) => {
+      const coveredPixels = y + height - top;
+      if (coveredPixels > 2) {
+        scrollRef.current?.scrollTo({ y: scrollY.current + coveredPixels, animated: true });
+      }
+    });
+  }
+
+  function trackScroll(event: NativeSyntheticEvent<NativeScrollEvent>) {
+    scrollY.current = event.nativeEvent.contentOffset.y;
+  }
+
+  function focusInput(name: 'tools' | 'instructions') {
+    focusedInput.current = name;
+    if (keyboardTop.current != null) setTimeout(alignSubmitButtonWithKeyboard, 80);
+  }
+
+  function blurInput(name: 'tools' | 'instructions') {
+    if (focusedInput.current === name) focusedInput.current = null;
+  }
 
   const clearFieldError = (name: string) => setFieldErrors(old => old[name] ? { ...old, [name]: '' } : old);
   const fieldProps = (name: string) => ({
     ref: (node: View | null) => { fields.current[name] = node; },
     collapsable: false,
-    style: { gap: 8, borderWidth: fieldErrors[name] ? 1 : 0, borderColor: '#B42318', borderRadius: 12, padding: fieldErrors[name] ? 8 : 0 },
+    style: { gap: 8, borderWidth: fieldErrors[name] ? 1 : 0, borderColor: '#B42318', borderRadius: 0, padding: fieldErrors[name] ? 8 : 0 },
   });
   const fieldError = (name: string) => fieldErrors[name] ? <Text accessibilityRole="alert" style={{ color: '#B42318' }}>{fieldErrors[name]}</Text> : null;
-
   function showErrors(errors: Record<string, string>) {
     setFieldErrors(errors);
     const first = Object.keys(errors)[0];
@@ -85,22 +143,26 @@ export default function CreateAssignmentScreen() {
     if (!selected.length || selected.some(id => !members.some(member => member.id === id && member.active))) errors.members = 'Chọn ít nhất một công nhân đang hoạt động.';
     const plot = plots.find(item => item.code === area);
     if (!plot) errors.area = 'Chọn lô đất đang hoạt động.';
-    const date = new Date(due + 'T12:00:00');
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(due) || Number.isNaN(date.getTime()) || date.getFullYear() !== Number(due.slice(0, 4)) || date.getMonth() + 1 !== Number(due.slice(5, 7)) || date.getDate() !== Number(due.slice(8, 10)) || date < today) errors.due = 'Chọn hạn hoàn thành hợp lệ, từ hôm nay trở đi.';
-    const timePattern = /^([01]\d|2[0-3]):[0-5]\d$/;
-    if (!timePattern.test(startTime)) errors.startTime = 'Nhập giờ bắt đầu theo HH:mm (ví dụ 08:00).';
-    if (!timePattern.test(endTime) || (timePattern.test(startTime) && endTime <= startTime)) errors.endTime = 'Nhập giờ kết thúc hợp lệ, sau giờ bắt đầu.';
-    if (!tools.trim()) errors.tools = 'Nhập công cụ/vật tư; nếu không cần, ghi Không cần.';
+    const validDate = (value: string) => {
+      const date = new Date(value + 'T12:00:00');
+      return /^\d{4}-\d{2}-\d{2}$/.test(value)
+        && !Number.isNaN(date.getTime())
+        && date.getFullYear() === Number(value.slice(0, 4))
+        && date.getMonth() + 1 === Number(value.slice(5, 7))
+        && date.getDate() === Number(value.slice(8, 10));
+    };
+    if (!validDate(startDate) || startDate < localDateKey()) errors.startDate = 'Chọn ngày bắt đầu từ hôm nay trở đi.';
+    if (!validDate(due) || !validDate(startDate) || due < startDate) errors.due = 'Chọn ngày kết thúc bằng hoặc sau ngày bắt đầu.';
     if (showErrors(errors)) return;
 
     setSaving(true); setMessage('');
     try {
       await addTask({
         title: title.trim(), instructions, memberIds: selected, area, plotId: plot!.plot_id,
-        due, startTime, endTime, tools: tools.trim(),
+        startDate, due, tools: tools.trim() || undefined,
       });
       allowLeave.current = true;
+      clearAssignmentForm();
       router.replace('/(leader)/assignments');
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Không thể lưu phân công.');
@@ -110,19 +172,79 @@ export default function CreateAssignmentScreen() {
   }
 
   return (
-    <Screen title="Giao việc mới" back scrollRef={scrollRef}>
+    <Screen title="Giao việc mới" back onBack={() => requestLeave()} scrollRef={scrollRef} onScroll={trackScroll}>
       <Feedback text={message || storageError} />
       {!!storageError && <Button title="Tải lại" onPress={retry} />}
       <Card>
-        <Text style={s.muted}>Các mục có dấu * là bắt buộc. Ghi chú/hướng dẫn có thể để trống.</Text>
-
         <View {...fieldProps('title')}>
-          <Input label="Tên nhiệm vụ *" value={title} onChangeText={value => { setTitle(value); if (value.trim()) clearFieldError('title'); }} placeholder="Ví dụ: Chăm sóc cây sầu riêng" maxLength={150} />
+          {customTitle || !taskTypes.length ? (
+            <>
+              <Input label="Tên nhiệm vụ *" value={title} onChangeText={value => { setTitle(value); if (value.trim()) clearFieldError('title'); }} placeholder="Nhập tên nhiệm vụ khác" maxLength={150} autoFocus={customTitle} />
+              {!!taskTypes.length && (
+                <Pressable onPress={() => { Keyboard.dismiss(); setCustomTitle(false); setTaskPickerOpen(true); setTitle(''); }}>
+                  <Text style={s.link}>Chọn lại từ danh sách công việc</Text>
+                </Pressable>
+              )}
+            </>
+          ) : (
+            <View style={{ gap: 8 }}>
+              <Text style={s.label}>Tên nhiệm vụ *</Text>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ expanded: taskPickerOpen }}
+                onPress={() => { Keyboard.dismiss(); setTaskPickerOpen(open => !open); }}
+                style={[s.input, { justifyContent: 'center' }]}
+              >
+                <Text style={{ color: title ? '#243C2A' : '#9AA99E' }}>{title || 'Chọn tên nhiệm vụ'}</Text>
+              </Pressable>
+              {taskPickerOpen && (
+                <View style={{ borderWidth: 1, borderColor: '#DCE7DD', borderRadius: 0, overflow: 'hidden', backgroundColor: '#FFFFFF' }}>
+                  {taskTypes.map((taskType, index) => (
+                    <Pressable
+                      key={taskType}
+                      onPress={() => { setTitle(taskType); setTaskPickerOpen(false); clearFieldError('title'); }}
+                      style={{ paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: index === taskTypes.length - 1 ? 0 : 1, borderBottomColor: '#EDF2ED' }}
+                    >
+                      <Text style={{ color: '#35583C' }}>{taskType}</Text>
+                    </Pressable>
+                  ))}
+                  <Pressable
+                    onPress={() => { setTitle(''); setTaskPickerOpen(false); setCustomTitle(true); }}
+                    style={{ paddingHorizontal: 14, paddingVertical: 13, borderTopWidth: 1, borderTopColor: '#DCE7DD', backgroundColor: '#F6F8F6' }}
+                  >
+                    <Text style={[s.link, { fontWeight: '700' }]}>Khác — tự nhập tên nhiệm vụ</Text>
+                  </Pressable>
+                </View>
+              )}
+            </View>
+          )}
           {fieldError('title')}
         </View>
 
         <View {...fieldProps('members')}>
-          <Text style={s.label}>Người thực hiện * · có thể chọn nhiều người</Text>
+          <View style={[s.row, { justifyContent: 'space-between', alignItems: 'center' }]}>
+            <Text style={[s.label, { flex: 1 }]}>Người thực hiện *</Text>
+            <Pressable
+              accessibilityRole="checkbox"
+              accessibilityLabel={`Chọn tất cả ${activeMemberIds.length} người đang hoạt động`}
+              accessibilityState={{
+                checked: allActiveSelected ? true : selectedActiveCount > 0 ? 'mixed' : false,
+                disabled: activeMemberIds.length === 0,
+              }}
+              disabled={activeMemberIds.length === 0}
+              onPress={() => {
+                clearFieldError('members');
+                setSelected(allActiveSelected ? [] : activeMemberIds);
+              }}
+              style={[
+                s.row,
+                { minHeight: 36, paddingHorizontal: 4, opacity: activeMemberIds.length ? 1 : 0.45 },
+              ]}
+            >
+              <Text style={{ fontSize: 20, color: '#2E833D' }}>{allActiveSelected ? '☑' : selectedActiveCount > 0 ? '▣' : '☐'}</Text>
+              <Text style={{ color: '#2E833D', fontWeight: '700' }}>Chọn tất cả</Text>
+            </Pressable>
+          </View>
           {members.map(member => (
             <Pressable
               key={member.id}
@@ -144,16 +266,42 @@ export default function CreateAssignmentScreen() {
           <AreaPicker value={area} onChange={value => { setArea(value); clearFieldError('area'); }} options={plots.map(plot => plot.code)} />
           {fieldError('area')}
         </View>
-        <View {...fieldProps('due')}>
-          <Calendar value={due} onChange={value => { setDue(value); clearFieldError('due'); }} />
-          {fieldError('due')}
+        <View style={{ gap: 8 }}>
+          <Text style={[s.label, { fontWeight: '700' }]}>Thời gian thực hiện *</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
+            <View {...fieldProps('startDate')} style={[fieldProps('startDate').style, { flex: 1 }]}>
+              <Calendar
+                label="Ngày bắt đầu"
+                value={startDate}
+                minimumDate={localDateKey()}
+                onChange={value => {
+                  setStartDate(value);
+                  clearFieldError('startDate');
+                  if (due && due < value) setDue('');
+                }}
+              />
+              {fieldError('startDate')}
+            </View>
+            <View {...fieldProps('due')} style={[fieldProps('due').style, { flex: 1 }]}>
+              <Calendar
+                label="Ngày kết thúc"
+                value={due}
+                minimumDate={startDate || localDateKey()}
+                onChange={value => { setDue(value); clearFieldError('due'); }}
+              />
+              {fieldError('due')}
+            </View>
+          </View>
+          <Text style={s.muted}>Ngày kết thúc không được trước ngày bắt đầu.</Text>
         </View>
-        <View {...fieldProps('startTime')}><Input label="Giờ bắt đầu *" value={startTime} onChangeText={value => { setStartTime(value); if (/^([01]\d|2[0-3]):[0-5]\d$/.test(value)) clearFieldError('startTime'); }} placeholder="08:00" maxLength={5} />{fieldError('startTime')}</View>
-        <View {...fieldProps('endTime')}><Input label="Giờ kết thúc *" value={endTime} onChangeText={value => { setEndTime(value); if (/^([01]\d|2[0-3]):[0-5]\d$/.test(value) && value > startTime) clearFieldError('endTime'); }} placeholder="10:00" maxLength={5} />{fieldError('endTime')}</View>
-        <View {...fieldProps('tools')}><Input label="Công cụ / vật tư *" value={tools} onChangeText={value => { setTools(value); if (value.trim()) clearFieldError('tools'); }} placeholder="Ví dụ: Kéo cắt tỉa, bình xịt" maxLength={300} />{fieldError('tools')}</View>
-        <Input label="Ghi chú / hướng dẫn" value={instructions} onChangeText={setInstructions} placeholder="Ghi chú chi tiết cho công nhân…" multiline maxLength={3000} />
+        <View {...fieldProps('tools')}><Input label="Công cụ / vật tư (không bắt buộc)" value={tools} onFocus={() => focusInput('tools')} onBlur={() => blurInput('tools')} onChangeText={setTools} placeholder="Ví dụ: Kéo cắt tỉa, bình xịt" maxLength={300} /></View>
+        <View {...fieldProps('instructions')}><Input label="Ghi chú / hướng dẫn" value={instructions} onFocus={() => {
+          focusInput('instructions');
+        }} onBlur={() => blurInput('instructions')} onChangeText={setInstructions} placeholder="Ghi chú chi tiết cho công nhân…" multiline maxLength={3000} /></View>
 
-        <Button title={saving ? 'Đang giao việc…' : 'Giao việc ngay'} disabled={saving || !ready} onPress={submit} />
+        <View ref={submitAreaRef} collapsable={false}>
+          <Button title={saving ? 'Đang giao việc…' : 'Giao việc ngay'} disabled={saving || !ready} onPress={submit} />
+        </View>
       </Card>
     </Screen>
   );

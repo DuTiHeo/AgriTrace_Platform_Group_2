@@ -17,6 +17,7 @@ import {
   TouchableWithoutFeedback,
   View
 } from 'react-native';
+import type { ScrollViewProps } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SymbolView } from 'expo-symbols';
 import { useAuth } from '@/contexts/auth-context';
@@ -39,12 +40,16 @@ export function Screen({
   title,
   titleAction,
   back = false,
-  scrollRef
+  scrollRef,
+  onScroll,
+  onBack,
 }: PropsWithChildren<{
   title?: string;
   titleAction?: ReactNode;
   back?: boolean;
   scrollRef?: RefObject<ScrollView | null>;
+  onScroll?: ScrollViewProps['onScroll'];
+  onBack?: () => void;
 }>) {
   const { user } = useAuth();
   const { showBadge } = useAccountUtilities();
@@ -68,7 +73,7 @@ export function Screen({
                   accessibilityLabel="Quay lại"
                   onPress={() => {
                     Keyboard.dismiss();
-                    router.back();
+                    if (onBack) onBack(); else router.back();
                   }}
                   style={s.back}
                 >
@@ -127,14 +132,17 @@ export function Screen({
 
         <ScrollView
           ref={scrollRef}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
+          automaticallyAdjustKeyboardInsets
           contentContainerStyle={s.content}
         >
 
           {!back && title && (
             titleAction ? (
-              <View style={[s.row, { alignItems: 'center' }]}>
+              <View style={[s.row, { alignItems: 'center', zIndex: 20 }]}>
                 <Text style={[s.title, { flex: 1 }]}>
                   {title}
                 </Text>
@@ -156,10 +164,14 @@ export function Screen({
 
 export function Calendar({
   value,
-  onChange
+  onChange,
+  label = 'Hạn hoàn thành',
+  minimumDate,
 }: {
   value: string;
-  onChange: (v: string) => void
+  onChange: (v: string) => void;
+  label?: string;
+  minimumDate?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [month, setMonth] = useState(new Date());
@@ -173,14 +185,17 @@ export function Calendar({
   return (
     <View style={{ gap: 8 }}>
       <Text style={s.label}>
-        Hạn hoàn thành
+        {label}
       </Text>
 
-      <Button
-        secondary
-        title={value ? `▦  ${dateText(value)}` : '▦  Chọn ngày'}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+        style={[s.button, s.secondary, { borderRadius: 0 }]}
         onPress={() => setOpen(true)}
-      />
+      >
+        <Text style={s.link}>{value ? dateText(value) : 'Chọn ngày'}</Text>
+      </Pressable>
 
       <Modal
         visible={open}
@@ -231,13 +246,15 @@ export function Calendar({
                 (_, i) => {
                   const d = i - shift + 1;
                   const v = `${year}-${String(m + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                  const disabled = d < 1 || (!!minimumDate && v < minimumDate);
 
                   return (
                     <Pressable
                       key={i}
-                      disabled={d < 1}
+                      disabled={disabled}
                       style={[
                         s.dayCell,
+                        disabled && { opacity: 0.28 },
                         v === value && {
                           backgroundColor: '#E3F2E5'
                         }

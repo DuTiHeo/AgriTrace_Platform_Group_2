@@ -30,7 +30,7 @@ export function RoleBottomNav({ state, navigation, items }: RoleNavProps & { ite
           const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
           if (!event.defaultPrevented && !active) navigation.navigate(item.route);
         }}>
-        {item.primary ? <View style={s.primaryCircle}><SymbolView name={item.icon} size={27} tintColor={colors.white} /></View>
+        {item.primary ? <View style={s.primaryCircle}><SymbolView name={item.icon} size={35} tintColor={colors.white} /></View>
           : <View style={s.icon}><SymbolView name={item.icon} size={25} tintColor={color} /></View>}
         <Text style={[s.label, { color }, (active || item.primary) && s.activeLabel]}>{item.label}</Text>
       </Pressable>;

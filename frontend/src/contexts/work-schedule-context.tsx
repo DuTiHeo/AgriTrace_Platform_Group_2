@@ -1,113 +1,141 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type PropsWithChildren } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState, type PropsWithChildren } from 'react';
 import { useAuth } from './auth-context';
-import { listMyTasks } from '@/sevices/farming-log.service';
+import { decodeTaskContent, listMyTasks, type ApiTask } from '@/sevices/farming-log.service';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { taskExecutionError } from '@/sevices/journal-filter';
+
 export type ScheduledTask = {
-  id: string; title: string; instructions: string; memberIds: string[]; area: string; due: string;
-  startDate?: string;
-  startTime?: string; endTime?: string; tools?: string;
-  status: 'todo' | 'doing' | 'done'; assigneePhones: string[];
+  id: string; title: string; instructions: string; memberIds: string[]; area: string; plotId: string; due: string;
+  startDate?: string; startTime?: string; endTime?: string; tools?: string;
+  started: boolean;
+  owner?: boolean;
+  assigneeStatuses: Record<string, { name: string | null; completed: boolean }>;
+  status: 'doing' | 'done'; displayStatus: 'in_progress' | 'incomplete' | 'completed' | 'completed_late'; assigneePhones: string[];
   leaderPhone: string; orgId: string | null; teamId: string | null;
-  teamName?: string | null;
-  updatedAt?: string | null;
+  teamName?: string | null; leaderName?: string | null; workerName?: string | null; updatedAt?: string | null;
+  rawContent: string; taskIds: string[]; assignmentId?: string; createdAt?: string | null;
 };
-const KEY = 'agrifarm.work-schedule.v1';
+
 function localDateKey(value: string | null) {
   if (!value) return '';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '';
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
-const normalizePhone = (phone: string) => phone.replace(/\D/g, '').replace(/^84(?=\d{9}$)/, '0');
-function validTask(value: unknown): value is ScheduledTask {
-  if (!value || typeof value !== 'object') return false;
-  const t = value as ScheduledTask;
-  return ['id','title','instructions','area','due','leaderPhone'].every(key => typeof (value as Record<string, unknown>)[key] === 'string')
-    && /^\d{4}-\d{2}-\d{2}$/.test(t.due)
-    && (t.startDate === undefined || /^\d{4}-\d{2}-\d{2}$/.test(t.startDate))
-    && ['todo','doing','done'].includes(t.status)
-    && Array.isArray(t.memberIds) && t.memberIds.every(x => typeof x === 'string')
-    && Array.isArray(t.assigneePhones) && t.assigneePhones.every(x => typeof x === 'string')
-    && (t.orgId === null || typeof t.orgId === 'string') && (t.teamId === null || typeof t.teamId === 'string')
-    && [t.startTime, t.endTime, t.tools].every(x => x === undefined || typeof x === 'string')
-    && (t.teamName === undefined || t.teamName === null || typeof t.teamName === 'string')
-    && (t.updatedAt === undefined || t.updatedAt === null || typeof t.updatedAt === 'string');
+
+function mapTask(task: ApiTask): ScheduledTask {
+  const content = decodeTaskContent(task.content);
+  const startDate = localDateKey(task.start_at);
+  const dueDate = localDateKey(task.due_at);
+  const completedLate = task.status === 'completed' && !!dueDate && !!task.updated_at && localDateKey(task.updated_at) > dueDate;
+  const overdue = !!dueDate && dueDate < localDateKey(new Date().toISOString());
+  return {
+    id: task.task_id, title: content.title, instructions: content.instructions ?? '',
+    memberIds: [task.worker_id], area: task.plot_code ?? 'Chưa có mã lô', plotId: task.plot_id,
+    due: dueDate, startDate: startDate || localDateKey(task.created_at) || dueDate,
+    startTime: content.startTime, endTime: content.endTime, tools: content.tools ?? '',
+    started: false,
+    assigneeStatuses: { [task.worker_id]: { name: task.worker_name, completed: task.status === 'completed' } },
+    status: task.status === 'completed' ? 'done' : 'doing',
+    displayStatus: task.status === 'completed' ? (completedLate ? 'completed_late' : 'completed') : (overdue ? 'incomplete' : 'in_progress'),
+    assigneePhones: task.worker_phone ? [task.worker_phone] : [], leaderPhone: '',
+    orgId: task.org_id, teamId: task.team_id, teamName: task.team_name, leaderName: task.team_leader_name ?? null,
+    workerName: task.worker_name, updatedAt: task.updated_at, rawContent: task.content,
+    taskIds: [task.task_id], assignmentId: content.assignmentId, createdAt: task.created_at,
+  };
 }
+
+function groupLeaderTasks(tasks: ScheduledTask[]) {
+  const groups = new Map<string, ScheduledTask>();
+  for (const task of tasks) {
+    const legacyMinute = task.createdAt?.slice(0, 16) ?? task.startDate ?? '';
+    const key = task.owner ? `owner:${task.id}` : task.assignmentId
+      ? `assignment:${task.assignmentId}`
+      : `legacy:${task.rawContent}|${task.plotId}|${task.due}|${legacyMinute}`;
+    const current = groups.get(key);
+    if (!current) {
+      groups.set(key, { ...task });
+      continue;
+    }
+    const allDone = current.status === 'done' && task.status === 'done';
+    groups.set(key, {
+      ...current,
+      memberIds: [...new Set([...current.memberIds, ...task.memberIds])],
+      assigneeStatuses: { ...current.assigneeStatuses, ...task.assigneeStatuses },
+      assigneePhones: [...new Set([...current.assigneePhones, ...task.assigneePhones])],
+      taskIds: [...current.taskIds, ...task.taskIds],
+      updatedAt: !current.updatedAt ? task.updatedAt : !task.updatedAt ? current.updatedAt
+        : new Date(task.updatedAt) > new Date(current.updatedAt) ? task.updatedAt : current.updatedAt,
+      workerName: null,
+      status: allDone ? 'done' : 'doing',
+      displayStatus: allDone
+        ? ([current.displayStatus, task.displayStatus].includes('completed_late') ? 'completed_late' : 'completed')
+        : ([current.displayStatus, task.displayStatus].includes('incomplete') ? 'incomplete' : 'in_progress'),
+    });
+  }
+  return [...groups.values()];
+}
+
 function useScheduleState() {
   const { user, accessToken } = useAuth();
-  const [all, setAll] = useState<ScheduledTask[]>([]);
-  const current = useRef<ScheduledTask[]>([]);
-  const saving = useRef(false);
-  const [localReady, setLocalReady] = useState(false);
-  const [localError, setLocalError] = useState('');
-  const [apiWorkerTasks, setApiWorkerTasks] = useState<ScheduledTask[]>([]);
-  const [apiReady, setApiReady] = useState(false);
-  const [apiError, setApiError] = useState('');
-  const [reload, setReload] = useState(0);
-  useEffect(() => {
-    let active = true;
-    setLocalReady(false); setLocalError('');
-    AsyncStorage.getItem(KEY).then(raw => {
-      const parsed: unknown = raw ? JSON.parse(raw) : [];
-      if (!Array.isArray(parsed) || !parsed.every(validTask)) throw new Error('Invalid schedule');
-      if (active) { current.current = parsed; setAll(parsed); setLocalReady(true); }
-    }).catch(() => { if (active) setLocalError('Không đọc được lịch đã lưu trên thiết bị. Vui lòng thử lại.'); });
-    return () => { active = false; };
-  }, [reload]);
-  const addAssignment = async (input: Omit<ScheduledTask, 'id' | 'status' | 'leaderPhone' | 'orgId' | 'teamId'>) => {
-    if (!localReady) throw new Error('Lịch chưa tải xong. Vui lòng thử lại.');
-    if (!user || user.role !== 'leader') throw new Error('Chỉ tổ trưởng được giao việc.');
-    if (saving.current) throw new Error('Đang lưu phân công. Vui lòng chờ.');
-    saving.current = true;
+  const [tasks, setTasks] = useState<ScheduledTask[]>([]);
+  const [leaderCompletedTasks, setLeaderCompletedTasks] = useState<ScheduledTask[]>([]);
+  const [ready, setReady] = useState(false);
+  const [error, setError] = useState('');
+
+  const loadTasks = useCallback(async () => {
+    if (!accessToken || !user || !['leader', 'worker'].includes(user.role)) return;
+    setError('');
     try {
-      const now = new Date();
-      const startDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-      const task: ScheduledTask = { ...input, startDate, id: `assigned-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, status: 'todo', leaderPhone: user.phone, orgId: user.org_id, teamId: user.team_id };
-      const next = [task, ...current.current];
-      await AsyncStorage.setItem(KEY, JSON.stringify(next));
-      current.current = next; setAll(next);
-    } catch { throw new Error('Không lưu được phân công trên thiết bị. Vui lòng thử lại.'); }
-    finally { saving.current = false; }
-  };
-  const loadWorkerTasks = useCallback(async () => {
-    if (!accessToken || user?.role !== 'worker') return;
-    setApiError('');
-    try {
-      const tasks = await listMyTasks(accessToken);
-      setApiWorkerTasks(tasks.filter(task => task.status !== 'cancelled').map(task => ({
-        id: task.task_id,
-        title: task.content,
-        instructions: task.content,
-        memberIds: [task.worker_id],
-        area: task.plot_code ?? 'Chưa có mã lô',
-        due: task.due_date ?? '',
-        startDate: localDateKey(task.created_at) || task.due_date || '',
-        status: task.status === 'completed' ? 'done' : 'doing',
-        assigneePhones: task.worker_phone ? [task.worker_phone] : [],
-        leaderPhone: '',
-        orgId: task.org_id,
-        teamId: task.team_id,
-        teamName: task.team_name,
-        updatedAt: task.updated_at,
-      })));
-      setApiReady(true);
-    } catch (error) {
-      setApiError(error instanceof Error ? error.message : 'Không tải được công việc được giao.');
+      const [result, stored] = await Promise.all([
+        listMyTasks(accessToken),
+        AsyncStorage.getItem(`worker-started-tasks:${user.phone}`),
+      ]);
+      const saved: unknown = stored ? JSON.parse(stored) : [];
+      const startedIds = new Set(Array.isArray(saved) ? saved.filter(id => typeof id === 'string') : []);
+      const mapped = result.filter(task => task.status !== 'cancelled').map(task => ({
+        ...mapTask(task), started: startedIds.has(task.task_id) || task.status === 'completed',
+        owner: user.role === 'leader' && task.worker_phone === user.phone,
+      }));
+      setTasks(user.role === 'leader' ? groupLeaderTasks(mapped) : mapped);
+      setLeaderCompletedTasks(user.role === 'leader' ? mapped.filter(task => !task.owner && task.status === 'done') : []);
+      setReady(true);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Không tải được danh sách công việc.');
     }
-  }, [accessToken, user?.role]);
-  useEffect(() => { if (user?.role === 'worker') void loadWorkerTasks(); }, [loadWorkerTasks, user?.role]);
-  const inScope = (task: ScheduledTask) => !!user && task.orgId === user.org_id && task.teamId === user.team_id;
-  const workerTasks = user?.role === 'worker' ? apiWorkerTasks : [];
-  const leaderTasks = user?.role === 'leader' ? all.filter(task => inScope(task) && task.leaderPhone === user.phone) : [];
-  const retry = useCallback(() => { if (user?.role === 'worker') void loadWorkerTasks(); else setReload(value => value + 1); }, [loadWorkerTasks, user?.role]);
-  const ready = user?.role === 'worker' ? apiReady : localReady;
-  const error = user?.role === 'worker' ? apiError : localError;
-  return { workerTasks, leaderTasks, ready, error, retry, loadWorkerTasks, addAssignment };
+  }, [accessToken, user]);
+
+  useEffect(() => { setTasks([]); setLeaderCompletedTasks([]); setReady(false); void loadTasks(); }, [loadTasks]);
+
+  const startTask = useCallback(async (taskId: string) => {
+    if (!user || !['worker', 'leader'].includes(user.role)
+      || !tasks.some(task => task.id === taskId && task.status !== 'done' && (user.role === 'worker' || task.owner))) return;
+    const task = tasks.find(item => item.id === taskId)!;
+    const blocked = taskExecutionError(task);
+    if (blocked) { setError(blocked); return; }
+    try {
+      const key = `worker-started-tasks:${user.phone}`;
+      const stored = await AsyncStorage.getItem(key);
+      const saved: unknown = stored ? JSON.parse(stored) : [];
+      const ids = Array.isArray(saved) ? saved.filter(id => typeof id === 'string') : [];
+      await AsyncStorage.setItem(key, JSON.stringify([...new Set([...ids, taskId])]));
+      setTasks(old => old.map(task => task.id === taskId ? { ...task, started: true } : task));
+    } catch {
+      setError('Không lưu được trạng thái bắt đầu. Vui lòng thử lại.');
+    }
+  }, [tasks, user]);
+
+  return {
+    workerTasks: user?.role === 'worker' ? tasks : [],
+    leaderTasks: user?.role === 'leader' ? tasks : [],
+    leaderCompletedTasks: user?.role === 'leader' ? leaderCompletedTasks : [],
+    ready, error, retry: loadTasks, loadWorkerTasks: loadTasks, loadTasks, startTask,
+  };
 }
+
 const Context = createContext<ReturnType<typeof useScheduleState> | null>(null);
 export function WorkScheduleProvider({ children }: PropsWithChildren) {
-  const value = useScheduleState();
-  return <Context.Provider value={value}>{children}</Context.Provider>;
+  return <Context.Provider value={useScheduleState()}>{children}</Context.Provider>;
 }
 export function useWorkSchedule() {
   const value = useContext(Context);

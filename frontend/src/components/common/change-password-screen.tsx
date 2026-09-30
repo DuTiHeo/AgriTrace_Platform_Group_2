@@ -59,7 +59,7 @@ export function ChangePasswordScreen() {
   return (
     <SafeAreaView style={s.page}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" contentContainerStyle={s.content}>
+        <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" automaticallyAdjustKeyboardInsets contentContainerStyle={[s.content, { paddingBottom: 48 }]}>
           <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
             <View style={{ gap: 18, flexGrow: 1 }}>
               {!success && <Pressable disabled={busy} onPress={() => { Keyboard.dismiss(); router.back(); }}><Text style={s.link}>← Quay lại</Text></Pressable>}
