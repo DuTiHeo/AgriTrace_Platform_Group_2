@@ -1,5 +1,5 @@
 # backend/app/crud/tasks.py
-from datetime import date
+from datetime import datetime
 from typing import Optional
 from uuid import UUID
 from sqlalchemy import text
@@ -60,12 +60,14 @@ def get_task(db: Session, task_id: UUID) -> Optional[dict]:
 
     query = text("""
         SELECT t.task_id, t.team_id, tm.name AS team_name, tm.org_id, o.name AS org_name,
+             leader.full_name AS team_leader_name,
                t.worker_id, u.full_name AS worker_name, u.phone AS worker_phone,
                t.plot_id, p.code AS plot_code,
-               t.content, t.due_date, t.status, t.created_at, t.updated_at
+               t.content, t.start_at, t.due_at, t.status, t.created_at, t.updated_at
         FROM tasks t
         JOIN teams tm ON t.team_id = tm.team_id
         JOIN organizations o ON tm.org_id = o.org_id
+        LEFT JOIN users leader ON leader.user_id = tm.team_leader_id
         JOIN users u ON t.worker_id = u.user_id
         JOIN plots p ON t.plot_id = p.plot_id
         WHERE t.task_id = :task_id;
@@ -123,12 +125,14 @@ def list_tasks(
     where_clause = " AND ".join(conditions)
     query = text(f"""
         SELECT t.task_id, t.team_id, tm.name AS team_name, tm.org_id, o.name AS org_name,
+               leader.full_name AS team_leader_name,
                t.worker_id, u.full_name AS worker_name, u.phone AS worker_phone,
                t.plot_id, p.code AS plot_code,
-               t.content, t.due_date, t.status, t.created_at, t.updated_at
+               t.content, t.start_at, t.due_at, t.status, t.created_at, t.updated_at
         FROM tasks t
         JOIN teams tm ON t.team_id = tm.team_id
         JOIN organizations o ON tm.org_id = o.org_id
+        LEFT JOIN users leader ON leader.user_id = tm.team_leader_id
         JOIN users u ON t.worker_id = u.user_id
         JOIN plots p ON t.plot_id = p.plot_id
         WHERE {where_clause}
@@ -146,13 +150,14 @@ def create_task(
     worker_id: UUID,
     plot_id: UUID,
     content: str,
-    due_date: Optional[date] = None,
+    start_at: datetime,
+    due_at: datetime,
     status: str = "in_progress",
 ) -> dict:
 
     query = text("""
-        INSERT INTO tasks (team_id, worker_id, plot_id, content, due_date, status)
-        VALUES (:team_id, :worker_id, :plot_id, :content, :due_date, :status)
+        INSERT INTO tasks (team_id, worker_id, plot_id, content, start_at, due_at, status)
+        VALUES (:team_id, :worker_id, :plot_id, :content, :start_at, :due_at, :status)
         RETURNING task_id;
     """)
     params = {
@@ -160,7 +165,8 @@ def create_task(
         "worker_id": worker_id,
         "plot_id": plot_id,
         "content": content,
-        "due_date": due_date,
+        "start_at": start_at,
+        "due_at": due_at,
         "status": status,
     }
     result = db.execute(query, params).mappings().first()
