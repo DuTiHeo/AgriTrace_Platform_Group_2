@@ -25,7 +25,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
   }
 
   return (
-    <AuthContext.Provider value={{ accessToken, user, setAuth, clearAuth }}>
+    <AuthContext.Provider value={{
+      accessToken,
+      user,
+      setAuth,
+      clearAuth
+    }}>
       {children}
     </AuthContext.Provider>
   );
@@ -33,6 +38,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) throw new Error('useAuth must be used inside AuthProvider');
+
+  if (!context)
+    throw new Error('useAuth must be used inside AuthProvider');
+
   return context;
 }

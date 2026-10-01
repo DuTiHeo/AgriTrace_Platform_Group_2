@@ -1,3 +1,4 @@
+import { getTaskTypeLabel } from '@/constants/task-types';
 import { useCallback, useState } from 'react';
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { Text } from "react-native";
@@ -20,7 +21,7 @@ export default function DiaryDetailScreen() {
         <>
           <Card>
             <Chip text="Báo cáo đã ghi nhận" />
-            <Text style={s.title}>{diary.title}</Text>
+            <Text style={s.title}>{getTaskTypeLabel(diary.title)}</Text>
             <Row label="Người thực hiện" value={diary.name} />
             <Row label="Khu vực" value={diary.area} />
             <Row label="Vị trí GPS" value={diary.gps ? `${diary.gps.latitude.toFixed(6)}, ${diary.gps.longitude.toFixed(6)}` : 'Không có dữ liệu GPS'} />

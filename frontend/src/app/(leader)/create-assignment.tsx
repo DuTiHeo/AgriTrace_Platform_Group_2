@@ -1,3 +1,5 @@
+import { DEFAULT_WORK_START_TIME, DEFAULT_WORK_END_TIME } from '@/constants/work-hours';
+import { getTaskTypeLabel } from '@/constants/task-types';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Keyboard, Pressable, ScrollView, Text, View, type NativeScrollEvent, type NativeSyntheticEvent } from 'react-native';
@@ -7,7 +9,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { AreaPicker } from '@/components/leader/area-picker';
 import { Feedback } from '@/components/leader/feedback';
 import { Button, Calendar, Card, Input, Screen, s } from '@/components/leader/ui';
-import { listPlots, listTaskTypes, type Plot } from '@/sevices/farming-log.service';
+import { listAssignedPlots, listTaskTypes, type Plot } from '@/sevices/farming-log.service';
 import { useDiscardWarning } from '@/hooks/use-discard-warning';
 
 function localDateKey(date = new Date()) {
@@ -16,7 +18,7 @@ function localDateKey(date = new Date()) {
 
 export default function CreateAssignmentScreen() {
   const { members, addTask } = useLeader();
-  const { accessToken } = useAuth();
+  const { accessToken, user } = useAuth();
   const { ready, error: storageError, retry } = useWorkSchedule();
   const [plots, setPlots] = useState<Plot[]>([]);
   const [taskTypes, setTaskTypes] = useState<string[]>([]);
@@ -67,12 +69,14 @@ export default function CreateAssignmentScreen() {
     scrollY.current = 0;
   }, []);
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     if (!accessToken) return;
-    void Promise.all([listPlots(accessToken), listTaskTypes(accessToken)])
-      .then(([plotList, typeList]) => { setPlots(plotList); setTaskTypes(typeList); })
-      .catch(error => setMessage(error instanceof Error ? error.message : 'Không tải được danh sách lô đất.'));
-  }, [accessToken]);
+    let active = true;
+    void Promise.all([listAssignedPlots(accessToken, user), listTaskTypes(accessToken)])
+      .then(([plotList, typeList]) => { if (active) { setPlots(plotList); setTaskTypes(typeList); } })
+      .catch(error => { if (active) setMessage(error instanceof Error ? error.message : 'Không tải được danh sách lô đất.'); });
+    return () => { active = false; };
+  }, [accessToken, user]));
 
   const requestLeave = useDiscardWarning({
     dirty,
@@ -163,7 +167,7 @@ export default function CreateAssignmentScreen() {
       });
       allowLeave.current = true;
       clearAssignmentForm();
-      router.replace('/(leader)/assignments');
+      router.replace({ pathname: '/(leader)/assignments', params: { taskId: '' } });
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Không thể lưu phân công.');
     } finally {
@@ -179,7 +183,7 @@ export default function CreateAssignmentScreen() {
         <View {...fieldProps('title')}>
           {customTitle || !taskTypes.length ? (
             <>
-              <Input label="Tên nhiệm vụ *" value={title} onChangeText={value => { setTitle(value); if (value.trim()) clearFieldError('title'); }} placeholder="Nhập tên nhiệm vụ khác" maxLength={150} autoFocus={customTitle} />
+              <Input label="Tên nhiệm vụ *" value={getTaskTypeLabel(title)} onChangeText={value => { setTitle(value); if (value.trim()) clearFieldError('title'); }} placeholder="Nhập tên nhiệm vụ khác" maxLength={150} autoFocus={customTitle} />
               {!!taskTypes.length && (
                 <Pressable onPress={() => { Keyboard.dismiss(); setCustomTitle(false); setTaskPickerOpen(true); setTitle(''); }}>
                   <Text style={s.link}>Chọn lại từ danh sách công việc</Text>
@@ -195,7 +199,7 @@ export default function CreateAssignmentScreen() {
                 onPress={() => { Keyboard.dismiss(); setTaskPickerOpen(open => !open); }}
                 style={[s.input, { justifyContent: 'center' }]}
               >
-                <Text style={{ color: title ? '#243C2A' : '#9AA99E' }}>{title || 'Chọn tên nhiệm vụ'}</Text>
+                <Text style={{ color: title ? '#243C2A' : '#9AA99E' }}>{getTaskTypeLabel(title) || 'Chọn tên nhiệm vụ'}</Text>
               </Pressable>
               {taskPickerOpen && (
                 <View style={{ borderWidth: 1, borderColor: '#DCE7DD', borderRadius: 0, overflow: 'hidden', backgroundColor: '#FFFFFF' }}>
@@ -205,7 +209,7 @@ export default function CreateAssignmentScreen() {
                       onPress={() => { setTitle(taskType); setTaskPickerOpen(false); clearFieldError('title'); }}
                       style={{ paddingHorizontal: 14, paddingVertical: 13, borderBottomWidth: index === taskTypes.length - 1 ? 0 : 1, borderBottomColor: '#EDF2ED' }}
                     >
-                      <Text style={{ color: '#35583C' }}>{taskType}</Text>
+                      <Text style={{ color: '#35583C' }}>{getTaskTypeLabel(taskType)}</Text>
                     </Pressable>
                   ))}
                   <Pressable
@@ -292,6 +296,7 @@ export default function CreateAssignmentScreen() {
               {fieldError('due')}
             </View>
           </View>
+          <Text style={s.muted}>Giờ bắt đầu mặc định: {DEFAULT_WORK_START_TIME} · Giờ kết thúc mặc định: {DEFAULT_WORK_END_TIME} (giờ Việt Nam).</Text>
           <Text style={s.muted}>Ngày kết thúc không được trước ngày bắt đầu.</Text>
         </View>
         <View {...fieldProps('tools')}><Input label="Công cụ / vật tư (không bắt buộc)" value={tools} onFocus={() => focusInput('tools')} onBlur={() => blurInput('tools')} onChangeText={setTools} placeholder="Ví dụ: Kéo cắt tỉa, bình xịt" maxLength={300} /></View>

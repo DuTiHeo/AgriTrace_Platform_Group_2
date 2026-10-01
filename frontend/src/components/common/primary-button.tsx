@@ -30,7 +30,10 @@ export function PrimaryButton({
         customStyle
       ]}
     >
-      <Text style={[styles.label, labelStyle]}>
+      <Text style={[
+        styles.label,
+        labelStyle
+      ]}>
         {title}
       </Text>
     </Pressable>
@@ -38,11 +41,15 @@ export function PrimaryButton({
 }
 
 const styles = StyleSheet.create({
-  button: { ...shared.button },
+  button: {
+    ...shared.button
+  },
 
   pressed: {
     opacity: 0.82
   },
 
-  label: { ...shared.buttonText }
+  label: {
+    ...shared.buttonText
+  }
 });

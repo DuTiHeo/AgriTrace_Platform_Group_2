@@ -13,7 +13,9 @@ export function AreaPicker({
   label?: string;
 }) {
   return (
-    <View style={{ gap: 13 }}>
+    <View style={{
+      gap: 13
+    }}>
       <Text style={s.label}>
         {label}
       </Text>

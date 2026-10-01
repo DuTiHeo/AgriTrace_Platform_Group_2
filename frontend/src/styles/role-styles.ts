@@ -3,15 +3,53 @@ import { colors, radius, spacing } from './theme';
 
 // Khối, chữ, ô nhập và nút theo giao diện leader; dùng cho cả hai vai trò.
 export const sharedStyles = StyleSheet.create({
-  photo: { width: 128, height: 100, borderRadius: radius.control },
-  photoList: { gap: 10 },
-  statCard: { backgroundColor: colors.surface, borderColor: colors.border, borderWidth: 1, borderRadius: radius.card, padding: 14, gap: 7 },
-  statNumber: { color: colors.primary, fontSize: 26, fontWeight: '800' },
+  photo: {
+    width: 128,
+    height: 100,
+    borderRadius: radius.control
+  },
+  photoList: {
+    gap: 10
+  },
+  statCard: {
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+    borderWidth: 1,
+    borderRadius: radius.card,
+    padding: 14,
+    gap: 7
+  },
+  statNumber: {
+    color: colors.primary,
+    fontSize: 26,
+    fontWeight: '800'
+  },
 
-  dangerButton: { backgroundColor: colors.surface, borderColor: colors.dangerBorder, borderWidth: 1.5, borderRadius: radius.control, minHeight: 48, padding: 14, alignItems: 'center', justifyContent: 'center' },
-  dangerText: { color: colors.danger, fontSize: 15, fontWeight: '800' },
-  body: { color: colors.text, fontSize: 14, lineHeight: 22 },
-  chipText: { color: colors.success, fontSize: 11, fontWeight: '700' },
+  dangerButton: {
+    backgroundColor: colors.surface,
+    borderColor: colors.dangerBorder,
+    borderWidth: 1.5,
+    borderRadius: radius.control,
+    minHeight: 48,
+    padding: 14,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  dangerText: {
+    color: colors.danger,
+    fontSize: 15,
+    fontWeight: '800'
+  },
+  body: {
+    color: colors.text,
+    fontSize: 14,
+    lineHeight: 22
+  },
+  chipText: {
+    color: colors.success,
+    fontSize: 11,
+    fontWeight: '700'
+  },
 
   page: {
     flex: 1,

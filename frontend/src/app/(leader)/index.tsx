@@ -1,3 +1,4 @@
+import { getTaskTypeLabel } from '@/constants/task-types';
 import { useLocalSearchParams, router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { AppState, Pressable, ScrollView, Text, View } from "react-native";
@@ -8,18 +9,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { localToday } from '@/contexts/notification-context';
 import { listLogs, type FarmingLog } from '@/sevices/farming-log.service';
 import { inJournalPeriod } from '@/sevices/journal-filter';
-import {
-  Avatar,
-  Button,
-  Card,
-  Chip,
-  dateText,
-  go,
-  Screen,
-  Section,
-  s,
-  Status
-} from "@/components/leader/ui";
+import { Avatar, Button, Card, Chip, dateText, go, Screen, Section, s, Status } from "@/components/leader/ui";
 
 export default function HomeScreen() {
   const { taskId } = useLocalSearchParams<{ taskId?: string }>();
@@ -29,29 +19,63 @@ export default function HomeScreen() {
   const [today, setToday] = useState(localToday);
   const [summaryLogs, setSummaryLogs] = useState<FarmingLog[]>([]);
   const [summaryError, setSummaryError] = useState('');
-  useFocusEffect(useCallback(() => {
-    let active = true;
-    let refreshing = false;
-    setSummaryLogs([]);
-    const refreshSummary = async () => {
-      setToday(localToday());
-      if (refreshing || !accessToken) return;
-      refreshing = true;
-      try {
-        const [logs] = await Promise.all([listLogs(accessToken), loadTasks(), loadMembers()]);
-        if (active) { setSummaryLogs(logs); setSummaryError(''); }
-      } catch {
-        if (active) setSummaryError('Không tải được số nhật ký hôm nay.');
-      } finally { refreshing = false; }
-    };
-    void refreshSummary();
-    const timer = setInterval(() => { void refreshSummary(); }, 30000);
-    const subscription = AppState.addEventListener('change', state => {
-      if (state === 'active') void refreshSummary();
-    });
-    return () => { active = false; clearInterval(timer); subscription.remove(); };
-  }, [accessToken, loadTasks, loadMembers]));
-  const ownerTasks = tasks.filter(t => t.owner && (!taskId || t.id === taskId));
+
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      let refreshing = false;
+
+      setSummaryLogs([]);
+
+      const refreshSummary = async () => {
+        setToday(localToday());
+
+        if (refreshing || !accessToken) return;
+
+        refreshing = true;
+
+        try {
+          const [logs] = await Promise.all([
+            listLogs(accessToken),
+            loadTasks(),
+            loadMembers()
+          ]);
+
+          if (active) {
+            setSummaryLogs(logs);
+            setSummaryError('');
+          }
+        } catch {
+          if (active) {
+            setSummaryError('Không tải được số nhật ký hôm nay.');
+          }
+        } finally {
+          refreshing = false;
+        }
+      };
+
+      void refreshSummary();
+
+      const timer = setInterval(() => {
+        void refreshSummary();
+      }, 30000);
+
+      const subscription = AppState.addEventListener('change', state => {
+        if (state === 'active') void refreshSummary();
+      });
+
+      return () => {
+        active = false;
+        clearInterval(timer);
+        subscription.remove();
+      };
+    }, [accessToken, loadTasks, loadMembers])
+  );
+
+  const ownerTasks = tasks.filter(
+    t => t.owner && (!taskId || t.id === taskId)
+  );
+
   const active = members.filter(m => m.active);
 
   const stats = [
@@ -62,19 +86,41 @@ export default function HomeScreen() {
       path: 'members'
     },
     {
-      n: summaryError ? '—' : summaryLogs.filter(log => inJournalPeriod(log.logged_at, 'today', new Date(`${today}T12:00:00`))).length,
+      n: summaryError
+        ? '—'
+        : summaryLogs.filter(log =>
+            inJournalPeriod(
+              log.logged_at,
+              'today',
+              new Date(`${today}T12:00:00`)
+            )
+          ).length,
       label: 'Nhật ký hôm nay',
       sub: 'Cập nhật từ tổ',
       path: 'diary'
     },
     {
-      n: tasks.filter(t => t.status !== 'done' && (t.startDate || t.due) <= today && t.due >= today).length,
+      n: tasks.filter(
+        t =>
+          t.status !== 'done' &&
+          (t.startDate || t.due) <= today &&
+          t.due >= today
+      ).length,
       label: 'Việc cần làm',
       sub: 'Trong hôm nay',
       path: 'assignments'
     },
     {
-      n: leaderTasks.filter(t => t.status === 'done' && !!t.updatedAt && inJournalPeriod(t.updatedAt, 'today', new Date(`${today}T12:00:00`))).length,
+      n: leaderTasks.filter(
+        t =>
+          t.status === 'done' &&
+          !!t.updatedAt &&
+          inJournalPeriod(
+            t.updatedAt,
+            'today',
+            new Date(`${today}T12:00:00`)
+          )
+      ).length,
       label: 'Đã hoàn thành',
       sub: 'Hoàn thành hôm nay',
       path: 'assignments'
@@ -83,7 +129,24 @@ export default function HomeScreen() {
 
   return (
     <Screen>
-      {!!taskId && <Card><Text style={s.section}>Công việc từ thông báo</Text><Text style={s.muted}>{ownerTasks[0]?.title ?? 'Công việc không còn trong danh sách.'}</Text><Button secondary title="Xem tất cả công việc" onPress={() => router.setParams({ taskId: '' })} /></Card>}
+      {!!taskId && (
+        <Card>
+          <Text style={s.section}>
+            Công việc từ thông báo
+          </Text>
+
+          <Text style={s.muted}>
+            {getTaskTypeLabel(ownerTasks[0]?.title ?? 'Công việc không còn trong danh sách.')}
+          </Text>
+
+          <Button
+            secondary
+            title="Xem tất cả công việc"
+            onPress={() => router.setParams({ taskId: '' })}
+          />
+        </Card>
+      )}
+
       <View>
         <Text style={s.title}>
           Một ngày làm việc tốt lành
@@ -92,7 +155,15 @@ export default function HomeScreen() {
         <Text style={[s.muted, { marginTop: 6 }]}>
           Theo dõi công việc, đồng hành cùng tổ của bạn.
         </Text>
-        {!!summaryError && <Text accessibilityRole="alert" style={{ color: colors.danger }}>{summaryError}</Text>}
+
+        {!!summaryError && (
+          <Text
+            accessibilityRole="alert"
+            style={{ color: colors.danger }}
+          >
+            {summaryError}
+          </Text>
+        )}
       </View>
 
       <ScrollView
@@ -110,9 +181,7 @@ export default function HomeScreen() {
               {x.label}
             </Text>
 
-            <Text
-              style={s.statNumber}
-            >
+            <Text style={s.statNumber}>
               {x.n}
             </Text>
 
@@ -152,7 +221,15 @@ export default function HomeScreen() {
       </Pressable>
 
       <Section title="Công việc chủ nông trại giao" />
-      {!!error && <Text accessibilityRole="alert" style={{ color: colors.danger }}>{error}</Text>}
+
+      {!!error && (
+        <Text
+          accessibilityRole="alert"
+          style={{ color: colors.danger }}
+        >
+          {error}
+        </Text>
+      )}
 
       {ownerTasks.map(t => (
         <Card key={t.id}>
@@ -161,11 +238,30 @@ export default function HomeScreen() {
 
             <View style={{ flex: 1 }} />
 
-            {t.status === 'done' ? <Status status={t.displayStatus} /> : t.started ? <Text style={[s.chip, s.chipText, { color: colors.warning, backgroundColor: colors.warningSoft }]}>Đang làm</Text> : null}
+            {t.status === 'done'
+              ? (
+                  <Status status={t.displayStatus} />
+                )
+              : t.started
+                ? (
+                    <Text
+                      style={[
+                        s.chip,
+                        s.chipText,
+                        {
+                          color: colors.warning,
+                          backgroundColor: colors.warningSoft
+                        }
+                      ]}
+                    >
+                      Đang làm
+                    </Text>
+                  )
+                : null}
           </View>
 
           <Text style={s.section}>
-            {t.title}
+            {getTaskTypeLabel(t.title)}
           </Text>
 
           <Text style={s.muted}>
@@ -186,8 +282,20 @@ export default function HomeScreen() {
             <Button
               title={t.started ? 'Gửi nhật ký hoàn thành' : 'Bắt đầu'}
               onPress={() => {
-                if (!t.started) { void startTask(t.id); return; }
-                router.push({ pathname: '/(leader)/capture', params: { taskId: t.id, plotId: t.plotId, taskTitle: t.title, area: t.area } });
+                if (!t.started) {
+                  void startTask(t.id);
+                  return;
+                }
+
+                router.push({
+                  pathname: '/(leader)/capture',
+                  params: {
+                    taskId: t.id,
+                    plotId: t.plotId,
+                    taskTitle: t.title,
+                    area: t.area
+                  }
+                });
               }}
             />
           )}

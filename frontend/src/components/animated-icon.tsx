@@ -5,5 +5,6 @@ export function AnimatedSplashOverlay() {
   useEffect(() => {
     SplashScreen.hideAsync();
   }, []);
+
   return null;
 }

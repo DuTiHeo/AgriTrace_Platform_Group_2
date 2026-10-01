@@ -1,3 +1,4 @@
+import { getTaskTypeLabel } from '@/constants/task-types';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
@@ -16,8 +17,9 @@ export default function AssignmentsScreen() {
   const [period, setPeriod] = useState<JournalPeriod>('today');
   const [limit, setLimit] = useState(10);
 
-  const assigned = tasks.filter(task => !task.owner && (!taskId || task.id === taskId));
-  const filtered = taskId ? assigned : assigned.filter(task => inJournalPeriod(task.startDate ?? task.due, period));
+  const assigned = tasks.filter(task => !task.owner && (!taskId || task.id === taskId))
+    .sort((a, b) => (Date.parse(b.createdAt ?? '') || 0) - (Date.parse(a.createdAt ?? '') || 0));
+  const filtered = taskId ? assigned : assigned.filter(task => period === 'all' || (!!task.createdAt && inJournalPeriod(task.createdAt, period)));
   const visible = filtered.slice(0, limit);
 
   useEffect(() => { setLimit(10); }, [period, taskId]);
@@ -58,10 +60,10 @@ export default function AssignmentsScreen() {
         return (
           <Card key={task.id}>
             <View style={[s.row, { alignItems: 'flex-start' }]}>
-              <Text style={[s.section, { flex: 1, paddingTop: 5 }]}>{task.title}</Text>
+              <Text style={[s.section, { flex: 1, paddingTop: 5 }]}>{getTaskTypeLabel(task.title)}</Text>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={`Chỉnh sửa công việc ${task.title}`}
+                accessibilityLabel={`Chỉnh sửa công việc ${getTaskTypeLabel(task.title)}`}
                 onPress={() => router.push({ pathname: '/(leader)/edit-assignment', params: { id: task.id } })}
                 style={[s.secondary, { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 10 }]}
               >
@@ -69,7 +71,7 @@ export default function AssignmentsScreen() {
               </Pressable>
             </View>
             <View style={[s.row, { alignItems: 'center' }]}>
-              <Text style={[s.muted, { flex: 1, flexShrink: 1 }]}>Giao {dateText(task.startDate ?? task.due)} · Hạn {dateText(task.due)}</Text>
+              <Text style={[s.muted, { flex: 1, flexShrink: 1 }]}>Bắt đầu {task.startTime ? `${task.startTime} · ` : ''}{dateText(task.startDate ?? task.due)}{'\n'}Kết thúc {task.endTime ? `${task.endTime} · ` : ''}{dateText(task.due)}</Text>
             </View>
             <Text style={s.label}>Khu vực: {task.area}</Text>
             <View style={{ gap: 8 }}>

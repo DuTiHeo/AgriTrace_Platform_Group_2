@@ -1,15 +1,6 @@
 import { type Href, router } from 'expo-router';
-import { useRef, useState } from 'react';
-import {
-  Image,
-  Keyboard,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableWithoutFeedback,
-  View
-} from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Image, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/common/primary-button';
@@ -27,6 +18,34 @@ export default function LoginScreen() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const phoneRef = useRef<TextInput>(null), passwordRef = useRef<TextInput>(null);
   const submitting = useRef(false);
+  const scrollRef = useRef<ScrollView>(null);
+  const scrollY = useRef(0);
+  const focusedInput = useRef<TextInput | null>(null);
+  const keyboardTop = useRef<number | null>(null);
+
+  const revealFocusedInput = useCallback(() => {
+    const input = focusedInput.current;
+    const top = keyboardTop.current;
+    if (!input || top === null) return;
+    input.measureInWindow((_x, y, _width, height) => {
+      if (focusedInput.current !== input || keyboardTop.current !== top) return;
+      const overlap = y + height + 24 - top;
+      if (overlap > 0) {
+        scrollRef.current?.scrollTo({ y: scrollY.current + overlap, animated: true });
+      }
+    });
+  }, []);
+
+  useEffect(() => {
+    const shown = Keyboard.addListener('keyboardDidShow', event => {
+      keyboardTop.current = event.endCoordinates.screenY;
+      revealFocusedInput();
+    });
+    const hidden = Keyboard.addListener('keyboardDidHide', () => {
+      keyboardTop.current = null;
+    });
+    return () => { shown.remove(); hidden.remove(); };
+  }, [revealFocusedInput]);
 
   async function signIn() {
     Keyboard.dismiss();
@@ -36,9 +55,12 @@ export default function LoginScreen() {
     setError(null);
 
     const errors: Record<string, string> = {};
+
     if (!phone.trim()) errors.phone = 'Vui lòng nhập số điện thoại.';
     if (!password) errors.password = 'Vui lòng nhập mật khẩu.';
+
     setFieldErrors(errors);
+
     if (errors.phone || errors.password) {
       (errors.phone ? phoneRef : passwordRef).current?.focus();
       return;
@@ -79,11 +101,24 @@ export default function LoginScreen() {
   }
 
   return (
+    <SafeAreaView style={styles.page}>
+      <KeyboardAvoidingView
+        style={styles.page}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        onLayout={revealFocusedInput}
+      >
+        <ScrollView
+          ref={scrollRef}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          onScroll={event => { scrollY.current = event.nativeEvent.contentOffset.y; }}
+          scrollEventThrottle={16}
+        >
     <TouchableWithoutFeedback
       onPress={Keyboard.dismiss}
       accessible={false}
     >
-      <SafeAreaView style={styles.page}>
         <View style={styles.content}>
           <View style={styles.logoCard}>
             <Image
@@ -105,22 +140,44 @@ export default function LoginScreen() {
 
             <TextInput
               ref={phoneRef}
+              onFocus={() => { focusedInput.current = phoneRef.current; revealFocusedInput(); }}
+              onBlur={() => { if (focusedInput.current === phoneRef.current) focusedInput.current = null; }}
               value={phone}
-              onChangeText={value => { setPhone(value); if (value.trim()) setFieldErrors(old => ({ ...old, phone: '' })); }}
+              onChangeText={value => {
+                setPhone(value);
+                if (value.trim()) {
+                  setFieldErrors(old => ({ ...old, phone: '' }));
+                }
+              }}
               editable={!loading}
               autoCapitalize="none"
               keyboardType="phone-pad"
               style={[styles.input, fieldErrors.phone && styles.invalid]}
             />
-            {!!fieldErrors.phone && <Text accessibilityRole="alert" style={styles.fieldError}>{fieldErrors.phone}</Text>}
+
+            {!!fieldErrors.phone && (
+              <Text
+                accessibilityRole="alert"
+                style={styles.fieldError}
+              >
+                {fieldErrors.phone}
+              </Text>
+            )}
 
             <Text style={styles.label}>Mật khẩu</Text>
 
             <View style={styles.passwordRow}>
               <TextInput
                 ref={passwordRef}
+                onFocus={() => { focusedInput.current = passwordRef.current; revealFocusedInput(); }}
+                onBlur={() => { if (focusedInput.current === passwordRef.current) focusedInput.current = null; }}
                 value={password}
-                onChangeText={value => { setPassword(value); if (value) setFieldErrors(old => ({ ...old, password: '' })); }}
+                onChangeText={value => {
+                  setPassword(value);
+                  if (value) {
+                    setFieldErrors(old => ({ ...old, password: '' }));
+                  }
+                }}
                 editable={!loading}
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -140,7 +197,15 @@ export default function LoginScreen() {
                 </Text>
               </Pressable>
             </View>
-            {!!fieldErrors.password && <Text accessibilityRole="alert" style={styles.fieldError}>{fieldErrors.password}</Text>}
+
+            {!!fieldErrors.password && (
+              <Text
+                accessibilityRole="alert"
+                style={styles.fieldError}
+              >
+                {fieldErrors.password}
+              </Text>
+            )}
 
             <Pressable
               style={styles.forgot}
@@ -174,8 +239,10 @@ export default function LoginScreen() {
             />
           </View>
         </View>
-      </SafeAreaView>
     </TouchableWithoutFeedback>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
@@ -186,9 +253,13 @@ const styles = StyleSheet.create({
   },
 
   content: {
-    flex: 1,
     paddingHorizontal: 28,
-    paddingTop: 80
+    paddingTop: 80,
+    paddingBottom: 48
+  },
+
+  scrollContent: {
+    flexGrow: 1
   },
 
   logoCard: {
@@ -293,6 +364,14 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700'
   },
-  invalid: { borderColor: '#B42318' },
-  fieldError: { color: '#B42318', fontSize: 12, marginTop: 5 }
+
+  invalid: {
+    borderColor: '#B42318'
+  },
+
+  fieldError: {
+    color: '#B42318',
+    fontSize: 12,
+    marginTop: 5
+  }
 });

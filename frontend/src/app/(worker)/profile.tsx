@@ -3,20 +3,14 @@ import { colors } from '@/styles/theme';
 import { sharedStyles as shared } from '@/styles/role-styles';
 import { type Href, router, useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
-import {
-  Keyboard,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View
-} from 'react-native';
+import { Keyboard, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WorkerHeader } from '@/components/worker/worker-header';
 import { useAuth } from '@/contexts/auth-context';
 import { logout } from '@/sevices/auth.sevice';
 import { useWorkSchedule } from '@/contexts/work-schedule-context';
 import { useReports } from '@/contexts/report-context';
+import { listAssignedPlots, type Plot } from '@/sevices/farming-log.service';
 
 const utilities = [
   { label: 'Báo cáo sự cố / Lỗi kỹ thuật', route: '/account/issues' },
@@ -28,32 +22,57 @@ const utilities = [
 export default function WorkerProfileScreen() {
   const { user, accessToken, clearAuth } = useAuth();
   const { workerTasks } = useWorkSchedule();
-  const { seasons, refresh, seasonsError } = useReports();
+  const { refresh } = useReports();
+  const [assignedPlots, setAssignedPlots] = useState<Plot[]>([]);
+  const [areasError, setAreasError] = useState('');
+  const [areasLoading, setAreasLoading] = useState(true);
+
   useFocusEffect(useCallback(() => {
-    void refresh({ skipIfFresh: true });
-  }, [refresh]));
+    let active = true;
+    setAssignedPlots([]);
+    setAreasError('');
+    setAreasLoading(true);
+    if (!accessToken) { setAreasLoading(false); return; }
+    void listAssignedPlots(accessToken, user)
+      .then(plots => { if (active) setAssignedPlots(plots); })
+      .catch(() => { if (active) setAreasError('Không tải được khu vực phụ trách'); })
+      .finally(() => { if (active) setAreasLoading(false); });
+    return () => { active = false; };
+  }, [accessToken, user]));
+
+  useFocusEffect(
+    useCallback(() => {
+      void refresh({ skipIfFresh: true });
+    }, [refresh])
+  );
+
   const [loggingOut, setLoggingOut] = useState(false);
   const [logoutError, setLogoutError] = useState<string | null>(null);
   const submitting = useRef(false);
-  const assignedPlotIds = new Set(workerTasks.map(task => task.plotId));
-  const assignedAreas = [...new Set(seasons
-    .filter(season => assignedPlotIds.has(season.plot_id)
-      && ['growing', 'ready_to_harvest'].includes(season.status))
-    .map(season => season.plot_code).filter(Boolean))];
+
+  const assignedAreas = assignedPlots.map(plot => plot.code);
+
   const completedTasks = workerTasks.filter(task => task.status === 'done').length;
   const roleName = user?.role === 'worker' ? 'Công nhân' : user?.role ?? 'Chưa có dữ liệu';
 
   async function signOut() {
     if (submitting.current) return;
+
     submitting.current = true;
     setLoggingOut(true);
     setLogoutError(null);
+
     try {
       if (accessToken) await logout(accessToken);
+
       clearAuth();
       router.replace('/login' as Href);
     } catch (error) {
-      setLogoutError(error instanceof Error ? error.message : 'Đăng xuất thất bại. Vui lòng thử lại.');
+      setLogoutError(
+        error instanceof Error
+          ? error.message
+          : 'Đăng xuất thất bại. Vui lòng thử lại.'
+      );
     } finally {
       submitting.current = false;
       setLoggingOut(false);
@@ -65,7 +84,10 @@ export default function WorkerProfileScreen() {
       <WorkerHeader />
 
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={shared.title}>Cá nhân</Text>
+        <Text style={shared.title}>
+          Cá nhân
+        </Text>
+
         <View style={styles.profileCard}>
           <Avatar name={user?.full_name ?? 'Công nhân'} />
 
@@ -92,7 +114,13 @@ export default function WorkerProfileScreen() {
 
           <Info
             label="Khu vực phụ trách:"
-            value={seasonsError ? 'Không tải được khu vực canh tác' : assignedAreas.length ? assignedAreas.join(', ') : 'Chưa có khu vực đang canh tác'}
+            value={
+              areasLoading ? 'Đang tải…' : areasError
+                ? areasError
+                : assignedAreas.length
+                  ? `${assignedAreas.length} khu vực · ${assignedAreas.join(', ')}`
+                  : 'Chưa có khu vực được giao'
+            }
           />
 
           <Info
@@ -118,28 +146,46 @@ export default function WorkerProfileScreen() {
             <Pressable
               key={setting.label}
               style={styles.setting}
-              onPress={() => { Keyboard.dismiss(); router.push(setting.route as Href); }}
+              onPress={() => {
+                Keyboard.dismiss();
+                router.push(setting.route as Href);
+              }}
             >
               <Text style={styles.settingText}>
                 {setting.label}
               </Text>
 
-              <Text style={styles.arrow}>›</Text>
+              <Text style={styles.arrow}>
+                ›
+              </Text>
             </Pressable>
           ))}
         </Section>
 
         {logoutError ? (
-          <Text accessibilityRole="alert" style={{ color: colors.danger, marginTop: 12 }}>
+          <Text
+            accessibilityRole="alert"
+            style={{
+              color: colors.danger,
+              marginTop: 12
+            }}
+          >
             {logoutError}
           </Text>
         ) : null}
+
         <Pressable
           accessibilityRole="button"
-          accessibilityState={{ disabled: loggingOut, busy: loggingOut }}
+          accessibilityState={{
+            disabled: loggingOut,
+            busy: loggingOut
+          }}
           disabled={loggingOut}
           onPress={signOut}
-          style={[styles.logout, loggingOut && { opacity: 0.6 }]}
+          style={[
+            styles.logout,
+            loggingOut && { opacity: 0.6 }
+          ]}
         >
           <Text style={styles.logoutText}>
             {loggingOut ? 'Đang đăng xuất…' : 'Đăng xuất'}
@@ -196,45 +242,90 @@ function Info({
 }
 
 const styles = StyleSheet.create({
-  page: { ...shared.page },
+  page: {
+    ...shared.page
+  },
 
-  content: { ...shared.content },
+  content: {
+    ...shared.content
+  },
 
-  profileCard: { ...shared.card, flexDirection: "row", alignItems: "center" },
+  profileCard: {
+    ...shared.card,
+    flexDirection: "row",
+    alignItems: "center"
+  },
 
-  avatar: { ...shared.avatar },
+  avatar: {
+    ...shared.avatar
+  },
 
   avatarText: {
     fontSize: 30
   },
 
-  name: { ...shared.section },
+  name: {
+    ...shared.section
+  },
 
-  role: { ...shared.muted, marginTop: 5 },
+  role: {
+    ...shared.muted,
+    marginTop: 5
+  },
 
-  active: { ...shared.chip, ...shared.chipText, marginTop: 8 },
+  active: {
+    ...shared.chip,
+    ...shared.chipText,
+    marginTop: 8
+  },
 
-  section: { ...shared.card },
+  section: {
+    ...shared.card
+  },
 
-  sectionTitle: { ...shared.section },
+  sectionTitle: {
+    ...shared.section
+  },
 
-  info: { ...shared.infoRow, alignItems: "center" },
+  info: {
+    ...shared.infoRow,
+    alignItems: "center"
+  },
 
-  infoLabel: { ...shared.muted, flex: 1 },
+  infoLabel: {
+    ...shared.muted,
+    flex: 1
+  },
 
-  infoValue: { ...shared.value },
+  infoValue: {
+    ...shared.value
+  },
 
   green: {
     color: colors.success
   },
 
-  setting: { ...shared.infoRow, minHeight: 48, alignItems: "center" },
+  setting: {
+    ...shared.infoRow,
+    minHeight: 48,
+    alignItems: "center"
+  },
 
-  settingText: { ...shared.label, flex: 1 },
+  settingText: {
+    ...shared.label,
+    flex: 1
+  },
 
-  arrow: { ...shared.muted, fontSize: 25 },
+  arrow: {
+    ...shared.muted,
+    fontSize: 25
+  },
 
-  logout: { ...shared.dangerButton },
+  logout: {
+    ...shared.dangerButton
+  },
 
-  logoutText: { ...shared.dangerText },
+  logoutText: {
+    ...shared.dangerText
+  },
 });

@@ -1,12 +1,6 @@
 import { type Href, router } from 'expo-router';
 import { useEffect } from 'react';
-import {
-  Image,
-  ImageBackground,
-  StyleSheet,
-  Text,
-  View
-} from 'react-native';
+import { Image, ImageBackground, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function WelcomeScreen() {
@@ -35,7 +29,9 @@ export default function WelcomeScreen() {
             />
           </View>
 
-          <Text style={styles.brand}>AgriFarm</Text>
+          <Text style={styles.brand}>
+            AgriFarm
+          </Text>
 
           <Text style={styles.tagline}>
             Kết nối nông nghiệp Việt

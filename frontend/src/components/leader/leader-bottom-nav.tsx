@@ -50,6 +50,15 @@ const items = [
 
 export function LeaderBottomNav(props: RoleNavProps) {
   const current = props.state.routes[props.state.index]?.name;
-  if (['create-assignment', 'capture'].includes(current)) return null;
-  return <RoleBottomNav {...props} items={items} />;
+
+  if ([
+    'create-assignment',
+    'capture'
+  ].includes(current))
+    return null;
+
+  return <RoleBottomNav
+    {...props}
+    items={items}
+  />;
 }

@@ -48,7 +48,12 @@ export function Section({
 }) {
   return (
     <View style={s.row}>
-      <Text style={[s.section, { flex: 1 }]}>
+      <Text style={[
+        s.section,
+        {
+          flex: 1
+        }
+      ]}>
         {title}
       </Text>
 
@@ -93,13 +98,17 @@ export function Button({
         s.button,
         secondary && s.secondary,
         danger && s.dangerButton,
-        (disabled || pressed) && { opacity: 0.5 }
+        (disabled || pressed) && {
+          opacity: 0.5
+        }
       ]}
     >
       <Text
         style={[
           s.buttonText,
-          secondary && { color: colors.primaryText },
+          secondary && {
+            color: colors.primaryText
+          },
           danger && s.dangerText
         ]}
       >
@@ -109,9 +118,13 @@ export function Button({
   );
 }
 
-export const Input = forwardRef<TextInput, TextInputProps & { label: string }>(function Input({ label, ...props }, ref) {
+export const Input = forwardRef<TextInput, TextInputProps & {
+  label: string
+}>(function Input({ label, ...props }, ref) {
   return (
-    <View style={{ gap: 8 }}>
+    <View style={{
+      gap: 8
+    }}>
       <Text style={s.label}>
         {label}
       </Text>
@@ -165,9 +178,9 @@ export function Chip({
               ? '#A66B16'
               : tone === 'danger'
                 ? colors.danger
-              : tone === 'gray'
-                ? '#728078'
-                : '#278046'
+                : tone === 'gray'
+                  ? '#728078'
+                  : '#278046'
         }}
       >
         {text}
@@ -187,12 +200,12 @@ export function Status({
         status === 'completed_late'
           ? 'Hoàn thành muộn'
           : status === 'completed' || status === 'done'
-          ? 'Đã hoàn thành'
-          : status === 'in_progress' || status === 'doing'
-            ? 'Đang làm'
-          : status === 'incomplete'
-            ? 'Chưa hoàn thành'
-            : 'Chưa hoàn thành'
+            ? 'Đã hoàn thành'
+            : status === 'in_progress' || status === 'doing'
+              ? 'Đang làm'
+              : status === 'incomplete'
+                ? 'Chưa hoàn thành'
+                : 'Chưa hoàn thành'
       }
       tone={
         status === 'completed' || status === 'done'
@@ -226,7 +239,12 @@ export function Row({
 }) {
   return (
     <View style={s.infoRow}>
-      <Text style={[s.muted, { flex: 1 }]}>
+      <Text style={[
+        s.muted,
+        {
+          flex: 1
+        }
+      ]}>
         {label}
       </Text>
 
@@ -236,4 +254,3 @@ export function Row({
     </View>
   );
 }
-
