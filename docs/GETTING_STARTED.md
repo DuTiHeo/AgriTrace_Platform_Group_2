@@ -111,8 +111,11 @@ Mở Terminal và chuyển đến nơi bạn đã lưu repository. Ví dụ:
 ```sh
 cd ~/Projects/AgriTrace_Platform_Group_2
 ```
-
-Thay đường dẫn trên bằng vị trí repository thực tế trên Mac.
+Còn nếu cho Mac
+```powershell
+ipconfig getifaddr en0
+```
+Cuộn tìm card mạng đang dùng:
 
 ### 4.2. Khởi động hoặc kiểm tra backend
 
