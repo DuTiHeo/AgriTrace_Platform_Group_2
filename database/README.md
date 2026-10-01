@@ -212,7 +212,7 @@ Bảng quan trọng nhất của tính năng **Farmer QuickLog**.
 | `user_id` | Người ghi nhật ký |
 | `season_id` | Thuộc mùa vụ nào |
 | `activity_type` | Loại hoạt động (bón phân, tưới nước…) |
-| `content` | Nội dung (có thể từ voice-to-text) |
+| `content` | Nội dung |
 | `gps` | Tọa độ thực địa (`GEOMETRY(Point)`) |
 | `logged_at` | Thời điểm ghi |
 

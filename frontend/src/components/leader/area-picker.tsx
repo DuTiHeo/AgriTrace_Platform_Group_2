@@ -5,22 +5,27 @@ export function AreaPicker({
   value,
   onChange,
   options = [],
+  label = 'Khu vực làm việc',
 }: {
   value: string;
   onChange: (v: string) => void;
   options?: string[];
+  label?: string;
 }) {
   return (
-    <View style={{ gap: 10 }}>
+    <View style={{
+      gap: 13
+    }}>
       <Text style={s.label}>
-        Khu vực làm việc
+        {label}
       </Text>
 
       <View
         style={{
           flexDirection: 'row',
           flexWrap: 'wrap',
-          gap: 8
+          columnGap: 6,
+          rowGap: 9
         }}
       >
         {options.map(area => (
@@ -31,8 +36,15 @@ export function AreaPicker({
               onChange(area);
             }}
             style={{
-              borderRadius: 10,
-              padding: 10,
+              borderRadius: 0,
+              minHeight: 40,
+              flexBasis: '18%',
+              flexGrow: 1,
+              maxWidth: '19%',
+              paddingHorizontal: 6,
+              paddingVertical: 9,
+              alignItems: 'center',
+              justifyContent: 'center',
               backgroundColor: value === area ? '#E0F0DF' : '#F6F8F6',
               borderWidth: 1,
               borderColor: value === area ? '#80B47C' : '#E4EBE4'
@@ -41,7 +53,8 @@ export function AreaPicker({
             <Text
               style={{
                 fontSize: 12,
-                color: '#35583C'
+                color: '#35583C',
+                textAlign: 'center'
               }}
             >
               {area}

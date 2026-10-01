@@ -1,14 +1,6 @@
 import { type Href, router } from 'expo-router';
 import { useRef, useState } from 'react';
-import {
-  Keyboard,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableWithoutFeedback,
-  View
-} from 'react-native';
+import { Keyboard, Pressable, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/common/primary-button';
@@ -95,11 +87,17 @@ export default function ForgotPasswordScreen() {
             <TextInput
               ref={phoneRef}
               value={phone}
-              onChangeText={value => { setPhone(value); if (value.trim()) setError(''); }}
+              onChangeText={value => {
+                setPhone(value);
+                if (value.trim()) setError('');
+              }}
               keyboardType="phone-pad"
               placeholder="Nhập số điện thoại khôi phục"
               placeholderTextColor="#A6B1A7"
-              style={[styles.input, error && !phone.trim() && { borderColor: '#B42318' }]}
+              style={[
+                styles.input,
+                error && !phone.trim() && { borderColor: '#B42318' }
+              ]}
             />
 
             {error ? (
@@ -224,5 +222,5 @@ const styles = StyleSheet.create({
     color: '#2F8437',
     fontSize: 13,
     fontWeight: '700'
-  },
+  }
 });

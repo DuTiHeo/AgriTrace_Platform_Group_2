@@ -8,13 +8,27 @@ type FullScreenImageViewerProps = {
 
 export function FullScreenImageViewer({ uri, onClose }: FullScreenImageViewerProps) {
   return (
-    <Modal visible={Boolean(uri)} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal
+      visible={Boolean(uri)}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
       <View style={styles.backdrop}>
-        <Pressable style={styles.closeButton} onPress={onClose}>
+        <Pressable
+          style={styles.closeButton}
+          onPress={onClose}
+        >
           <Text style={styles.closeText}>×</Text>
         </Pressable>
 
-        {uri && <Image source={{ uri }} style={styles.image} contentFit="contain" />}
+        {uri && <Image
+          source={{
+            uri
+          }}
+          style={styles.image}
+          contentFit="contain"
+        />}
       </View>
     </Modal>
   );

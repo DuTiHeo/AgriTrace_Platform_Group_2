@@ -1,5 +1,5 @@
 # backend/app/schemas/tasks.py
-from datetime import date, datetime
+from datetime import datetime
 from enum import Enum
 from typing import Optional
 from uuid import UUID
@@ -62,6 +62,7 @@ class TaskSummary(BaseModel):
     task_id: UUID
     team_id: UUID
     team_name: Optional[str] = None
+    team_leader_name: Optional[str] = None
     worker_id: UUID
     worker_name: Optional[str] = None
     worker_phone: Optional[str] = None

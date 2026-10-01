@@ -1,19 +1,22 @@
+import { getTaskTypeLabel } from '@/constants/task-types';
 import { colors } from '@/styles/theme';
 import { sharedStyles as shared } from '@/styles/role-styles';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
+import { useCallback } from 'react';
 import { useWorkSchedule } from '@/contexts/work-schedule-context';
-import {
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View
-} from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function WorkerTaskDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { workerTasks } = useWorkSchedule();
+  const { workerTasks, loadWorkerTasks } = useWorkSchedule();
+
+  useFocusEffect(
+    useCallback(() => {
+      void loadWorkerTasks();
+    }, [loadWorkerTasks])
+  );
+
   const task = workerTasks.find(item => item.id === id);
   const dueDate = task?.due ? new Date(`${task.due}T00:00:00`) : null;
   const dueLabel = dueDate && !Number.isNaN(dueDate.getTime()) ? dueDate.toLocaleDateString('vi-VN') : 'Chưa có dữ liệu';
@@ -22,7 +25,9 @@ export default function WorkerTaskDetailScreen() {
     <SafeAreaView style={styles.page} edges={['top']}>
       <View style={styles.header}>
         <Pressable onPress={() => router.back()}>
-          <Text style={styles.back}>←</Text>
+          <Text style={styles.back}>
+            ←
+          </Text>
         </Pressable>
 
         <Text style={styles.headerTitle}>
@@ -34,19 +39,19 @@ export default function WorkerTaskDetailScreen() {
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={shared.card}>
-        <Text style={styles.status}>
-          {task?.status === 'done' ? 'Đã xong' : 'Đang làm'}
-        </Text>
+          {task?.started && (
+            <Text style={styles.status}>
+              {task.status === 'done'
+                ? (task.displayStatus === 'completed_late' ? 'Hoàn thành muộn' : 'Đã hoàn thành')
+                : 'Đang làm'}
+            </Text>
+          )}
 
-        <Text style={styles.title}>
-          {task?.title ?? 'Không tìm thấy công việc'}
-        </Text>
-
-        <Text style={styles.description}>
-          {task?.instructions || 'Chưa có mô tả công việc.'}
-        </Text>
-
+          <Text style={styles.title}>
+            {getTaskTypeLabel(task?.title ?? 'Không tìm thấy công việc')}
+          </Text>
         </View>
+
         <View style={styles.section}>
           <Row
             label="Khu vực"
@@ -55,19 +60,28 @@ export default function WorkerTaskDetailScreen() {
 
           <Row
             label="Hạn hoàn thành"
-            value={dueLabel}
+            value={task?.endTime ? `${task.endTime} · ${dueLabel}` : dueLabel}
           />
 
           <Row
-            label="Người giao"
-            value={task?.teamName ? `Tổ trưởng ${task.teamName}` : 'Chưa có dữ liệu'}
+            label="Bắt đầu theo lịch"
+            value={task?.startDate ? `${task.startTime ? `${task.startTime} · ` : ''}${new Date(`${task.startDate}T00:00:00`).toLocaleDateString('vi-VN')}` : 'Chưa có dữ liệu'}
           />
 
+          <Row
+            label="Người giao việc"
+            value={task?.leaderName || (task?.teamName ? `Tổ trưởng · ${task.teamName}` : 'Chưa có dữ liệu')}
+          />
+
+          <Row
+            label="Công cụ / vật tư"
+            value={task?.tools || 'Không yêu cầu'}
+          />
         </View>
 
         <View style={styles.note}>
           <Text style={styles.noteTitle}>
-            Lưu ý từ tổ trưởng
+            Ghi chú / hướng dẫn
           </Text>
 
           <Text style={styles.noteText}>
@@ -100,33 +114,65 @@ function Row({
 }
 
 const styles = StyleSheet.create({
-  page: { ...shared.page },
+  page: {
+    ...shared.page
+  },
 
-  header: { ...shared.header },
+  header: {
+    ...shared.header
+  },
 
-  back: { ...shared.backText },
+  back: {
+    ...shared.backText
+  },
 
-  headerTitle: { ...shared.title, flex: 1 },
+  headerTitle: {
+    ...shared.title,
+    flex: 1
+  },
 
-  content: { ...shared.content },
+  content: {
+    ...shared.content
+  },
 
-  status: { ...shared.chip, ...shared.chipText, backgroundColor: colors.warningSoft, color: colors.warning },
+  status: {
+    ...shared.chip,
+    ...shared.chipText,
+    backgroundColor: colors.warningSoft,
+    color: colors.warning
+  },
 
-  title: { ...shared.title },
+  title: {
+    ...shared.title
+  },
 
-  description: { ...shared.body },
+  section: {
+    ...shared.card
+  },
 
-  section: { ...shared.card },
+  row: {
+    ...shared.infoRow,
+    alignItems: "center"
+  },
 
-  row: { ...shared.infoRow, alignItems: "center" },
+  label: {
+    ...shared.muted,
+    flex: 1
+  },
 
-  label: { ...shared.muted, flex: 1 },
+  value: {
+    ...shared.value
+  },
 
-  value: { ...shared.value },
+  note: {
+    ...shared.card
+  },
 
-  note: { ...shared.card },
+  noteTitle: {
+    ...shared.section
+  },
 
-  noteTitle: { ...shared.section },
-
-  noteText: { ...shared.body },
+  noteText: {
+    ...shared.body
+  },
 });

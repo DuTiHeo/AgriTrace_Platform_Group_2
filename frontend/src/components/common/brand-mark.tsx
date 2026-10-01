@@ -19,7 +19,9 @@ export function BrandMark({ size = 76 }: BrandMarkProps) {
       <Text
         style={[
           styles.leaf,
-          { fontSize: size * 0.5 }
+          {
+            fontSize: size * 0.5
+          }
         ]}
       >
         ⌁
@@ -28,7 +30,9 @@ export function BrandMark({ size = 76 }: BrandMarkProps) {
       <View
         style={[
           styles.stem,
-          { height: size * 0.3 }
+          {
+            height: size * 0.3
+          }
         ]}
       />
     </View>
@@ -55,7 +59,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     lineHeight: 30,
     transform: [
-      { rotate: '-30deg' }
+      {
+        rotate: '-30deg'
+      }
     ]
   },
 
@@ -65,8 +71,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#2F8437',
     borderRadius: 2,
     transform: [
-      { rotate: '40deg' },
-      { translateY: 5 }
+      {
+        rotate: '40deg'
+      },
+      {
+        translateY: 5
+      }
     ]
   },
 });

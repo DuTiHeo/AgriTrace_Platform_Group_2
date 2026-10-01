@@ -1,14 +1,6 @@
 import { type Href, Redirect, router } from 'expo-router';
 import { useRef, useState } from 'react';
-import {
-  Keyboard,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableWithoutFeedback,
-  View
-} from 'react-native';
+import { Keyboard, Pressable, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/common/primary-button';
@@ -44,13 +36,15 @@ export default function ResetPasswordScreen() {
       setError(
         'Mật khẩu cần ít nhất 8 ký tự, có chữ và số, không có khoảng trắng đầu/cuối.'
       );
-      setField('password'); passwordRef.current?.focus();
+      setField('password');
+      passwordRef.current?.focus();
       return;
     }
 
     if (password !== confirmPassword) {
       setError('Mật khẩu xác nhận không khớp.');
-      setField('confirm'); confirmRef.current?.focus();
+      setField('confirm');
+      confirmRef.current?.focus();
       return;
     }
 
@@ -133,11 +127,20 @@ export default function ResetPasswordScreen() {
             <TextInput
               ref={passwordRef}
               value={password}
-              onChangeText={value => { setPassword(value); if (field === 'password') { setError(''); setField(''); } }}
+              onChangeText={value => {
+                setPassword(value);
+                if (field === 'password') {
+                  setError('');
+                  setField('');
+                }
+              }}
               secureTextEntry
               placeholder="Nhập mật khẩu mới"
               placeholderTextColor="#A6B1A7"
-              style={[styles.input, field === 'password' && { borderColor: '#B42318' }]}
+              style={[
+                styles.input,
+                field === 'password' && { borderColor: '#B42318' }
+              ]}
             />
 
             <Text style={styles.label}>
@@ -147,11 +150,20 @@ export default function ResetPasswordScreen() {
             <TextInput
               ref={confirmRef}
               value={confirmPassword}
-              onChangeText={value => { setConfirmPassword(value); if (field === 'confirm' && value === password) { setError(''); setField(''); } }}
+              onChangeText={value => {
+                setConfirmPassword(value);
+                if (field === 'confirm' && value === password) {
+                  setError('');
+                  setField('');
+                }
+              }}
               secureTextEntry
               placeholder="Nhập lại mật khẩu mới"
               placeholderTextColor="#A6B1A7"
-              style={[styles.input, field === 'confirm' && { borderColor: '#B42318' }]}
+              style={[
+                styles.input,
+                field === 'confirm' && { borderColor: '#B42318' }
+              ]}
             />
 
             {error ? (

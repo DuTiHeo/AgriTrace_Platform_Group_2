@@ -17,6 +17,7 @@ import {
   TouchableWithoutFeedback,
   View
 } from 'react-native';
+import type { ScrollViewProps } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SymbolView } from 'expo-symbols';
 import { useAuth } from '@/contexts/auth-context';
@@ -25,7 +26,12 @@ import { useLeader } from '@/contexts/leader-context';
 export const go = (path: string, id?: string) =>
   router.push(
     (id
-      ? { pathname: `/(leader)/${path}`, params: { id } }
+      ? {
+        pathname: `/(leader)/${path}`,
+        params: {
+          id
+        }
+      }
       : `/(leader)/${path}`) as Href
   );
 
@@ -39,12 +45,16 @@ export function Screen({
   title,
   titleAction,
   back = false,
-  scrollRef
+  scrollRef,
+  onScroll,
+  onBack,
 }: PropsWithChildren<{
   title?: string;
   titleAction?: ReactNode;
   back?: boolean;
   scrollRef?: RefObject<ScrollView | null>;
+  onScroll?: ScrollViewProps['onScroll'];
+  onBack?: () => void;
 }>) {
   const { user } = useAuth();
   const { showBadge } = useAccountUtilities();
@@ -52,9 +62,14 @@ export function Screen({
   const unread = notices.filter(n => !n.read).length;
 
   return (
-    <SafeAreaView style={s.page} edges={['top']}>
+    <SafeAreaView
+      style={s.page}
+      edges={['top']}
+    >
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        style={{
+          flex: 1
+        }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <TouchableWithoutFeedback
@@ -68,7 +83,10 @@ export function Screen({
                   accessibilityLabel="Quay lại"
                   onPress={() => {
                     Keyboard.dismiss();
-                    router.back();
+
+                    if (onBack)
+                      onBack(); else
+                      router.back();
                   }}
                   style={s.back}
                 >
@@ -77,14 +95,21 @@ export function Screen({
                   </Text>
                 </Pressable>
 
-                <Text style={[s.title, { flex: 1 }]}>
+                <Text style={[
+                  s.title,
+                  {
+                    flex: 1
+                  }
+                ]}>
                   {title}
                 </Text>
               </>
             ) : (
               <>
                 <PersonalAvatarButton role="leader" />
-                <View style={{ flex: 1 }}>
+                <View style={{
+                  flex: 1
+                }}>
                   <Text style={s.muted}>
                     Tổ trưởng phụ trách
                   </Text>
@@ -127,15 +152,29 @@ export function Screen({
 
         <ScrollView
           ref={scrollRef}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
+          automaticallyAdjustKeyboardInsets
           contentContainerStyle={s.content}
         >
 
           {!back && title && (
             titleAction ? (
-              <View style={[s.row, { alignItems: 'center' }]}>
-                <Text style={[s.title, { flex: 1 }]}>
+              <View style={[
+                s.row,
+                {
+                  alignItems: 'center',
+                  zIndex: 20
+                }
+              ]}>
+                <Text style={[
+                  s.title,
+                  {
+                    flex: 1
+                  }
+                ]}>
                   {title}
                 </Text>
                 {titleAction}
@@ -156,10 +195,14 @@ export function Screen({
 
 export function Calendar({
   value,
-  onChange
+  onChange,
+  label = 'Hạn hoàn thành',
+  minimumDate,
 }: {
   value: string;
-  onChange: (v: string) => void
+  onChange: (v: string) => void;
+  label?: string;
+  minimumDate?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [month, setMonth] = useState(new Date());
@@ -171,16 +214,31 @@ export function Calendar({
     (new Date(year, m, 1).getDay() + 6) % 7;
 
   return (
-    <View style={{ gap: 8 }}>
+    <View style={{
+      gap: 8
+    }}>
       <Text style={s.label}>
-        Hạn hoàn thành
+        {label}
       </Text>
 
-      <Button
-        secondary
-        title={value ? `▦  ${dateText(value)}` : '▦  Chọn ngày'}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{
+          expanded: open
+        }}
+        style={[
+          s.button,
+          s.secondary,
+          {
+            borderRadius: 0
+          }
+        ]}
         onPress={() => setOpen(true)}
-      />
+      >
+        <Text style={s.link}>
+          {value ? dateText(value) : 'Chọn ngày'}
+        </Text>
+      </Pressable>
 
       <Modal
         visible={open}
@@ -213,7 +271,15 @@ export function Calendar({
             </View>
 
             <View style={s.grid}>
-              {['T2','T3','T4','T5','T6','T7','CN'].map(x => (
+              {[
+                'T2',
+                'T3',
+                'T4',
+                'T5',
+                'T6',
+                'T7',
+                'CN'
+              ].map(x => (
                 <Text
                   key={x}
                   style={s.day}
@@ -230,14 +296,18 @@ export function Calendar({
                 },
                 (_, i) => {
                   const d = i - shift + 1;
-                  const v = `${year}-${String(m + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                  const v = `${year}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                  const disabled = d < 1 || (!!minimumDate && v < minimumDate);
 
                   return (
                     <Pressable
                       key={i}
-                      disabled={d < 1}
+                      disabled={disabled}
                       style={[
                         s.dayCell,
+                        disabled && {
+                          opacity: 0.28
+                        },
                         v === value && {
                           backgroundColor: '#E3F2E5'
                         }
@@ -247,7 +317,9 @@ export function Calendar({
                         setOpen(false);
                       }}
                     >
-                      <Text style={{ color: '#24442C' }}>
+                      <Text style={{
+                        color: '#24442C'
+                      }}>
                         {d > 0 ? d : ''}
                       </Text>
                     </Pressable>
@@ -267,4 +339,3 @@ export function Calendar({
     </View>
   );
 }
-

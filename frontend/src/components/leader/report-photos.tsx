@@ -28,7 +28,9 @@ export function Photos({
             }}
           >
             <Image
-              source={{ uri }}
+              source={{
+                uri
+              }}
               style={sharedStyles.photo}
             />
           </Pressable>

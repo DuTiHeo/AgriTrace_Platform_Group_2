@@ -43,7 +43,12 @@ def get_plot(db: Session, plot_id: UUID) -> dict | None:
                    s.season_id AS current_season_id,
                    c.name AS current_crop_name
             FROM plots p
-            LEFT JOIN seasons s ON p.plot_id = s.plot_id AND s.status IN ('growing', 'ready_to_harvest')
+            LEFT JOIN LATERAL (
+                SELECT season_id, crop_id FROM seasons
+                WHERE plot_id = p.plot_id AND status IN ('growing', 'ready_to_harvest')
+                ORDER BY planting_date DESC, created_at DESC, season_id
+                LIMIT 1
+            ) s ON TRUE
             LEFT JOIN crop_catalog c ON s.crop_id = c.crop_id
             WHERE p.plot_id = :plot_id
         """),
@@ -94,7 +99,12 @@ def list_plots(
                c.name AS current_crop_name
         FROM plots p
         {join_org}
-        LEFT JOIN seasons s ON p.plot_id = s.plot_id AND s.status IN ('growing', 'ready_to_harvest')
+        LEFT JOIN LATERAL (
+                SELECT season_id, crop_id FROM seasons
+                WHERE plot_id = p.plot_id AND status IN ('growing', 'ready_to_harvest')
+                ORDER BY planting_date DESC, created_at DESC, season_id
+                LIMIT 1
+            ) s ON TRUE
         LEFT JOIN crop_catalog c ON s.crop_id = c.crop_id
         WHERE {where_clause}
         ORDER BY p.code ASC

@@ -1,14 +1,6 @@
 import { Redirect, router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import {
-  Keyboard,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableWithoutFeedback,
-  View
-} from 'react-native';
+import { Keyboard, Pressable, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/common/primary-button';
@@ -33,10 +25,12 @@ export default function VerifyOtpScreen() {
       1000
     );
 
-    const fill = recovery?.demo_otp ? setTimeout(
-      () => setOtp(recovery.demo_otp ?? ''),
-      5000
-    ) : undefined;
+    const fill = recovery?.demo_otp
+      ? setTimeout(
+          () => setOtp(recovery.demo_otp ?? ''),
+          5000
+        )
+      : undefined;
 
     return () => {
       clearInterval(countdown);
@@ -141,7 +135,11 @@ export default function VerifyOtpScreen() {
             ref={otpRef}
             accessibilityLabel="Mã OTP"
             value={otp}
-            onChangeText={value => { const next = value.replace(/\D/g, '').slice(0, 4); setOtp(next); if (next.length === 4) setError(''); }}
+            onChangeText={value => {
+              const next = value.replace(/\D/g, '').slice(0, 4);
+              setOtp(next);
+              if (next.length === 4) setError('');
+            }}
             keyboardType="number-pad"
             maxLength={4}
             editable={!loading}

@@ -15,6 +15,10 @@ export function Comments({
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const inputRef = useRef<TextInput>(null);
+  const remarks = diary.comments.filter(comment => ![
+    'Đánh giá: Đạt',
+    'Đánh giá: Không đạt'
+  ].includes(comment.text));
 
   return (
     <View
@@ -25,17 +29,13 @@ export function Comments({
         paddingTop: 14
       }}
     >
-      <Text style={s.label}>
-        Nhận xét của tổ trưởng · {diary.comments.length}
-      </Text>
-
-      {diary.comments.map((c, i) => (
+      {remarks.map((c, i) => (
         <View
           key={i}
           style={{
             padding: 12,
             backgroundColor: '#F0F7EF',
-            borderRadius: 12,
+            borderRadius: 0,
             gap: 5
           }}
         >
@@ -61,29 +61,49 @@ export function Comments({
 
       <Input
         ref={inputRef}
-        label="Thêm đánh giá"
+        label="Viết nhận xét"
         placeholder="Viết nhận xét về công việc…"
         value={text}
-        onChangeText={value => { setText(value); if (value.trim()) setError(''); }}
+        onChangeText={value => {
+          setText(value);
+
+          if (value.trim())
+            setError('');
+        }}
         multiline
         maxLength={1000}
       />
 
-      {!!error && <Text accessibilityRole="alert">{error}</Text>}
+      {!!error && <Text accessibilityRole="alert">
+        {error}
+      </Text>}
       <Button
         title="Gửi nhận xét"
         disabled={saving}
         onPress={async () => {
-          if (!text.trim()) { setError('Vui lòng nhập nhận xét.'); inputRef.current?.focus(); return; }
-          setSaving(true); setError('');
-          try { await addComment(
-            diary.id,
-            text.trim(),
-            user?.full_name ?? 'Tổ trưởng'
-          );
-          setText('');
-          } catch (e) { setError(e instanceof Error ? e.message : 'Không lưu được nhận xét.'); }
-          finally { setSaving(false); }
+          if (!text.trim()) {
+            setError('Vui lòng nhập nhận xét.');
+            inputRef.current?.focus();
+
+            return;
+          }
+
+          setSaving(true);
+          setError('');
+
+          try {
+            await addComment(
+              diary.id,
+              text.trim(),
+              user?.full_name ?? 'Tổ trưởng'
+            );
+            setText('');
+          } catch (e) {
+            setError(e instanceof Error ? e.message : 'Không lưu được nhận xét.');
+          }
+          finally {
+            setSaving(false);
+          }
         }}
       />
     </View>

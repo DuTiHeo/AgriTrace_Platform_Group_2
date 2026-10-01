@@ -1,39 +1,53 @@
-import { useEffect, useState } from "react";
-import { router, type Href } from "expo-router";
+import { useCallback, useState } from "react";
+import { router, useFocusEffect, type Href } from "expo-router";
 import { Keyboard, Pressable, Text, View } from "react-native";
 import { useAuth } from "@/contexts/auth-context";
 import { useLeader } from "@/contexts/leader-context";
 import { logout } from "@/sevices/auth.sevice";
-import {
-  Avatar,
-  Button,
-  Card,
-  go,
-  Row,
-  Screen,
-  Section,
-  s
-} from "@/components/leader/ui";
+import { Avatar, Button, Card, go, Row, Screen, Section, s } from "@/components/leader/ui";
 import { Feedback } from "@/components/leader/feedback";
-import { listMyTasks, listPlots } from '@/sevices/farming-log.service';
+import { listMyTasks, listAssignedPlots } from '@/sevices/farming-log.service';
 
 export default function ProfileScreen() {
   const { user, accessToken, clearAuth } = useAuth();
   const { members, diaries } = useLeader();
   const [busy, setBusy] = useState(false),
     [error, setError] = useState('');
-  const [management, setManagement] = useState<{ areas: string[]; taskCount: number } | null>(null);
+  const [management, setManagement] = useState<{
+    areas: string[];
+    taskCount: number;
+  } | null>(null);
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     let active = true;
+    setManagement(null);
+    setError('');
+
     if (!accessToken) return;
-    Promise.all([listPlots(accessToken), listMyTasks(accessToken)])
+
+    Promise.all([listAssignedPlots(accessToken, user), listMyTasks(accessToken)])
       .then(([plots, apiTasks]) => {
-        if (active) setManagement({ areas: plots.map(plot => plot.code), taskCount: apiTasks.length });
+        if (active) {
+          setManagement({
+            areas: plots.map(plot => plot.code),
+            taskCount: apiTasks.length
+          });
+        }
       })
-      .catch(loadError => { if (active) setError(loadError instanceof Error ? loadError.message : 'Không tải được thông tin quản lý.'); });
-    return () => { active = false; };
-  }, [accessToken]);
+      .catch(loadError => {
+        if (active) {
+          setError(
+            loadError instanceof Error
+              ? loadError.message
+              : 'Không tải được thông tin quản lý.'
+          );
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [accessToken, user]));
 
   async function signOut() {
     if (busy)
@@ -50,7 +64,11 @@ export default function ProfileScreen() {
       router.replace('/login');
     }
     catch (e) {
-      setError(e instanceof Error ? e.message : 'Không thể đăng xuất.');
+      setError(
+        e instanceof Error
+          ? e.message
+          : 'Không thể đăng xuất.'
+      );
     }
     finally {
       setBusy(false);
@@ -58,11 +76,11 @@ export default function ProfileScreen() {
   }
 
   const links = [
-    ['members', '👥', 'Quản lý thành viên tổ'],
-    ['areas', '🗺️', 'Danh mục vùng trồng'],
-    ['change-password', '🔒', 'Đổi mật khẩu'],
-    ['settings', '🔔', 'Cài đặt thông báo & ngôn ngữ'],
-    ['issues', '⚠️', 'Báo cáo sự cố / Lỗi kỹ thuật']
+    ['members', 'Quản lý thành viên tổ'],
+    ['areas', 'Danh mục vùng trồng'],
+    ['change-password', 'Đổi mật khẩu'],
+    ['settings', 'Cài đặt thông báo & ngôn ngữ'],
+    ['issues', 'Báo cáo sự cố / Lỗi kỹ thuật']
   ];
 
   return (
@@ -77,8 +95,22 @@ export default function ProfileScreen() {
             </Text>
 
             <Text style={s.muted}>
-              Tổ trưởng · {user?.team_id ? `Mã tổ ${user.team_id}` : 'Chưa được phân tổ'}
+              Tổ trưởng
             </Text>
+
+            <View
+              style={[
+                s.chip,
+                {
+                  alignSelf: 'flex-start',
+                  marginTop: 8
+                }
+              ]}
+            >
+              <Text style={s.chipText}>
+                Đang làm việc
+              </Text>
+            </View>
           </View>
         </View>
       </Card>
@@ -93,7 +125,11 @@ export default function ProfileScreen() {
 
         <Row
           label="Khu vực quản lý"
-          value={management ? (management.areas.join(', ') || 'Chưa có dữ liệu') : 'Đang tải…'}
+          value={
+            management
+              ? (management.areas.length ? `${management.areas.length} khu vực · ${management.areas.join(', ')}` : 'Chưa có khu vực được phân công')
+              : error ? 'Không tải được khu vực quản lý' : 'Đang tải…'
+          }
         />
 
         <Row
@@ -103,7 +139,11 @@ export default function ProfileScreen() {
 
         <Row
           label="Nhiệm vụ đã giao"
-          value={management ? `${management.taskCount} nhiệm vụ` : 'Đang tải…'}
+          value={
+            management
+              ? `${management.taskCount} nhiệm vụ`
+              : 'Đang tải…'
+          }
         />
 
         <Row
@@ -113,18 +153,26 @@ export default function ProfileScreen() {
       </Card>
 
       <Card>
-        <Section title="⚙️ Quản lý & tiện ích" />
+        <Section title="Quản lý & tiện ích" />
 
-        {links.map(([path, icon, label]) => (
+        {links.map(([path, label]) => (
           <Pressable
             key={path}
-            onPress={() => { Keyboard.dismiss(); if (['issues', 'settings', 'change-password'].includes(path)) router.push(`/account/${path}` as Href); else go(path); }}
-            style={[s.infoRow, { alignItems: 'center' }]}
-          >
-            <Text style={s.label}>
-              {icon}
-            </Text>
+            onPress={() => {
+              Keyboard.dismiss();
 
+              if (['issues', 'settings', 'change-password'].includes(path))
+                router.push(`/account/${path}` as Href);
+              else
+                go(path);
+            }}
+            style={[
+              s.infoRow,
+              {
+                alignItems: 'center'
+              }
+            ]}
+          >
             <Text style={[s.label, { flex: 1 }]}>
               {label}
             </Text>

@@ -5,17 +5,20 @@ import {
   Text,
   type PressableProps,
   type StyleProp,
+  type TextStyle,
   type ViewStyle
 } from 'react-native';
 
 type PrimaryButtonProps = Omit<PressableProps, 'style'> & {
   title: string;
   style?: StyleProp<ViewStyle>
+  labelStyle?: StyleProp<TextStyle>;
 };
 
 export function PrimaryButton({
   title,
   style: customStyle,
+  labelStyle,
   ...props
 }: PrimaryButtonProps) {
   return (
@@ -27,7 +30,10 @@ export function PrimaryButton({
         customStyle
       ]}
     >
-      <Text style={styles.label}>
+      <Text style={[
+        styles.label,
+        labelStyle
+      ]}>
         {title}
       </Text>
     </Pressable>
@@ -35,11 +41,15 @@ export function PrimaryButton({
 }
 
 const styles = StyleSheet.create({
-  button: { ...shared.button },
+  button: {
+    ...shared.button
+  },
 
   pressed: {
     opacity: 0.82
   },
 
-  label: { ...shared.buttonText }
+  label: {
+    ...shared.buttonText
+  }
 });

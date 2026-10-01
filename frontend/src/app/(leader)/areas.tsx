@@ -1,31 +1,33 @@
-import { useEffect, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 import { Card, Chip, Screen, s } from '@/components/leader/ui';
 import { Feedback } from '@/components/leader/feedback';
 import { useAuth } from '@/contexts/auth-context';
-import { listPlots, type Plot } from '@/sevices/farming-log.service';
+import { listAssignedPlots, type Plot } from '@/sevices/farming-log.service';
 import { colors } from '@/styles/theme';
 
 export default function AreasScreen() {
-  const { accessToken } = useAuth();
+  const { accessToken, user } = useAuth();
   const [plots, setPlots] = useState<Plot[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
+  useFocusEffect(useCallback(() => {
     let active = true;
     if (!accessToken) { setLoading(false); return; }
     setLoading(true); setError('');
-    void listPlots(accessToken)
+    void listAssignedPlots(accessToken, user)
       .then(result => { if (active) setPlots(result); })
       .catch(loadError => { if (active) setError(loadError instanceof Error ? loadError.message : 'Không tải được vùng trồng.'); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [accessToken]);
+  }, [accessToken, user]));
 
   return (
     <Screen title="Vùng trồng quản lý" back>
       <Text style={s.muted}>Danh sách vùng trồng để lựa chọn khi giao việc.</Text>
+      {!loading && !error && <Text style={s.muted}>{plots.length} khu vực được phân công cho tổ.</Text>}
       {loading ? <ActivityIndicator color={colors.primary} /> : null}
       <Feedback text={error} />
       {!loading && !error && !plots.length ? <Text style={s.muted}>Chưa có vùng trồng đang hoạt động.</Text> : null}
