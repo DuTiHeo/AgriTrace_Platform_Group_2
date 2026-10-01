@@ -36,6 +36,14 @@
         {
           "locationWhenInUsePermission": "Cho phép AgriFarm lấy vị trí khi bạn ghi nhật ký canh tác."
         }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Cho phép AgriFarm thu âm để nhập nội dung nhật ký bằng giọng nói.",
+          "enableBackgroundRecording": false,
+          "enableBackgroundPlayback": false
+        }
       ]
     ],
     "experiments": {

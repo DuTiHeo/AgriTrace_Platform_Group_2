@@ -14,6 +14,8 @@ import { useDiscardWarning } from '@/hooks/use-discard-warning';
 import { useAuth } from '@/contexts/auth-context';
 import { listPlots, listTaskTypes, type Plot } from '@/sevices/farming-log.service';
 import { AreaPicker } from '@/components/leader/area-picker';
+import { useVoiceInput } from '@/hooks/use-voice-input';
+import { VoiceInputButton } from '@/components/common/voice-input-button';
 
 export function FarmingLogFormScreen() {
   const finishTabFlow = useFinishTabFlow();
@@ -40,7 +42,12 @@ export function FarmingLogFormScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const voice = useVoiceInput(accessToken, draftKey, text => {
+    updateDraft(old => ({ ...old, note: old.note.trimEnd() ? `${old.note.trimEnd()}\n${text}` : text }));
+    setFieldErrors(old => ({ ...old, note: '' }));
+  });
   const scrollRef = useRef<ScrollView>(null);
+  const contentRef = useRef<View>(null);
   const titleRef = useRef<TextInput>(null), noteRef = useRef<TextInput>(null);
   const fieldY = useRef<Record<string, number>>({});
   const pending = useRef(false);
@@ -50,9 +57,10 @@ export function FarmingLogFormScreen() {
     setTimeout(() => {
       const scroll = scrollRef.current;
       const input = ref.current;
-      if (!scroll || !input) return;
+      const content = contentRef.current;
+      if (!scroll || !input || !content) return;
       input.measureLayout(
-        scroll.getInnerViewNode(),
+        content,
         (_x, y) => scroll.scrollTo({ y: Math.max(0, y - 70), animated: true }),
         () => undefined,
       );
@@ -112,7 +120,7 @@ export function FarmingLogFormScreen() {
 
   async function capture() {
     Keyboard.dismiss();
-    if (pending.current || draft.photos.length >= 5) return;
+    if (pending.current || voice.busy || draft.photos.length >= 5) return;
     pending.current = true;
     setBusy(true);
     setError('');
@@ -137,7 +145,7 @@ export function FarmingLogFormScreen() {
 
   async function submitReport() {
     Keyboard.dismiss();
-    if (pending.current || submitted.current || busy) return;
+    if (pending.current || submitted.current || busy || voice.busy) return;
     if (!validate()) return;
     submitted.current = true;
     setBusy(true);
@@ -167,7 +175,7 @@ export function FarmingLogFormScreen() {
         </TouchableWithoutFeedback>
         <ScrollView ref={scrollRef} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" automaticallyAdjustKeyboardInsets contentContainerStyle={styles.content}>
           <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-            <View style={{ gap: 18 }}>
+            <View ref={contentRef} collapsable={false} style={{ gap: 18 }}>
               <View style={[styles.task, { gap: 12 }]}>
                 <Pressable onPress={() => void locate()} onLayout={event => { fieldY.current.gps = event.nativeEvent.layout.y; }} style={[styles.gpsBox, draft.gps ? styles.gpsReady : styles.gpsPending, fieldErrors.gps && styles.invalid]} accessibilityLiveRegion="polite">
                   <Text style={styles.gpsTitle}>📍 Vị trí GPS</Text>
@@ -204,6 +212,7 @@ export function FarmingLogFormScreen() {
                 <Text style={styles.label}>Nội dung báo cáo *</Text>
                 <TextInput ref={noteRef} accessibilityHint="Nội dung được gửi dưới dạng văn bản thuần, không phải HTML" style={[styles.note, fieldErrors.note && styles.invalid]} multiline textAlignVertical="top" value={draft.note} placeholder="Mô tả việc đã làm, kết quả và vấn đề cần tổ trưởng lưu ý…" onFocus={() => revealInput(noteRef)} onChangeText={value => { updateDraft(old => ({ ...old, note: value })); if (value.trim()) clearFieldError('note'); }} />
                 {fieldError('note')}
+                <VoiceInputButton {...voice} disabled={busy} />
                 </View>
               </View>
               <View onLayout={event => { fieldY.current.photos = event.nativeEvent.layout.y; }} style={[styles.task, { gap: 12 }, fieldErrors.photos && styles.invalid]}>
@@ -222,12 +231,12 @@ export function FarmingLogFormScreen() {
                     ))}
                   </ScrollView>
                 ) : <View style={styles.noPhoto}><Text style={styles.noPhotoText}>Chưa có ảnh minh chứng</Text></View>}
-                <PrimaryButton title={busy ? 'Đang xử lý…' : '📷  Chụp ảnh'} disabled={busy || draft.photos.length >= 5} style={(busy || draft.photos.length >= 5) && styles.disabled} onPress={capture} />
+                <PrimaryButton title={busy ? 'Đang xử lý…' : '📷  Chụp ảnh'} disabled={busy || voice.busy || draft.photos.length >= 5} style={(busy || voice.busy || draft.photos.length >= 5) && styles.disabled} onPress={capture} />
                 <Text style={styles.taskMeta}>{draft.photos.length < 2 ? `Chụp thêm ${2 - draft.photos.length} ảnh để có thể gửi.` : draft.photos.length >= 5 ? 'Đã đủ 5 ảnh. Bạn có thể xóa ảnh để chụp lại.' : 'Đã đủ ảnh. Bạn có thể chụp thêm hoặc gửi báo cáo.'}</Text>
                 {fieldError('photos')}
                 {!!error && <Text style={{ color: colors.danger }} accessibilityRole="alert">{error}</Text>}
               </View>
-              <PrimaryButton title="Gửi báo cáo hoàn thành" disabled={busy} style={[styles.submitButton, busy && styles.disabled]} labelStyle={styles.submitButtonText} onPress={submitReport} />
+              <PrimaryButton title="Gửi báo cáo hoàn thành" disabled={busy || voice.busy} style={[styles.submitButton, (busy || voice.busy) && styles.disabled]} labelStyle={styles.submitButtonText} onPress={submitReport} />
             </View>
           </TouchableWithoutFeedback>
         </ScrollView>
