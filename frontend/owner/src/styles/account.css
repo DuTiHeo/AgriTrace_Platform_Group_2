@@ -1,0 +1,417 @@
+.account-page {
+  display: flex; flex-direction: column; gap: 18px;
+}
+
+.account-heading {
+  margin-bottom: 2px;
+}
+
+.account-layout {
+  display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 18px; align-items: start;
+}
+
+.account-side-column,
+.account-main-column {
+  display: flex; min-width: 0; flex-direction: column; gap: 18px;
+}
+
+.account-identity-card {
+  display: flex; align-items: center; flex-direction: column; padding: 24px 20px; text-align: center;
+}
+
+.account-large-avatar {
+  display: grid;
+  width: 82px;
+  height: 82px;
+  place-items: center;
+  color: #fff;
+  background: linear-gradient(145deg, #087333, #29a45b);
+  border: 5px solid #e8f7ec;
+  border-radius: 50%;
+  font-size: 23px;
+  font-weight: 800;
+}
+
+.account-identity-card h2 {
+  margin-top: 13px; color: #173a28; font-size: 19px;
+}
+
+.account-identity-card > span {
+  margin-top: 2px; color: var(--gray-500); font-size: 12px;
+}
+
+.account-verified-badge {
+  display: inline-flex; align-items: center; gap: 5px; margin-top: 12px; padding: 5px 9px; color: #08783e; background: #eaf8ee; border-radius: 999px; font-size: 10px; font-weight: 700;
+}
+
+.account-identity-card dl {
+  width: 100%; margin-top: 18px; border-top: 1px solid var(--gray-200);
+}
+
+.account-identity-card dl div {
+  display: flex; justify-content: space-between; gap: 10px; padding: 11px 0; border-bottom: 1px solid #edf0ed; text-align: left;
+}
+
+.account-identity-card dt {
+  color: var(--gray-500); font-size: 10px;
+}
+
+.account-identity-card dd {
+  color: #33483a; font-size: 10px; font-weight: 700; text-align: right;
+}
+
+.account-logout-button {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 14px;
+  color: #b42318;
+  background: #fff;
+  border: 1px solid #fecaca;
+  border-radius: 9px;
+  font-weight: 700;
+}
+
+.account-logout-button:hover {
+  background: #fff5f4; border-color: #fda29b;
+}
+
+.account-section-card {
+  padding: 21px;
+}
+
+.account-section-heading {
+  display: flex; align-items: flex-start; gap: 11px; margin-bottom: 20px; padding-bottom: 17px; border-bottom: 1px solid var(--gray-200);
+}
+
+.account-section-icon {
+  display: grid; width: 39px; height: 39px; flex: 0 0 auto; place-items: center; color: #08783e; background: #dcfce7; border-radius: 9px;
+}
+
+.account-section-icon.security {
+  color: #1d4ed8; background: #dbeafe;
+}
+
+.account-section-icon.notification {
+  color: #b45309; background: #ffedd5;
+}
+
+.account-section-heading h2 {
+  color: #173a28; font-size: 17px;
+}
+
+.account-section-heading p {
+  margin-top: 2px; color: var(--gray-500); font-size: 11px;
+}
+
+.account-profile-form {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 15px;
+}
+
+.account-profile-form label,
+.account-password-form label {
+  display: flex; min-width: 0; flex-direction: column; gap: 6px;
+}
+
+.account-profile-form label > span,
+.account-password-form label > span {
+  color: #334155; font-size: 12px; font-weight: 700;
+}
+
+.account-profile-form label > div,
+.account-password-form label > div {
+  position: relative; display: flex; align-items: center;
+}
+
+.account-profile-form label svg,
+.account-password-form label svg {
+  position: absolute; z-index: 1; left: 11px; color: #7c8b81;
+}
+
+.account-profile-form input,
+.account-password-form input {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 11px 9px 35px;
+  color: #17251b;
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  outline: 0;
+}
+
+.account-profile-form input:focus,
+.account-password-form input:focus {
+  border-color: var(--green-600); box-shadow: 0 0 0 3px rgb(22 148 71 / 12%);
+}
+
+.account-field-full {
+  grid-column: 1 / -1;
+}
+
+.account-form-actions {
+  display: flex; justify-content: flex-end; margin-top: 2px;
+}
+
+.account-password-form {
+  display: flex; max-width: 560px; flex-direction: column; gap: 13px;
+}
+
+.account-password-form label > div > input {
+  padding-right: 42px;
+}
+
+.account-show-password {
+  display: inline-flex; width: max-content; align-items: center; gap: 5px; color: #64756a; background: transparent; border: 0; font-size: 11px;
+}
+
+.account-preference-list {
+  display: flex; flex-direction: column;
+}
+
+.account-preference-list > label {
+  position: relative; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 13px 0; border-bottom: 1px solid #edf0ed; cursor: pointer;
+}
+
+.account-preference-list > label:first-child {
+  padding-top: 0;
+}
+
+.account-preference-list > label > div {
+  display: flex; min-width: 0; flex-direction: column; gap: 2px;
+}
+
+.account-preference-list strong {
+  color: #2c4635; font-size: 13px;
+}
+
+.account-preference-list div span {
+  color: var(--gray-500); font-size: 11px;
+}
+
+.account-preference-list input {
+  position: absolute; opacity: 0; pointer-events: none;
+}
+
+.account-toggle {
+  position: relative; width: 42px; height: 23px; flex: 0 0 auto; background: #cfd7d1; border-radius: 999px; transition: 150ms ease;
+}
+
+.account-toggle::after {
+  position: absolute; top: 3px; left: 3px; width: 17px; height: 17px; background: #fff; border-radius: 50%; box-shadow: 0 1px 3px rgb(0 0 0 / 20%); transition: 150ms ease; content: "";
+}
+
+.account-preference-list input:checked + .account-toggle {
+  background: var(--green-600);
+}
+
+.account-preference-list input:checked + .account-toggle::after {
+  transform: translateX(19px);
+}
+
+.account-preference-list + .account-success {
+  margin-top: 13px;
+}
+
+.account-preference-list ~ .account-form-actions {
+  margin-top: 15px;
+}
+
+.login-page {
+  display: grid; min-height: 100vh; grid-template-columns: minmax(380px, 0.9fr) minmax(480px, 1.1fr); background: #f7faf7;
+}
+
+.login-brand-panel {
+  position: relative;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  padding: clamp(35px, 6vw, 80px);
+  color: #fff;
+  background:
+  radial-gradient(circle at 85% 12%, rgb(255 255 255 / 14%), transparent 25%),
+  linear-gradient(145deg, #064e25, #08733a 65%, #219052);
+}
+
+.login-brand-panel::after {
+  position: absolute; right: -120px; bottom: -170px; width: 430px; height: 430px; background: rgb(255 255 255 / 6%); border-radius: 50%; content: "";
+}
+
+.login-brand-content {
+  position: relative; z-index: 1; max-width: 560px;
+}
+
+.login-brand-content > img {
+  width: 78px; height: 78px; padding: 7px; background: #fff; border-radius: 19px;
+}
+
+.login-brand-content > span {
+  display: block; margin-top: 30px; color: #c7efd2; font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+}
+
+.login-brand-content h1 {
+  margin-top: 10px; color: #fff; font-size: clamp(30px, 4vw, 46px); line-height: 1.16;
+}
+
+.login-brand-content > p {
+  margin-top: 17px; color: #d6ecdd; font-size: 14px; line-height: 1.7;
+}
+
+.login-feature-list {
+  display: flex; margin-top: 30px; flex-direction: column; gap: 12px;
+}
+
+.login-feature-list div {
+  display: flex; align-items: center; gap: 9px; color: #e8f7ec; font-size: 12px;
+}
+
+.login-feature-list svg {
+  color: #98e0ab;
+}
+
+.login-form-panel {
+  display: flex; align-items: center; justify-content: center; padding: 35px;
+}
+
+.login-form-card {
+  display: flex; width: min(430px, 100%); flex-direction: column; gap: 16px; padding: 32px; background: #fff; border: 1px solid #e1e8e2; border-radius: 17px; box-shadow: 0 18px 50px rgb(30 67 40 / 10%);
+}
+
+.login-mobile-brand {
+  display: none; align-items: center; gap: 8px; color: #075d2a;
+}
+
+.login-mobile-brand img {
+  width: 38px; height: 38px;
+}
+
+.login-heading {
+  margin-bottom: 4px;
+}
+
+.login-heading > span {
+  color: #08783e; font-size: 11px; font-weight: 800; text-transform: uppercase;
+}
+
+.login-heading h2 {
+  margin-top: 4px; color: #173a28; font-size: 25px;
+}
+
+.login-heading p {
+  margin-top: 5px; color: var(--gray-500); font-size: 12px;
+}
+
+.login-form-card > label {
+  display: flex; flex-direction: column; gap: 6px;
+}
+
+.login-form-card > label > span {
+  color: #33483a; font-size: 12px; font-weight: 700;
+}
+
+.login-form-card > label > div {
+  position: relative; display: flex; align-items: center;
+}
+
+.login-form-card > label > div > svg {
+  position: absolute; left: 11px; color: #78877e;
+}
+
+.login-form-card input {
+  width: 100%; min-height: 45px; padding: 10px 43px 10px 36px; color: #17251b; background: #fff; border: 1px solid #cbd5e1; border-radius: 9px; outline: 0;
+}
+
+.login-form-card input:focus {
+  border-color: var(--green-600); box-shadow: 0 0 0 3px rgb(22 148 71 / 12%);
+}
+
+.login-form-card label button {
+  position: absolute; right: 7px; display: grid; width: 32px; height: 32px; place-items: center; color: #718078; background: transparent; border: 0;
+}
+
+.login-demo-hint {
+  padding: 9px 11px; color: #775219; background: #fff8e8; border: 1px solid #fde4a7; border-radius: 7px; font-size: 10px;
+}
+
+.login-forgot-link {
+  align-self: flex-end; margin-top: -7px; color: var(--green-700); font-size: 11px; font-weight: 700; text-decoration: none;
+}
+
+.login-forgot-link:hover {
+  text-decoration: underline;
+}
+
+.login-submit {
+  width: 100%; margin-top: 2px;
+}
+
+.recovery-back {
+  display: inline-flex; width: max-content; align-items: center; gap: 5px; color: var(--gray-500); font-size: 11px; font-weight: 700; text-decoration: none;
+}
+
+.recovery-back:hover {
+  color: var(--green-700);
+}
+
+.recovery-success {
+  display: flex; align-items: center; flex-direction: column; gap: 9px; padding: 18px; color: #08783e; background: #effaf2; border-radius: 10px; text-align: center;
+}
+
+@media (max-width: 980px) {
+  .account-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .account-side-column {
+    display: grid; grid-template-columns: 1fr auto; align-items: stretch;
+  }
+
+  .account-logout-button {
+    align-self: start;
+  }
+
+  .login-page {
+    grid-template-columns: 1fr;
+  }
+
+  .login-brand-panel {
+    display: none;
+  }
+
+  .login-mobile-brand {
+    display: flex;
+  }
+
+
+}
+
+@media (max-width: 640px) {
+  .account-side-column {
+    display: flex;
+  }
+
+  .account-profile-form {
+    grid-template-columns: 1fr;
+  }
+
+  .account-field-full {
+    grid-column: auto;
+  }
+
+  .account-form-actions .btn,
+  .account-logout-button {
+    width: 100%;
+  }
+
+  .login-form-panel {
+    padding: 18px;
+  }
+
+  .login-form-card {
+    padding: 23px 19px;
+  }
+
+
+}
