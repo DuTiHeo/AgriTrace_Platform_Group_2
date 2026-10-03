@@ -4,7 +4,6 @@ import {
   ArrowLeft,
   Building2,
   CalendarDays,
-  CheckCircle2,
   Clock3,
   Edit3,
   FileText,
@@ -31,11 +30,13 @@ import {
   useParams,
 } from "react-router-dom";
 import { useFarmContext } from "../contexts/FarmContext";
+import { farmingLogService } from "../services/farmingLogService";
 import { plotService } from "../services/plotService";
 import { seasonService } from "../services/seasonService";
 import { getTeamList } from "../services/teamService";
 import type { Plot } from "../types/plot";
 import type { TeamSummary } from "../types/team";
+import type { SeasonCultivationNote } from "../types/farmingLog";
 import type {
   Season,
   SeasonStatus,
@@ -82,39 +83,11 @@ function formatDate(date: string | null) {
   );
 }
 
-function calculateProgress(season: Season) {
-  if (season.status === "completed") {
-    return 100;
-  }
-
-  if (
-    season.status === "planned" ||
-    season.status === "cancelled"
-  ) {
-    return 0;
-  }
-
-  const start = new Date(
-    `${season.sowingDate}T00:00:00`,
-  ).getTime();
-
-  const end = new Date(
-    `${season.expectedHarvestDate}T00:00:00`,
-  ).getTime();
-
-  const now = Date.now();
-
-  if (end <= start) {
-    return 0;
-  }
-
-  const progress =
-    ((now - start) / (end - start)) * 100;
-
-  return Math.min(
-    100,
-    Math.max(0, Math.round(progress)),
-  );
+function formatNoteDate(value: string) {
+  const date = new Date(value);
+  return Number.isFinite(date.getTime())
+    ? new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" }).format(date)
+    : "Chưa ghi nhận thời gian";
 }
 
 function SeasonDetailPage() {
@@ -136,6 +109,12 @@ function SeasonDetailPage() {
     useState<DialogType>(null);
   const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState("");
+  const [notesState, setNotesState] = useState<{
+    seasonId: string;
+    items: SeasonCultivationNote[];
+    loading: boolean;
+    error: string;
+  }>({ seasonId: "", items: [], loading: true, error: "" });
 
   const [editForm, setEditForm] =
     useState<EditForm>({
@@ -200,6 +179,41 @@ function SeasonDetailPage() {
     return () => { window.clearTimeout(timer); loadRequest.current += 1; };
   }, [loadData]);
 
+  const notesRequest = useRef(0);
+  const loadNotes = useCallback(async () => {
+    const request = ++notesRequest.current;
+    if (!seasonId) return;
+    setNotesState({ seasonId, items: [], loading: true, error: "" });
+    try {
+      const items = await farmingLogService.getSeasonNotes(seasonId);
+      if (request !== notesRequest.current) return;
+      setNotesState({ seasonId, items, loading: false, error: "" });
+    } catch (error) {
+      if (request !== notesRequest.current) return;
+      setNotesState({
+        seasonId, items: [], loading: false,
+        error: error instanceof Error ? error.message : "Không thể tải ghi chú canh tác.",
+      });
+    }
+  }, [seasonId]);
+
+  useEffect(() => {
+    const requestCounter = notesRequest;
+    const timer = window.setTimeout(() => void loadNotes(), 0);
+    const refresh = () => void loadNotes();
+    const onVisible = () => { if (document.visibilityState === "visible") refresh(); };
+    window.addEventListener("farming-logs-updated", refresh);
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.clearTimeout(timer);
+      requestCounter.current += 1;
+      window.removeEventListener("farming-logs-updated", refresh);
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [loadNotes]);
+
   const farmName = useMemo(
     () =>
       farms.find(
@@ -207,10 +221,6 @@ function SeasonDetailPage() {
       )?.name ?? "Không xác định",
     [farms, season?.farmId],
   );
-
-  const progress = season
-    ? calculateProgress(season)
-    : 0;
 
   const nextStatusOptions = season
     ? allowedNextStatuses[season.status]
@@ -565,50 +575,6 @@ function SeasonDetailPage() {
           </div>
         </article>
 
-        <article className="season-detail-summary-card card">
-          <CheckCircle2 size={20} />
-
-          <div>
-            <span>Tiến độ</span>
-            <strong>{progress}%</strong>
-          </div>
-        </article>
-      </section>
-
-      <section className="season-progress-card card">
-        <div className="season-detail-section-heading">
-          <div>
-            <h2>Tiến độ mùa vụ</h2>
-            <p>
-              Tiến độ được tính từ ngày gieo đến ngày thu
-              hoạch dự kiến.
-            </p>
-          </div>
-
-          <strong>{progress}%</strong>
-        </div>
-
-        <div className="season-progress-track">
-          <span style={{ width: `${progress}%` }} />
-        </div>
-
-        <div className="season-progress-dates">
-          <div>
-            <span>Bắt đầu</span>
-            <strong>
-              {formatDate(season.sowingDate)}
-            </strong>
-          </div>
-
-          <div>
-            <span>Thu hoạch dự kiến</span>
-            <strong>
-              {formatDate(
-                season.expectedHarvestDate,
-              )}
-            </strong>
-          </div>
-        </div>
       </section>
 
       <div className="season-detail-grid">
@@ -661,19 +627,35 @@ function SeasonDetailPage() {
           </div>
         </section>
 
-        <section className="season-detail-card card">
+        <section className="season-detail-card season-cultivation-notes card">
           <div className="season-detail-section-heading">
-            <h2>Ghi chú canh tác</h2>
+            <div><h2>Ghi chú canh tác</h2><p>Ghi chú từ nhật ký của mùa vụ này.</p></div>
+            <button className="btn btn-secondary" type="button"
+              disabled={notesState.loading} onClick={() => void loadNotes()}>
+              <RefreshCw size={15} />Làm mới
+            </button>
           </div>
-
-          <div className="season-notes">
-            <FileText size={20} />
-
-            <p>
-              {season.notes ||
-                "Không có ghi chú cho mùa vụ này."}
-            </p>
-          </div>
+          {notesState.seasonId !== season.id || notesState.loading ? (
+            <p className="season-notes-status" role="status">Đang tải ghi chú...</p>
+          ) : notesState.error ? (
+            <p className="form-error" role="alert">{notesState.error}</p>
+          ) : notesState.items.length ? (
+            <ul className="season-note-list">
+              {notesState.items.map((note) => <li key={note.id}>
+                <div className="season-note-meta"><strong>{note.authorName || "Chưa ghi nhận người viết"}</strong>
+                  <span>{formatNoteDate(note.createdAt)}</span></div>
+                <p>{note.content}</p>
+                <div className="season-note-footer">
+                  <span className={note.resolved ? "resolved" : "pending"}>{note.resolved ? "Đã xử lý" : "Cần theo dõi"}</span>
+                  <Link to={`/farming-logs/${note.logId}`}>Xem nhật ký{note.activityType ? ` · ${note.activityType}` : ""}</Link>
+                </div>
+              </li>)}
+            </ul>
+          ) : (
+            <div className="season-notes"><FileText size={20} />
+              <p>Chưa có ghi chú trong nhật ký của mùa vụ này.</p>
+            </div>
+          )}
         </section>
       </div>
 

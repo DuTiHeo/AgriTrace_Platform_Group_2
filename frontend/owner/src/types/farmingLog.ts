@@ -20,6 +20,16 @@ export type FarmingLogNote = {
   resolvedAt: string | null;
 };
 
+export type SeasonCultivationNote = {
+  id: string;
+  logId: string;
+  activityType: string;
+  authorName: string;
+  content: string;
+  resolved: boolean;
+  createdAt: string;
+};
+
 export type FarmingLog = {
   id: string;
   farmId: string;

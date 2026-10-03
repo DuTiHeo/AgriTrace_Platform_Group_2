@@ -148,8 +148,34 @@ async function main() {
     assert.equal(await evaluate('window.__ownerErrors.length'), 0, route);
   }
   console.log('PASS: Seven detail pages and creation forms read baseline API data');
+  const seasonNotes = await evaluate(`(async () => {
+    const headers = { Authorization: 'Bearer ' + sessionStorage.getItem('farmer_quicklog_access_token') };
+    const logs = await fetch('/api/farming-logs', { headers }).then(r => r.json());
+    let target;
+    for (const log of logs) {
+      const detail = await fetch('/api/farming-logs/' + log.log_id, { headers }).then(r => r.json());
+      if (detail.notes?.length) { target = log.season_id; break; }
+    }
+    if (!target) return null;
+    const summaries = await fetch('/api/farming-logs?season_id=' + target, { headers }).then(r => r.json());
+    const details = await Promise.all(summaries.map(log => fetch('/api/farming-logs/' + log.log_id, { headers }).then(r => r.json())));
+    const notes = details.flatMap(log => log.notes ?? []);
+    return { seasonId:target, count:new Set(notes.map(n => n.note_id)).size, contents:notes.map(n => n.content) };
+  })()`);
+  assert.ok(seasonNotes, 'Existing data contains cultivation notes');
+  await navigate('/seasons/' + seasonNotes.seasonId);
+  await waitFor(() => evaluate('document.querySelectorAll(".season-note-list li").length === ' + seasonNotes.count), 'season cultivation notes');
+  assert.equal(await evaluate('document.querySelectorAll(".season-detail-summary-card").length'), 3);
+  assert.equal(await evaluate('document.body.innerText.includes("Tiến độ")'), false);
+  assert.ok(await evaluate('(' + JSON.stringify(seasonNotes.contents) + ').every(text => document.querySelector(".season-cultivation-notes").innerText.includes(text))'));
+  assert.ok(await evaluate('Array.from(document.querySelectorAll(".season-note-list a")).every(link => link.pathname.startsWith("/farming-logs/"))'));
+  const refreshStart = requests.length;
+  await evaluate('document.querySelector(".season-cultivation-notes button").click()');
+  await waitFor(() => evaluate('document.querySelectorAll(".season-note-list li").length === ' + seasonNotes.count + ' && !document.querySelector(".season-cultivation-notes button").disabled'), 'season notes refresh');
+  assert.ok(requests.slice(refreshStart).some(url => url.includes('/farming-logs?season_id=')));
+  console.log('PASS: Season displays real journal notes and refreshes them; season progress is removed');
   await navigate('/plots');
-  await waitFor(() => evaluate('!!document.querySelector(".header-farm-selector select")'), 'plot farm selector');
+  await waitFor(() => evaluate('!!document.querySelector(".header-farm-selector select:not(:disabled)") && document.querySelector(".header-farm-selector select").options.length >= 3'), 'loaded plot farm selector');
   await evaluate(`(async () => {
     const headers = { Authorization: 'Bearer ' + sessionStorage.getItem('farmer_quicklog_access_token') };
     const farms = await fetch('/api/organizations/mine', { headers }).then(r => r.json());
@@ -168,9 +194,11 @@ async function main() {
     await new Promise(resolve => setTimeout(resolve, 75));
     select.value = second.org_id; select.dispatchEvent(new Event('change', { bubbles: true }));
   })()`);
+  const selectedPlotIds = `Array.from(document.querySelectorAll('.plots-table a.table-action-button')).map(link => link.pathname.split('/').at(-1)).sort()`;
+  await waitFor(() => evaluate('JSON.stringify(' + selectedPlotIds + ') === JSON.stringify(window.__expectedPlots.map(p => p.plot_id).sort())'), 'selected farm plot IDs');
   await sleep(1600);
-  assert.ok(await evaluate('window.__expectedPlots.every(p => document.body.innerText.includes(p.code))'));
-  assert.ok(await evaluate('window.__oldPlots.every(p => !document.body.innerText.includes(p.code))'));
+  assert.ok(await evaluate('JSON.stringify(' + selectedPlotIds + ') === JSON.stringify(window.__expectedPlots.map(p => p.plot_id).sort())'));
+  assert.ok(await evaluate('window.__oldPlots.every(p => !(' + selectedPlotIds + ').includes(p.plot_id))'));
   assert.equal(await evaluate('window.__ownerErrors.length'), 0);
   console.log('PASS: A delayed previous farm response cannot overwrite the selected farm');
   await navigate('/account');

@@ -98,7 +98,7 @@
 
 .season-detail-summary {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
 }
 
@@ -134,10 +134,6 @@
   white-space: nowrap;
 }
 
-.season-progress-card {
-  padding: 20px;
-}
-
 .season-detail-section-heading {
   display: flex;
   align-items: flex-start;
@@ -156,58 +152,6 @@
   margin: 4px 0 0;
   color: #64748b;
   font-size: 12px;
-}
-
-.season-detail-section-heading > strong {
-  color: #08783e;
-  font-size: 18px;
-}
-
-.season-progress-track {
-  height: 10px;
-  overflow: hidden;
-  background: #e7ebe8;
-  border-radius: 999px;
-}
-
-.season-progress-track span {
-  display: block;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    #169447,
-    #087333
-  );
-  border-radius: inherit;
-  transition: width 300ms ease;
-}
-
-.season-progress-dates {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 15px;
-  margin-top: 12px;
-}
-
-.season-progress-dates > div {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.season-progress-dates > div:last-child {
-  text-align: right;
-}
-
-.season-progress-dates span {
-  color: #64748b;
-  font-size: 11px;
-}
-
-.season-progress-dates strong {
-  color: #334155;
-  font-size: 13px;
 }
 
 .season-detail-grid {
@@ -280,6 +224,76 @@
   margin: 0;
   font-size: 13px;
   line-height: 1.65;
+}
+
+.season-cultivation-notes .season-detail-section-heading {
+  flex-wrap: wrap;
+}
+
+.season-cultivation-notes .btn {
+  flex-shrink: 0;
+  min-height: 34px;
+  padding: 7px 10px;
+  font-size: 12px;
+}
+
+.season-notes-status {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.season-note-list {
+  display: grid;
+  gap: 12px;
+  max-height: 440px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.season-note-list li {
+  min-width: 0;
+  padding: 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  overflow-wrap: anywhere;
+}
+
+.season-note-meta,
+.season-note-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  font-size: 11px;
+}
+
+.season-note-meta {
+  color: #64748b;
+}
+
+.season-note-meta strong {
+  color: #172b20;
+  font-size: 12px;
+}
+
+.season-note-list p {
+  margin: 10px 0;
+  color: #334155;
+  font-size: 13px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+
+.season-note-footer a,
+.season-note-footer .resolved {
+  color: #08783e;
+}
+
+.season-note-footer .pending {
+  color: #92400e;
 }
 
 .season-team-support {
@@ -510,12 +524,4 @@
     grid-template-columns: 1fr;
   }
 
-  .season-progress-dates {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .season-progress-dates > div:last-child {
-    text-align: left;
-  }
 }

@@ -1,6 +1,6 @@
 import { accountService } from "./accountService";
 import { httpClient, resolveMediaUrl } from "./httpClient";
-import type { FarmingLog, FarmingLogNote, FarmingLogPhoto } from "../types/farmingLog";
+import type { FarmingLog, FarmingLogNote, FarmingLogPhoto, SeasonCultivationNote } from "../types/farmingLog";
 
 type LogPhotoDto = {
   photo_id: string;
@@ -78,6 +78,32 @@ async function getLogDetail(logId: string) {
 }
 
 export const farmingLogService = {
+  async getSeasonNotes(seasonId: string): Promise<SeasonCultivationNote[]> {
+    // Read fresh log details: notes belong to logs, not to the season schema.
+    const summaries = await httpClient.get<FarmingLogDto[]>(
+      `/farming-logs?season_id=${encodeURIComponent(seasonId)}`,
+      { cacheTtl: 0 },
+    );
+    const details = await Promise.all(
+      summaries.filter((log) => log.season_id === seasonId).map((log) =>
+        httpClient.get<FarmingLogDto>(`/farming-logs/${log.log_id}`, { cacheTtl: 0 }),
+      ),
+    );
+    const notes = details.filter((log) => log.season_id === seasonId).flatMap((log) =>
+      (log.notes ?? []).map((note) => ({
+        id: note.note_id,
+        logId: log.log_id,
+        activityType: log.activity_type,
+        authorName: note.leader_name ?? "",
+        content: note.content,
+        resolved: note.resolved,
+        createdAt: note.created_at,
+      })),
+    );
+    return [...new Map(notes.map((note) => [note.id, note])).values()]
+      .sort((first, second) => (Date.parse(second.createdAt) || 0) - (Date.parse(first.createdAt) || 0));
+  },
+
   async getAll(farmId?: string): Promise<FarmingLog[]> {
     const query = farmId && farmId !== "all"
       ? `?org_id=${encodeURIComponent(farmId)}`

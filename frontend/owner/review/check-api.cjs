@@ -240,6 +240,37 @@ async function main() {
     assert.equal(seasonRequests, 0);
     assert.equal(app.requests.length, 7);
   });
+  await check('Season notes use actual log notes, stay scoped, sorted, and refresh without stale cache', async () => {
+    let revision = 1;
+    const log = (id, seasonId, notes) => ({ log_id:id, season_id:seasonId, activity_type:'Chăm sóc', notes });
+    const note = (id, createdAt, content, resolved=false) => ({ note_id:id, leader_name:'Người viết', created_at:createdAt, content, resolved });
+    const app = harness(({route,url}) => {
+      if (route === '/farming-logs') {
+        assert.equal(new URL(url,'http://localhost').searchParams.get('season_id'), 'season-1');
+        return { payload:[log('log-1','season-1'),log('log-2','season-1'),log('foreign','other-season')] };
+      }
+      if (route === '/farming-logs/log-1') return { payload:log('log-1','season-1', [note('older','2026-10-01T08:00:00Z','Ghi chú cũ')]) };
+      if (route === '/farming-logs/log-2') return { payload:log('log-2','season-1', [note('newer','2026-10-03T08:00:00Z','Cập nhật '+revision,revision===2)]) };
+      throw new Error('Unexpected request: '+route);
+    });
+    const service=app.load('src/services/farmingLogService').farmingLogService;
+    const first=await service.getSeasonNotes('season-1');
+    assert.deepEqual(Array.from(first,n=>n.id),['newer','older']);
+    assert.equal(first[0].logId,'log-2');
+    revision=2;
+    const second=await service.getSeasonNotes('season-1');
+    assert.equal(second[0].content,'Cập nhật 2');
+    assert.equal(second[0].resolved,true);
+    assert.equal(app.requests.length,6);
+    assert.equal(app.requests.some(r=>r.options.method!=='GET'),false);
+  });
+  await check('Season note failures surface as errors instead of a false empty state', async () => {
+    const app=harness(()=>({status:403,payload:{detail:'Access denied'}}));
+    await assert.rejects(app.load('src/services/farmingLogService').farmingLogService.getSeasonNotes('season-1'), /Access denied/);
+    const empty=harness(()=>({payload:[]}));
+    assert.equal((await empty.load('src/services/farmingLogService').farmingLogService.getSeasonNotes('season-1')).length,0);
+    assert.equal(empty.requests.length,1);
+  });
   await check('Concurrent GETs share transport and return independent values', async () => {
     let release;
     const app = harness(() => new Promise((resolve) => { release = resolve; }));

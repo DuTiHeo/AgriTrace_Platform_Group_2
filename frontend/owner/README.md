@@ -41,6 +41,7 @@ Giá trị này chỉ là địa chỉ API; không đưa secret/token vào biế
 - Số liệu vùng trồng được nối từ danh sách mùa vụ/công việc/nhật ký. Thống kê lô thu hoạch dùng dữ liệu API. Công việc không có quan hệ mùa vụ/người giao trong API hiện tại; web không suy đoán các thông tin này.
 - Tạo nhân sự mặc định là công nhân chưa có tổ. Sau khi tạo, dùng chi tiết nhân sự để gán tổ/phong tổ trưởng qua API sẵn có. Chuyển công nhân trực tiếp bằng `POST /teams/{id}/members`; không gỡ tổ cũ trước khi thêm tổ mới. Leader cần hạ vai trò trước khi chuyển tổ.
 - Tạo công việc gửi `plot_id`, `team_id`, `worker_id`, nội dung và thời gian có múi giờ; không gửi `season_id` hoặc `assigned_by_id`.
+- Ghi chú canh tác trong chi tiết mùa vụ lấy từ `notes` của nhật ký thuộc mùa vụ đó, qua `GET /farming-logs?season_id=...` và các route chi tiết nhật ký. Hiển thị người viết, thời gian, trạng thái và link nhật ký; tải mới khi bấm Làm mới, quay lại tab hoặc có cập nhật nhật ký. API mùa vụ không có ghi chú chung; phần tiến độ theo ngày đã được bỏ khỏi giao diện.
 - Thông báo, gửi báo lỗi, tự sửa hồ sơ Owner và truy xuất công khai chưa được backend của nhóm hỗ trợ. Giao diện hiển thị trạng thái chưa khả dụng và không gọi các route thiếu. Không tạo dữ liệu demo thay thế hoặc nút gửi báo thành công giả.
 - Đổi mật khẩu, quản lý nông trại/vùng trồng/mùa vụ/nhân sự/tổ/công việc/lô thu hoạch và ghi chú nhật ký dùng các API hiện có. Các thao tác ghi chỉ đi qua API và quyền backend, không sửa database trực tiếp.
 
@@ -86,6 +87,8 @@ Kiểm tra phần Expo hiện có phát hiện lỗi TypeScript `TS2882` ở `sr
 Kiểm chứng ngày 2026-10-03: Owner lint/build đạt, 19 kiểm tra hợp đồng/transport đạt, 62 method/path đều có ở backend GitHub. Edge đã kiểm tra 11 route danh sách, 7 trang chi tiết, các form tạo, modal giao việc, hồ sơ, đổi nông trại khi response cũ bị trễ và trạng thái các chức năng chưa hỗ trợ. Browser dùng backend GitHub gắn source chỉ đọc và `PGOPTIONS=-c default_transaction_read_only=on` trên database local hiện có; không thực hiện mutation. Phiên Owner được cấp tạm cho kiểm thử do mật khẩu local đã đổi; Worker được kiểm tra bằng login thật. Kiểm tra này chưa xác nhận mọi thao tác ghi nghiệp vụ hoặc tải dữ liệu lớn.
 
 ## Giới hạn
+
+Cập nhật phần chi tiết mùa vụ ngày 2026-10-03: bỏ phần trăm/thanh tiến độ, hiển thị ghi chú thật từ nhật ký đúng mùa vụ và hỗ trợ làm mới. Owner lint/build đạt, 21 kiểm tra hợp đồng/transport đạt; Edge xác nhận nội dung ghi chú, liên kết nhật ký, thao tác làm mới và 3 thẻ thông tin còn lại. Chỉ kiểm thử đọc API; không tạo/sửa/xóa dữ liệu. Backend/database/docker-compose không có diff so với `origin/master`.
 
 Backend chưa hỗ trợ phân trang/bulk details; hydrate danh sách nhiều dòng cần thêm GET và chưa tối ưu cho dữ liệu lớn. Một số luồng backend gồm nhiều transaction (tạo lô kèm đóng góp, phong vai trò rồi gán tổ); frontend không thể bảo đảm tính nguyên tử thay backend. Không tự thêm rollback hay migration.
 
