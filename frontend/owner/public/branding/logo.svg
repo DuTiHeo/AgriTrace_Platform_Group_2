@@ -1,0 +1,42 @@
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 64 64"
+  role="img"
+  aria-label="Farmer QuickLog"
+>
+  <rect width="64" height="64" rx="16" fill="#075D2A"/>
+
+  <path
+    d="M14 47C22 40 31 39 50 40"
+    fill="none"
+    stroke="#86E89B"
+    stroke-width="4"
+    stroke-linecap="round"
+  />
+
+  <path
+    d="M18 52C27 45 37 44 51 45"
+    fill="none"
+    stroke="#D8F7DF"
+    stroke-width="3"
+    stroke-linecap="round"
+  />
+
+  <path
+    d="M31 39V23"
+    fill="none"
+    stroke="#FFFFFF"
+    stroke-width="4"
+    stroke-linecap="round"
+  />
+
+  <path
+    d="M31 28C33 19 41 14 50 16C49 25 43 31 31 31Z"
+    fill="#79E38F"
+  />
+
+  <path
+    d="M31 32C28 24 21 21 15 23C17 31 22 35 31 35Z"
+    fill="#B8F4C4"
+  />
+</svg>
