@@ -45,7 +45,11 @@ export default function MemberDetailScreen() {
     }
   }, [accessToken, id]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    // Start the external request with the same loading/error state as the retry button.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void load();
+  }, [load]);
 
   return (
     <Screen title="Thông tin thành viên" back>

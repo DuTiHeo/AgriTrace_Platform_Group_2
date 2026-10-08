@@ -6,7 +6,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ReportComments, ReportPhotos, s } from '@/components/worker/diary-content';
 import { useReports } from '@/contexts/report-context';
 import { useAuth } from '@/contexts/auth-context';
-import { colors } from '@/styles/theme';
 
 export default function WorkerDiaryDetailScreen() {
   const { id, fromNotification } = useLocalSearchParams<{

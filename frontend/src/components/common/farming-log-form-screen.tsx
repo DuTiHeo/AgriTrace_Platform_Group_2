@@ -3,7 +3,7 @@ import { useFinishTabFlow } from '@/hooks/use-finish-tab-flow';
 import { colors } from '@/styles/theme';
 import { sharedStyles as shared } from '@/styles/role-styles';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
-import { useCallback, useRef, useState, type RefObject } from 'react';
+import { useCallback, useMemo, useRef, useState, type RefObject } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 import { Image, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -34,14 +34,14 @@ export function FarmingLogFormScreen() {
     area
   ]);
   const { drafts, setDrafts } = useReports();
-  const emptyDraft: ReportDraft = {
+  const emptyDraft = useMemo<ReportDraft>(() => ({
     taskTitle,
     area,
     taskId,
     plotId,
     note: '',
     photos: []
-  };
+  }), [taskTitle, area, taskId, plotId]);
   const draft = drafts[draftKey] ?? emptyDraft;
   const updateDraft = useCallback((update: (old: ReportDraft) => ReportDraft) => {
     setDrafts(old => ({
@@ -51,9 +51,7 @@ export function FarmingLogFormScreen() {
   }, [
     draftKey,
     setDrafts,
-    taskTitle,
-    area,
-    taskId
+    emptyDraft
   ]);
   const { gpsStatus, locate, preparePhoto, submit, activeSeasons } = useFarmingLogForm(draft, updateDraft);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
@@ -669,10 +667,6 @@ const styles = StyleSheet.create({
   },
   label: {
     ...shared.label
-  },
-  photoCount: {
-    ...shared.chip,
-    ...shared.chipText
   },
   photoList: {
     ...shared.photoList

@@ -41,6 +41,8 @@ export function useFarmingLogForm(draft: ReportDraft, updateDraft: (update: (old
 
   useEffect(() => {
     if (!draft.gps)
+      // The native GPS request must publish its loading state before asking for permission.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       void locate();
   }, [
     draft.gps,

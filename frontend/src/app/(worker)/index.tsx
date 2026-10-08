@@ -1,3 +1,4 @@
+import { localDateKey, taskOccursOn as occursOn } from '@/utils/task-dates';
 import { getTaskTypeLabel } from '@/constants/task-types';
 import { useWorkSchedule } from '@/contexts/work-schedule-context';
 import { colors } from '@/styles/theme';
@@ -10,22 +11,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useReports } from '@/contexts/report-context';
 import { WorkerHeader } from '@/components/worker/worker-header';
-
-function localDateKey(value: string | null | undefined) {
-  if (!value) return '';
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) return '';
-
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-}
-
-function occursOn(task: { startDate?: string; due: string }, day: string) {
-  const start = task.startDate || task.due;
-
-  return !!start && !!task.due && start <= day && day <= task.due;
-}
 
 export default function WorkerHome() {
   const { reports } = useReports();
@@ -359,11 +344,6 @@ const styles = StyleSheet.create({
   taskName: {
     ...shared.section,
     flex: 1
-  },
-
-  status: {
-    ...shared.chip,
-    ...shared.chipText
   },
 
   meta: {

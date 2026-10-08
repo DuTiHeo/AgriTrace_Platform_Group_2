@@ -1,3 +1,4 @@
+import { isValidDateKey, localDateKey } from '@/utils/task-dates';
 import { DEFAULT_WORK_START_TIME, DEFAULT_WORK_END_TIME } from '@/constants/work-hours';
 import { getTaskTypeLabel } from '@/constants/task-types';
 import { router, useFocusEffect } from 'expo-router';
@@ -11,10 +12,6 @@ import { Feedback } from '@/components/leader/feedback';
 import { Button, Calendar, Card, Input, Screen, s } from '@/components/leader/ui';
 import { listAssignedPlots, listTaskTypes, type Plot } from '@/sevices/farming-log.service';
 import { useDiscardWarning } from '@/hooks/use-discard-warning';
-
-function localDateKey(date = new Date()) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-}
 
 export default function CreateAssignmentScreen() {
   const { members, addTask } = useLeader();
@@ -86,16 +83,7 @@ export default function CreateAssignmentScreen() {
     message: 'Bạn chưa giao việc xong. Bạn có xác nhận thoát không? Toàn bộ nội dung đã nhập sẽ bị xóa.',
   });
 
-  useEffect(() => {
-    const shown = Keyboard.addListener('keyboardDidShow', event => {
-      keyboardTop.current = event.endCoordinates.screenY;
-      if (focusedInput.current) setTimeout(alignSubmitButtonWithKeyboard, 160);
-    });
-    const hidden = Keyboard.addListener('keyboardDidHide', () => { keyboardTop.current = null; });
-    return () => { shown.remove(); hidden.remove(); };
-  }, []);
-
-  function alignSubmitButtonWithKeyboard() {
+  const alignSubmitButtonWithKeyboard = useCallback(() => {
     const submitArea = submitAreaRef.current;
     const top = keyboardTop.current;
     if (!submitArea || top == null || !focusedInput.current) return;
@@ -105,7 +93,16 @@ export default function CreateAssignmentScreen() {
         scrollRef.current?.scrollTo({ y: scrollY.current + coveredPixels, animated: true });
       }
     });
-  }
+  }, []);
+
+  useEffect(() => {
+    const shown = Keyboard.addListener('keyboardDidShow', event => {
+      keyboardTop.current = event.endCoordinates.screenY;
+      if (focusedInput.current) setTimeout(alignSubmitButtonWithKeyboard, 160);
+    });
+    const hidden = Keyboard.addListener('keyboardDidHide', () => { keyboardTop.current = null; });
+    return () => { shown.remove(); hidden.remove(); };
+  }, [alignSubmitButtonWithKeyboard]);
 
   function trackScroll(event: NativeSyntheticEvent<NativeScrollEvent>) {
     scrollY.current = event.nativeEvent.contentOffset.y;
@@ -122,7 +119,6 @@ export default function CreateAssignmentScreen() {
 
   const clearFieldError = (name: string) => setFieldErrors(old => old[name] ? { ...old, [name]: '' } : old);
   const fieldProps = (name: string) => ({
-    ref: (node: View | null) => { fields.current[name] = node; },
     collapsable: false,
     style: { gap: 8, borderWidth: fieldErrors[name] ? 1 : 0, borderColor: '#B42318', borderRadius: 0, padding: fieldErrors[name] ? 8 : 0 },
   });
@@ -147,16 +143,8 @@ export default function CreateAssignmentScreen() {
     if (!selected.length || selected.some(id => !members.some(member => member.id === id && member.active))) errors.members = 'Chọn ít nhất một công nhân đang hoạt động.';
     const plot = plots.find(item => item.code === area);
     if (!plot) errors.area = 'Chọn lô đất đang hoạt động.';
-    const validDate = (value: string) => {
-      const date = new Date(value + 'T12:00:00');
-      return /^\d{4}-\d{2}-\d{2}$/.test(value)
-        && !Number.isNaN(date.getTime())
-        && date.getFullYear() === Number(value.slice(0, 4))
-        && date.getMonth() + 1 === Number(value.slice(5, 7))
-        && date.getDate() === Number(value.slice(8, 10));
-    };
-    if (!validDate(startDate) || startDate < localDateKey()) errors.startDate = 'Chọn ngày bắt đầu từ hôm nay trở đi.';
-    if (!validDate(due) || !validDate(startDate) || due < startDate) errors.due = 'Chọn ngày kết thúc bằng hoặc sau ngày bắt đầu.';
+    if (!isValidDateKey(startDate) || startDate < localDateKey(new Date())) errors.startDate = 'Chọn ngày bắt đầu từ hôm nay trở đi.';
+    if (!isValidDateKey(due) || !isValidDateKey(startDate) || due < startDate) errors.due = 'Chọn ngày kết thúc bằng hoặc sau ngày bắt đầu.';
     if (showErrors(errors)) return;
 
     setSaving(true); setMessage('');
@@ -180,7 +168,7 @@ export default function CreateAssignmentScreen() {
       <Feedback text={message || storageError} />
       {!!storageError && <Button title="Tải lại" onPress={retry} />}
       <Card>
-        <View {...fieldProps('title')}>
+        <View ref={node => { fields.current.title = node; }} {...fieldProps('title')}>
           {customTitle || !taskTypes.length ? (
             <>
               <Input label="Tên nhiệm vụ *" value={getTaskTypeLabel(title)} onChangeText={value => { setTitle(value); if (value.trim()) clearFieldError('title'); }} placeholder="Nhập tên nhiệm vụ khác" maxLength={150} autoFocus={customTitle} />
@@ -225,7 +213,7 @@ export default function CreateAssignmentScreen() {
           {fieldError('title')}
         </View>
 
-        <View {...fieldProps('members')}>
+        <View ref={node => { fields.current.members = node; }} {...fieldProps('members')}>
           <View style={[s.row, { justifyContent: 'space-between', alignItems: 'center' }]}>
             <Text style={[s.label, { flex: 1 }]}>Người thực hiện *</Text>
             <Pressable
@@ -266,18 +254,18 @@ export default function CreateAssignmentScreen() {
           {fieldError('members')}
         </View>
 
-        <View {...fieldProps('area')}>
+        <View ref={node => { fields.current.area = node; }} {...fieldProps('area')}>
           <AreaPicker value={area} onChange={value => { setArea(value); clearFieldError('area'); }} options={plots.map(plot => plot.code)} />
           {fieldError('area')}
         </View>
         <View style={{ gap: 8 }}>
           <Text style={[s.label, { fontWeight: '700' }]}>Thời gian thực hiện *</Text>
           <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
-            <View {...fieldProps('startDate')} style={[fieldProps('startDate').style, { flex: 1 }]}>
+            <View ref={node => { fields.current.startDate = node; }} {...fieldProps('startDate')} style={[fieldProps('startDate').style, { flex: 1 }]}>
               <Calendar
                 label="Ngày bắt đầu"
                 value={startDate}
-                minimumDate={localDateKey()}
+                minimumDate={localDateKey(new Date())}
                 onChange={value => {
                   setStartDate(value);
                   clearFieldError('startDate');
@@ -286,11 +274,11 @@ export default function CreateAssignmentScreen() {
               />
               {fieldError('startDate')}
             </View>
-            <View {...fieldProps('due')} style={[fieldProps('due').style, { flex: 1 }]}>
+            <View ref={node => { fields.current.due = node; }} {...fieldProps('due')} style={[fieldProps('due').style, { flex: 1 }]}>
               <Calendar
                 label="Ngày kết thúc"
                 value={due}
-                minimumDate={startDate || localDateKey()}
+                minimumDate={startDate || localDateKey(new Date())}
                 onChange={value => { setDue(value); clearFieldError('due'); }}
               />
               {fieldError('due')}
@@ -299,8 +287,8 @@ export default function CreateAssignmentScreen() {
           <Text style={s.muted}>Giờ bắt đầu mặc định: {DEFAULT_WORK_START_TIME} · Giờ kết thúc mặc định: {DEFAULT_WORK_END_TIME} (giờ Việt Nam).</Text>
           <Text style={s.muted}>Ngày kết thúc không được trước ngày bắt đầu.</Text>
         </View>
-        <View {...fieldProps('tools')}><Input label="Công cụ / vật tư (không bắt buộc)" value={tools} onFocus={() => focusInput('tools')} onBlur={() => blurInput('tools')} onChangeText={setTools} placeholder="Ví dụ: Kéo cắt tỉa, bình xịt" maxLength={300} /></View>
-        <View {...fieldProps('instructions')}><Input label="Ghi chú / hướng dẫn" value={instructions} onFocus={() => {
+        <View ref={node => { fields.current.tools = node; }} {...fieldProps('tools')}><Input label="Công cụ / vật tư (không bắt buộc)" value={tools} onFocus={() => focusInput('tools')} onBlur={() => blurInput('tools')} onChangeText={setTools} placeholder="Ví dụ: Kéo cắt tỉa, bình xịt" maxLength={300} /></View>
+        <View ref={node => { fields.current.instructions = node; }} {...fieldProps('instructions')}><Input label="Ghi chú / hướng dẫn" value={instructions} onFocus={() => {
           focusInput('instructions');
         }} onBlur={() => blurInput('instructions')} onChangeText={setInstructions} placeholder="Ghi chú chi tiết cho công nhân…" multiline maxLength={3000} /></View>
 

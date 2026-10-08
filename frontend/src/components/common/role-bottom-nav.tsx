@@ -14,10 +14,10 @@ export type NavItem = {
 export type RoleNavProps = {
   state: {
     index: number;
-    routes: Array<{
+    routes: {
       name: string;
       key: string
-    }>
+    }[]
   };
   navigation: {
     navigate: (name: string) => void;

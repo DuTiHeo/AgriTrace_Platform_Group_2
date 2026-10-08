@@ -41,7 +41,6 @@ export type Task = {
 };
 export type Diary = {
   id: string;
-  memberId: string;
   name: string;
   title: string;
   area: string;
@@ -53,6 +52,7 @@ export type Diary = {
     longitude: number
   };
   comments: {
+    id: string;
     name: string;
     text: string;
     time: string
@@ -103,6 +103,8 @@ function useLeaderState() {
     }
   }, [accessToken]);
   useEffect(() => {
+    // Loading from the server also clears the previous request error.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadMembers();
   }, [loadMembers]);
   const { leaderTasks, loadTasks, registerCreatedTasks } = useWorkSchedule();
@@ -110,7 +112,6 @@ function useLeaderState() {
   const tasks: Task[] = leaderTasks;
   const diaries: Diary[] = reports.map(r => ({
     id: r.id,
-    memberId: r.workerId,
     name: r.workerName,
     title: r.taskTitle,
     area: r.area,
@@ -119,6 +120,7 @@ function useLeaderState() {
     time: r.completedAt,
     gps: r.gps,
     comments: (r.comments ?? []).map(c => ({
+      id: c.id,
       name: c.author,
       text: c.text,
       time: c.time
@@ -154,7 +156,7 @@ function useLeaderState() {
     registerCreatedTasks(createdTasks);
     await loadTasks();
   };
-  const addComment = (id: string, text: string, _name: string) => addReportComment(id, text);
+  const addComment = (id: string, text: string) => addReportComment(id, text);
 
   return {
     members,

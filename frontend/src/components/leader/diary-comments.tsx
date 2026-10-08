@@ -1,6 +1,5 @@
 import { useRef, useState } from "react";
 import { Text, TextInput, View } from "react-native";
-import { useAuth } from "@/contexts/auth-context";
 import { useLeader, type Diary } from "@/contexts/leader-context";
 import { Button, dateText, Input, s } from "./ui";
 
@@ -10,15 +9,10 @@ export function Comments({
   diary: Diary;
 }) {
   const { addComment } = useLeader();
-  const { user } = useAuth();
   const [text, setText] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const inputRef = useRef<TextInput>(null);
-  const remarks = diary.comments.filter(comment => ![
-    'Đánh giá: Đạt',
-    'Đánh giá: Không đạt'
-  ].includes(comment.text));
 
   return (
     <View
@@ -29,9 +23,9 @@ export function Comments({
         paddingTop: 14
       }}
     >
-      {remarks.map((c, i) => (
+      {diary.comments.map(c => (
         <View
-          key={i}
+          key={c.id}
           style={{
             padding: 12,
             backgroundColor: '#F0F7EF',
@@ -94,8 +88,7 @@ export function Comments({
           try {
             await addComment(
               diary.id,
-              text.trim(),
-              user?.full_name ?? 'Tổ trưởng'
+              text.trim()
             );
             setText('');
           } catch (e) {

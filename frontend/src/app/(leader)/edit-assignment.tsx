@@ -1,3 +1,4 @@
+import { isValidDateKey } from '@/utils/task-dates';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Keyboard, Pressable, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -80,13 +81,7 @@ export default function EditAssignmentScreen() {
 
   async function save() {
     if (!accessToken || !task || busy) return;
-    const validDate = (value: string) => {
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-      const date = new Date(`${value}T12:00:00`);
-      return !Number.isNaN(date.getTime()) && date.getFullYear() === Number(value.slice(0, 4))
-        && date.getMonth() + 1 === Number(value.slice(5, 7)) && date.getDate() === Number(value.slice(8, 10));
-    };
-    if (!title.trim() || !validDate(startDate) || !validDate(due)) { setError('Tên, ngày bắt đầu hoặc hạn hoàn thành chưa hợp lệ.'); return; }
+    if (!title.trim() || !isValidDateKey(startDate) || !isValidDateKey(due)) { setError('Tên, ngày bắt đầu hoặc hạn hoàn thành chưa hợp lệ.'); return; }
     if (due < startDate) { setError('Ngày kết thúc phải bằng hoặc sau ngày bắt đầu.'); return; }
     setBusy(true); setError('');
     try {

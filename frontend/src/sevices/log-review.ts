@@ -8,7 +8,6 @@ export function latestReview(notes: LogNote[]) {
     .sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))[0];
 
   return note ? {
-    review: note.content === reviewContent('passed') ? 'passed' as const : 'rejected' as const,
-    reviewedBy: note.leader_name ?? 'Người quản lý'
+    review: note.content === reviewContent('passed') ? 'passed' as const : 'rejected' as const
   } : {};
 }
