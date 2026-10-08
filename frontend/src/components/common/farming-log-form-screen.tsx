@@ -15,6 +15,7 @@ import { useDiscardWarning } from '@/hooks/use-discard-warning';
 import { useAuth } from '@/contexts/auth-context';
 import { listAssignedPlots, listTaskTypes, type Plot } from '@/sevices/farming-log.service';
 import { AreaPicker } from '@/components/leader/area-picker';
+import { RemovePhotoButton } from '@/components/common/remove-photo-button';
 
 export function FarmingLogFormScreen() {
   const finishTabFlow = useFinishTabFlow();
@@ -528,6 +529,7 @@ export function FarmingLogFormScreen() {
                         clearFieldError('note');
                     }}
                   />
+                  <Text style={styles.taskMeta}>Có thể dùng micro trên bàn phím để nói</Text>
                   {fieldError('note')}
                 </View>
               </View>
@@ -570,20 +572,16 @@ export function FarmingLogFormScreen() {
                             style={styles.photo}
                           />
                         </Pressable>
-                        <Pressable
+                        <RemovePhotoButton
                           disabled={busy}
-                          style={styles.remove}
+                          label={`Xóa ảnh ${index + 1}`}
                           onPress={() => {
-                            Keyboard.dismiss();
                             updateDraft(old => ({
                               ...old,
                               photos: old.photos.filter((_, i) => i !== index)
                             }));
                           }}
-                        >
-                          <Text style={styles.removeText}>Xóa ảnh {index + 1}
-                          </Text>
-                        </Pressable>
+                        />
                       </View>
                     ))}
                   </ScrollView>
@@ -634,14 +632,6 @@ export function FarmingLogFormScreen() {
 const styles = StyleSheet.create({
   input: {
     ...shared.input
-  },
-  remove: {
-    ...shared.button,
-    ...shared.secondary,
-    marginTop: 8
-  },
-  removeText: {
-    ...shared.link
   },
   disabled: {
     opacity: 0.45
@@ -719,7 +709,7 @@ const styles = StyleSheet.create({
   },
   note: {
     ...shared.input,
-    minHeight: 76,
+    minHeight: 150,
     textAlignVertical: "top"
   },
   noteField: {
