@@ -44,7 +44,12 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "owner:install": "npm ci --prefix owner",
+    "owner:dev": "npm --prefix owner run dev",
+    "owner:build": "npm --prefix owner run build",
+    "owner:lint": "npm --prefix owner run lint",
+    "owner:test": "npm --prefix owner test"
   },
   "private": true
 }

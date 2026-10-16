@@ -1,0 +1,411 @@
+.personnel-form-page {
+  max-width: 1120px;
+}
+
+.personnel-form-heading {
+  margin-bottom: 24px;
+}
+
+.personnel-form-heading h1 {
+  margin-top: 14px;
+  color: var(--green-900);
+  font-size: 26px;
+  line-height: 1.25;
+}
+
+.personnel-form-heading p {
+  margin-top: 6px;
+  color: var(--gray-500);
+}
+
+.personnel-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--green-800);
+  font-weight: 600;
+}
+
+.personnel-back-link:hover {
+  color: var(--green-900);
+  text-decoration: underline;
+}
+
+.personnel-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.personnel-form-section {
+  padding: 22px;
+}
+
+.personnel-section-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 22px;
+  border-bottom: 1px solid var(--gray-200);
+  padding-bottom: 17px;
+}
+
+.personnel-section-heading > span {
+  display: inline-flex;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: var(--green-100);
+  color: var(--green-800);
+}
+
+.personnel-section-heading h2 {
+  color: var(--gray-900);
+  font-size: 17px;
+  line-height: 1.35;
+}
+
+.personnel-section-heading p {
+  margin-top: 3px;
+  color: var(--gray-500);
+  font-size: 13px;
+}
+
+.personnel-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.personnel-field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.personnel-field > span,
+.personnel-role-field legend {
+  color: var(--gray-700);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.personnel-field b,
+.personnel-role-field b {
+  color: var(--red-700);
+}
+
+.personnel-field small {
+  color: var(--gray-500);
+  font-size: 12px;
+}
+
+.personnel-field.field-full,
+.personnel-role-field.field-full {
+  grid-column: 1 / -1;
+}
+
+.personnel-textarea {
+  min-height: 92px;
+  resize: vertical;
+}
+
+.personnel-role-field {
+  min-width: 0;
+  border: 0;
+}
+
+.personnel-role-field legend {
+  margin-bottom: 9px;
+}
+
+.personnel-role-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.personnel-role-options label {
+  position: relative;
+  display: flex;
+  min-height: 88px;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-md);
+  background: var(--white);
+  padding: 15px;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.personnel-role-options label:hover {
+  border-color: var(--green-600);
+}
+
+.personnel-role-options label.selected {
+  border-color: var(--green-700);
+  background: var(--green-50);
+  box-shadow: 0 0 0 3px rgba(22, 148, 71, 0.1);
+}
+
+.personnel-role-options input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.personnel-role-options label > span {
+  display: inline-flex;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: var(--gray-100);
+  color: var(--gray-700);
+}
+
+.personnel-role-options label.selected > span {
+  background: var(--green-100);
+  color: var(--green-800);
+}
+
+.personnel-role-options label > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+
+.personnel-role-options strong {
+  color: var(--gray-900);
+}
+
+.personnel-role-options small {
+  margin-top: 3px;
+  color: var(--gray-500);
+  font-size: 12px;
+}
+
+.personnel-password-choice {
+  display: flex;
+  max-width: 560px;
+  align-items: flex-start;
+  gap: 11px;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  background: var(--gray-100);
+  padding: 14px;
+  cursor: pointer;
+}
+
+.personnel-password-choice input {
+  width: 17px;
+  height: 17px;
+  margin-top: 2px;
+  accent-color: var(--green-700);
+}
+
+.personnel-password-choice > span {
+  display: flex;
+  flex-direction: column;
+}
+
+.personnel-password-choice strong {
+  color: var(--gray-900);
+  font-size: 13px;
+}
+
+.personnel-password-choice small {
+  margin-top: 3px;
+  color: var(--gray-500);
+  font-size: 12px;
+}
+
+.personnel-password-field {
+  max-width: 560px;
+  margin-top: 17px;
+}
+
+.personnel-password-input {
+  position: relative;
+}
+
+.personnel-password-input .input {
+  padding-right: 44px;
+}
+
+.personnel-password-input button {
+  position: absolute;
+  top: 50%;
+  right: 7px;
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  transform: translateY(-50%);
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--gray-500);
+}
+
+.personnel-password-input button:hover {
+  background: var(--gray-100);
+  color: var(--gray-900);
+}
+
+.personnel-form-error {
+  border: 1px solid #f5b7b1;
+  border-radius: var(--radius-sm);
+  background: var(--red-100);
+  padding: 12px 14px;
+  color: var(--red-700);
+  font-weight: 600;
+}
+
+.personnel-form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 4px 0 20px;
+}
+
+.personnel-success-card {
+  max-width: 660px;
+  margin: 60px auto;
+  padding: 36px;
+  text-align: center;
+}
+
+.personnel-success-icon {
+  display: inline-flex;
+  width: 68px;
+  height: 68px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--green-100);
+  color: var(--green-800);
+}
+
+.personnel-success-card h1 {
+  margin-top: 18px;
+  color: var(--green-900);
+  font-size: 25px;
+}
+
+.personnel-success-card > p {
+  margin-top: 8px;
+  color: var(--gray-500);
+}
+
+.personnel-success-card > p strong {
+  color: var(--gray-900);
+}
+
+.personnel-credential-box {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 24px;
+  text-align: left;
+}
+
+.personnel-credential-box > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-sm);
+  background: var(--gray-100);
+  padding: 14px;
+}
+
+.personnel-credential-box span {
+  color: var(--gray-500);
+  font-size: 12px;
+}
+
+.personnel-credential-box strong {
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+  color: var(--gray-900);
+  font-size: 16px;
+}
+
+.personnel-password-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 16px;
+  border: 1px solid #fed7aa;
+  border-radius: var(--radius-sm);
+  background: #fff7ed;
+  padding: 13px;
+  color: var(--orange-700);
+  text-align: left;
+}
+
+.personnel-password-warning svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
+.personnel-password-warning p {
+  font-size: 13px;
+}
+
+.personnel-success-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+@media (max-width: 768px) {
+  .personnel-form-heading h1 {
+    font-size: 22px;
+  }
+
+  .personnel-form-section {
+    padding: 18px;
+  }
+
+  .personnel-form-grid,
+  .personnel-role-options,
+  .personnel-credential-box {
+    grid-template-columns: 1fr;
+  }
+
+  .personnel-field.field-full,
+  .personnel-role-field.field-full {
+    grid-column: auto;
+  }
+
+  .personnel-form-actions,
+  .personnel-success-actions {
+    flex-direction: column-reverse;
+  }
+
+  .personnel-form-actions .btn,
+  .personnel-success-actions .btn {
+    width: 100%;
+  }
+
+  .personnel-success-card {
+    margin: 20px auto;
+    padding: 24px 18px;
+  }
+}

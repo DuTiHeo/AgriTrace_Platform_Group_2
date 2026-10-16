@@ -1,0 +1,577 @@
+.plot-form-page {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+.plot-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.plot-form-card {
+  padding: 22px;
+}
+
+.plot-form-section-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 22px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.plot-form-section-icon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  place-items: center;
+  color: #08783e;
+  background: #dcfce7;
+  border-radius: 10px;
+}
+
+.plot-form-section-heading h2 {
+  margin: 0 0 4px;
+  color: #123524;
+  font-size: 18px;
+}
+
+.plot-form-section-heading p {
+  margin: 0;
+  color: #64748b;
+  font-size: 13px;
+}
+
+.plot-form-page .form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.plot-form-page .form-field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.plot-form-page .form-field-full {
+  grid-column: 1 / -1;
+}
+
+.plot-form-page .form-field > span {
+  color: #334155;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.plot-form-page .form-field b {
+  color: #dc2626;
+}
+
+.plot-form-page .form-field input,
+.plot-form-page .form-field select,
+.plot-form-page .form-field textarea {
+  width: 100%;
+  padding: 11px 12px;
+  color: #172b20;
+  font: inherit;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  outline: none;
+  transition:
+  border-color 150ms ease,
+  box-shadow 150ms ease;
+}
+
+.plot-form-page .form-field input,
+.plot-form-page .form-field select {
+  height: 44px;
+}
+
+.plot-form-page .form-field textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.plot-form-page .form-field input:focus,
+.plot-form-page .form-field select:focus,
+.plot-form-page .form-field textarea:focus {
+  border-color: #22c55e;
+  box-shadow: 0 0 0 3px rgb(34 197 94 / 12%);
+}
+
+.plot-form-page .form-field input:disabled,
+.plot-form-page .form-field select:disabled {
+  color: #94a3b8;
+  background: #f8fafc;
+  cursor: not-allowed;
+}
+
+.boundary-error {
+  padding: 11px 13px;
+  color: #b91c1c;
+  font-size: 13px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 9px;
+}
+
+.boundary-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.boundary-toolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.boundary-coordinate-inputs {
+  display: flex;
+  flex: 1;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.boundary-coordinate-inputs label {
+  display: flex;
+  min-width: 150px;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.boundary-coordinate-inputs label span {
+  color: #475569;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.boundary-coordinate-inputs input {
+  width: 100%;
+  height: 40px;
+  padding: 0 11px;
+  color: #172b20;
+  font: inherit;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  outline: none;
+}
+
+.boundary-coordinate-inputs input:focus {
+  border-color: #22c55e;
+  box-shadow: 0 0 0 3px rgb(34 197 94 / 12%);
+}
+
+.boundary-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon-action-button {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  place-items: center;
+  color: #475569;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.icon-action-button:hover:not(:disabled) {
+  color: #08783e;
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+
+.icon-action-button.danger:hover:not(:disabled) {
+  color: #dc2626;
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+.icon-action-button:disabled {
+  color: #cbd5e1;
+  background: #f8fafc;
+  cursor: not-allowed;
+}
+
+.boundary-map {
+  position: relative;
+  height: 430px;
+  overflow: hidden;
+  background: #e8f1e5;
+  border: 1px solid #bbd4bc;
+  border-radius: 12px;
+  cursor: crosshair;
+}
+
+.boundary-map.disabled {
+  cursor: not-allowed;
+  opacity: 0.78;
+}
+
+.boundary-map-grid {
+  position: absolute;
+  inset: 0;
+  opacity: 0.62;
+  background-image:
+  linear-gradient(#bfd7c0 1px, transparent 1px),
+  linear-gradient(90deg, #bfd7c0 1px, transparent 1px);
+  background-size: 38px 38px;
+}
+
+.boundary-map::before,
+.boundary-map::after {
+  position: absolute;
+  content: "";
+  background: rgb(255 255 255 / 30%);
+  border: 1px solid rgb(120 160 121 / 35%);
+  border-radius: 50%;
+}
+
+.boundary-map::before {
+  top: 12%;
+  right: 8%;
+  width: 190px;
+  height: 95px;
+  transform: rotate(-18deg);
+}
+
+.boundary-map::after {
+  bottom: 9%;
+  left: 6%;
+  width: 230px;
+  height: 110px;
+  transform: rotate(12deg);
+}
+
+.boundary-map-empty {
+  position: absolute;
+  z-index: 2;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 7px;
+  width: max-content;
+  max-width: calc(100% - 40px);
+  padding: 18px 22px;
+  color: #14532d;
+  text-align: center;
+  background: rgb(255 255 255 / 88%);
+  border: 1px solid rgb(187 247 208 / 85%);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgb(15 23 42 / 10%);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.boundary-map-empty strong {
+  font-size: 14px;
+}
+
+.boundary-map-empty span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.boundary-polygon {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.boundary-polygon polygon {
+  fill: rgb(8 120 62 / 30%);
+  stroke: #05703a;
+  stroke-width: 0.65;
+  vector-effect: non-scaling-stroke;
+}
+
+.boundary-polygon polyline {
+  fill: none;
+  stroke: #05703a;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.boundary-polygon circle {
+  fill: #ffffff;
+  stroke: #05703a;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.boundary-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 13px;
+  color: #475569;
+  font-size: 13px;
+  background: #f8fafc;
+  border-radius: 9px;
+}
+
+.boundary-footer > div {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.boundary-footer strong {
+  color: #08783e;
+}
+
+.boundary-point-list {
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+}
+
+.boundary-point-row {
+  display: grid;
+  grid-template-columns: 85px minmax(0, 1fr) 32px;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 7px 10px;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.boundary-point-row:last-child {
+  border-bottom: 0;
+}
+
+.boundary-point-row span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.boundary-point-row code {
+  overflow: hidden;
+  color: #334155;
+  font-size: 12px;
+  text-overflow: ellipsis;
+}
+
+.boundary-point-row button {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  place-items: center;
+  color: #94a3b8;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.boundary-point-row button:hover {
+  color: #dc2626;
+  background: #fef2f2;
+}
+
+.plot-area-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 0.7fr);
+  align-items: stretch;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.input-with-unit {
+  display: flex;
+  align-items: center;
+}
+
+.input-with-unit input {
+  border-radius: 9px 0 0 9px !important;
+}
+
+.input-with-unit > span {
+  display: grid;
+  height: 44px;
+  min-width: 52px;
+  place-items: center;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 700;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-left: 0;
+  border-radius: 0 9px 9px 0;
+}
+
+.calculated-area {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  gap: 5px;
+  padding: 13px 15px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 9px;
+}
+
+.calculated-area span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.calculated-area strong {
+  color: #08783e;
+  font-size: 18px;
+}
+
+.calculated-area button {
+  width: max-content;
+  padding: 0;
+  color: #08783e;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.calculated-area button:hover {
+  text-decoration: underline;
+}
+
+.plot-review-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.plot-review-item {
+  display: flex;
+  min-height: 75px;
+  justify-content: center;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border-right: 1px solid #e2e8f0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.plot-review-item:nth-child(even) {
+  border-right: 0;
+}
+
+.plot-review-item:last-child,
+.plot-review-item:nth-last-child(2):nth-child(odd) {
+  border-bottom: 0;
+}
+
+.plot-review-full {
+  grid-column: 1 / -1;
+  border-right: 0;
+}
+
+.plot-review-item span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.plot-review-item strong {
+  color: #172b20;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.plot-form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+@media (max-width: 850px) {
+  .boundary-toolbar,
+  .boundary-coordinate-inputs {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .boundary-actions {
+    flex-wrap: wrap;
+  }
+
+  .boundary-coordinate-inputs label {
+    width: 100%;
+  }
+
+  .plot-area-field {
+    grid-template-columns: 1fr;
+  }
+
+
+}
+
+@media (max-width: 640px) {
+  .plot-form-card {
+    padding: 16px;
+  }
+
+  .plot-form-page .form-grid,
+  .plot-review-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .plot-form-page .form-field-full,
+  .plot-review-full {
+    grid-column: auto;
+  }
+
+  .plot-review-item {
+    border-right: 0;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .plot-review-item:nth-last-child(2) {
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .boundary-map {
+    height: 340px;
+  }
+
+  .boundary-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+
+}
