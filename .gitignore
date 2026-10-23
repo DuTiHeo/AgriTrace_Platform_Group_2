@@ -23,3 +23,8 @@ backend/uploads/
 Thumbs.db
 .vscode/
 .idea/
+
+# AI Agents
+.agents/
+AGENTS.md
+
