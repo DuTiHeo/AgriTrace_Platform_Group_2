@@ -62,10 +62,12 @@ export type UserDetail = TeamMember & {
   team_id: string | null;
   created_at: string;
 };
+export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled' | 'incomplete';
+
 export type MemberTask = {
   task_id: string;
   worker_id: string;
-  status: 'in_progress' | 'completed' | 'cancelled'
+  status: TaskStatus;
 };
 export type ApiTask = MemberTask & {
   team_id: string;
@@ -91,6 +93,15 @@ export type Plot = {
   status: 'active' | 'inactive';
   current_season_id: string | null;
   current_crop_name: string | null
+};
+export type PlotLocateResponse = {
+  plot_id: string;
+  org_id: string;
+  code: string;
+  area: number | null;
+  status: 'active' | 'inactive';
+  current_season_id: string | null;
+  current_crop_name: string | null;
 };
 export type Crop = {
   crop_id: string;
@@ -184,7 +195,7 @@ async function request<T>(token: string, path: string, options: RequestInit = {}
         429: 'Bạn thao tác quá nhanh. Vui lòng thử lại sau.',
       };
       throw new ApiError(response.status >= 500 ? 'Máy chủ đang gặp sự cố. Vui lòng thử lại sau.'
-        : (response.status === 400 && typeof body?.detail === 'string') ? body.detail
+        : (typeof body?.detail === 'string' && [400, 404, 422].includes(response.status)) ? body.detail
           : messages[response.status] ?? 'Không thực hiện được yêu cầu.', response.status);
     }
 
@@ -216,19 +227,29 @@ export const listTeamMembers = (token: string) => request<TeamMember[]>(token, '
 export const getUserDetail = (token: string, id: string) => request<UserDetail>(token, `/users/${encodeURIComponent(id)}`);
 export const listMemberTasks = (token: string, userId: string) => request<MemberTask[]>(token, `/tasks?worker_id=${encodeURIComponent(userId)}&include_cancelled=true`);
 export const listMyTasks = (token: string) => request<ApiTask[]>(token, '/tasks');
-export const updateTaskStatus = (token: string, taskId: string, status: 'in_progress' | 'completed') => request<ApiTask>(token, `/tasks/${encodeURIComponent(taskId)}/status`, json('PATCH', {
+export const updateTaskStatus = (token: string, taskId: string, status: TaskStatus) => request<ApiTask>(token, `/tasks/${encodeURIComponent(taskId)}/status`, json('PATCH', {
   status
 }));
+export const deleteTask = (token: string, taskId: string) => request<ApiTask>(token, `/tasks/${encodeURIComponent(taskId)}`, {
+  method: 'DELETE'
+});
 export async function listPlots(token: string): Promise<Plot[]> {
   const plots = await request<Plot[]>(token, '/plots?status=active');
   return [...new Map(plots.map(plot => [plot.plot_id, plot])).values()];
 }
 
+export const locatePlot = (token: string, latitude: number, longitude: number, orgId?: string) =>
+  request<PlotLocateResponse>(
+    token,
+    `/plots/locate?latitude=${encodeURIComponent(latitude)}&longitude=${encodeURIComponent(longitude)}${orgId ? `&org_id=${encodeURIComponent(orgId)}` : ''}`
+  );
+
+
 export async function listAssignedPlots(token: string, user: { role: string; team_id?: string | null } | null): Promise<Plot[]> {
   if (!user || !user.team_id) return [];
   const plots = await listPlots(token);
   const assignedIds = user.role === 'worker'
-    ? new Set((await listMyTasks(token)).filter(task => task.status === 'in_progress').map(task => task.plot_id))
+    ? new Set((await listMyTasks(token)).filter(task => ['pending', 'in_progress', 'incomplete'].includes(task.status)).map(task => task.plot_id))
     : new Set((await listSeasons(token, user.team_id)).filter(season => ['growing', 'ready_to_harvest'].includes(season.status)).map(season => season.plot_id));
   return plots.filter(plot => assignedIds.has(plot.plot_id));
 }
@@ -249,13 +270,11 @@ export type TaskPayload = {
   content?: string;
   start_at?: string;
   due_at?: string;
-  status?: 'in_progress' | 'completed' | 'cancelled'
+  status?: TaskStatus;
 };
 export const createTask = (token: string, payload: Required<Pick<TaskPayload, 'team_id' | 'worker_id' | 'plot_id' | 'content' | 'start_at' | 'due_at'>> & TaskPayload) => request<ApiTask>(token, '/tasks', json('POST', payload));
 export const updateTask = (token: string, taskId: string, payload: TaskPayload) => request<ApiTask>(token, `/tasks/${encodeURIComponent(taskId)}`, json('PATCH', payload));
-export const cancelTask = (token: string, taskId: string) => request<ApiTask>(token, `/tasks/${encodeURIComponent(taskId)}`, {
-  method: 'DELETE'
-});
+export const cancelTask = (token: string, taskId: string) => deleteTask(token, taskId);
 
 export async function getMemberActivity(token: string, userId: string) {
   const [logs, tasks] = await Promise.all([

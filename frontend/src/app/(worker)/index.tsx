@@ -162,7 +162,20 @@ export default function WorkerHome() {
                   {getTaskTypeLabel(task.title)}
                 </Text>
 
-                {task.started && (
+                {task.displayStatus === 'incomplete' ? (
+                  <Text
+                    style={[
+                      shared.chip,
+                      shared.chipText,
+                      {
+                        color: colors.danger,
+                        backgroundColor: '#fef2f2'
+                      }
+                    ]}
+                  >
+                    Chưa hoàn thành
+                  </Text>
+                ) : (task.displayStatus === 'in_progress' || task.started) ? (
                   <Text
                     style={[
                       shared.chip,
@@ -174,6 +187,19 @@ export default function WorkerHome() {
                     ]}
                   >
                     Đang làm
+                  </Text>
+                ) : (
+                  <Text
+                    style={[
+                      shared.chip,
+                      shared.chipText,
+                      {
+                        color: colors.muted,
+                        backgroundColor: '#EFF2F0'
+                      }
+                    ]}
+                  >
+                    Đã nhận
                   </Text>
                 )}
               </View>

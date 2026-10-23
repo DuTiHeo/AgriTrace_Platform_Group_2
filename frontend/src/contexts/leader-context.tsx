@@ -23,12 +23,14 @@ export type Task = {
   plotId?: string;
   due: string;
   status: 'doing' | 'done';
-  displayStatus: 'in_progress' | 'incomplete' | 'completed' | 'completed_late';
+  displayStatus: 'pending' | 'in_progress' | 'incomplete' | 'completed' | 'completed_late';
   owner?: boolean;
   started?: boolean;
   assigneeStatuses?: Record<string, {
     name: string | null;
-    completed: boolean
+    completed: boolean;
+    status?: 'pending' | 'in_progress' | 'completed' | 'cancelled' | 'incomplete';
+    displayStatus?: 'pending' | 'in_progress' | 'incomplete' | 'completed' | 'completed_late';
   }>;
   startDate?: string;
   startTime?: string;
@@ -94,7 +96,7 @@ function useLeaderState() {
         id: member.user_id,
         name: member.full_name,
         phone: member.phone,
-        area: [...new Map(assignedTasks.filter(task => task.worker_id === member.user_id && task.status === 'in_progress')
+        area: [...new Map(assignedTasks.filter(task => task.worker_id === member.user_id && ['pending', 'in_progress', 'incomplete'].includes(task.status))
           .map(task => [task.plot_id, task.plot_code])).values()].filter(Boolean).join(', ') || 'Chưa có khu vực được giao',
         active: member.status === 'active',
       })));
