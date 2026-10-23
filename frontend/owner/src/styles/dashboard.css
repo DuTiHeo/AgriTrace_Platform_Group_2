@@ -254,6 +254,11 @@
   color: var(--green-800);
 }
 
+.status-incomplete {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
 .activity-row {
   display: grid;
   grid-template-columns: 36px minmax(0, 1fr) auto;

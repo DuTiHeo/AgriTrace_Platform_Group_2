@@ -1,7 +1,9 @@
 export type TaskStatus =
+  | "pending"
   | "in_progress"
   | "completed"
-  | "cancelled";
+  | "cancelled"
+  | "incomplete";
 
 export type TaskAssigneeRole = "leader" | "worker";
 

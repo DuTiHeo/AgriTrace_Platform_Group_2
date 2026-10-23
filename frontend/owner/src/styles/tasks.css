@@ -51,6 +51,11 @@
   background: #dbeafe;
 }
 
+.task-summary-incomplete > svg {
+  color: #b91c1c;
+  background: #fef2f2;
+}
+
 .task-summary-awaiting > svg {
   color: #b45309;
   background: #ffedd5;
@@ -190,6 +195,12 @@
   white-space: nowrap;
 }
 
+.task-status-pending {
+  color: #4b5563;
+  background-color: #f3f4f6;
+  border: 1px solid #e5e7eb;
+}
+
 .task-status-in_progress {
   color: #1d4ed8;
   background: #eff6ff;
@@ -203,6 +214,11 @@
 .task-status-completed {
   color: #08783e;
   background: #eaf8ee;
+}
+
+.task-status-incomplete {
+  color: #b91c1c;
+  background: #fef2f2;
 }
 
 .task-status-cancelled {
