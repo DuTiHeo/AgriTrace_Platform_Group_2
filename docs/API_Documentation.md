@@ -55,10 +55,60 @@ Usecase | Method | Endpoint | Mo ta | Trang thai |
 Usecase | Method | Endpoint | Mo ta | Trang thai |
 |---|---|---|---|---|
 |UC-SH04.1| GET | /plots | Danh sách + tìm kiếm, scope theo role (tương tự Organization), lọc thêm theo org_id/status/keyword | Đã xong |
+|UC-W03.4 + BR-14| GET | /plots/locate | Tự động suy luận Lô đất và Mùa vụ từ tọa độ GPS (PostGIS ST_Contains). Khóa chọn thủ công (BR-14, UC-W03.4, EX-15). Bắt buộc đứng trước GET /{plot_id} để tránh xung đột UUID | Đã xong |
 |UC-SH04.1| GET | /plots/{plot_id} | Xem chi tiết lô đất kèm ranh giới GeoJSON và mùa vụ đang canh tác hiện tại (nếu có) | Đã xong |
 |UC-O02.1| POST | /plots | Tạo lô đất mới thuộc 1 nông trại. Tự tính diện tích từ ranh giới nếu không nhập tay; chặn nếu ranh giới lô vượt ra ngoài ranh giới nông trại cha (ST_Contains) | Đã xong |
 |UC-O02.2| PATCH | /plots/{plot_id} | Sửa mã lô, diện tích, trạng thái hoặc ranh giới. Chặn sửa ranh giới nếu lô đang có mùa vụ hoạt động (growing/ready_to_harvest); ranh giới mới vẫn phải nằm trong nông trại cha | Đã xong |
 |UC-O02.3| DELETE | /plots/{plot_id}?soft=true\|false | Xóa lô đất. Mặc định xóa mềm (status=inactive); luôn chặn nếu đang có mùa vụ hoạt động; soft=false trả 400 nếu lô đã có lịch sử mùa vụ/nhiệm vụ | Đã xong |
+
+Ghi chú nghiệp vụ và Request/Response chính cho Plot (Định vị tự động GPS - BR-14, UC-W03.4, EX-15):
+
+1. **Nguyên tắc định vị không gian & Khóa chọn thủ công (`BR-14`, `UC-W03.4`)**:
+   - Sử dụng hàm không gian PostGIS `ST_Contains(boundary_geojson, ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326))` để xác định Lô đất chứa tọa độ GPS. Lưu ý thứ tự trục PostGIS: kinh độ `longitude` (trục X), vĩ độ `latitude` (trục Y).
+   - Truy vấn đồng thời mùa vụ đang hoạt động (`status IN ('growing', 'ready_to_harvest')`) và tên giống cây trồng tương ứng.
+   - **Phân quyền & Cô lập dữ liệu**:
+     - `worker`, `leader`: Tự động trích xuất `org_id` từ token người dùng (`current_user["org_id"]`), tuyệt đối không được truy vấn lô đất của nông trại khác.
+     - `owner`: Lấy `org_id` từ query parameter (thẩm định quyền sở hữu qua `ensure_owns_org`) hoặc mặc định lấy nông trại active đầu tiên của mình.
+     - `admin`: Bắt buộc truyền query parameter `org_id`.
+   - **Bất biến định tuyến FastAPI**: Route `GET /plots/locate` **BẮT BUỘC ĐỨNG TRƯỚC** `GET /plots/{plot_id}` để tránh xung đột định tuyến UUID (FastAPI parse nhầm `"locate"` thành UUID parameter gây lỗi `422 Unprocessable Entity`).
+
+2. **Query Parameters**:
+   - `latitude`: float (bắt buộc, `-90.0` đến `90.0`) - Vĩ độ GPS của thiết bị.
+   - `longitude`: float (bắt buộc, `-180.0` đến `180.0`) - Kinh độ GPS của thiết bị.
+   - `org_id`: UUID (tùy chọn với Owner, bắt buộc với Admin, tự động lấy từ token với Worker/Leader).
+
+3. **Ví dụ Request / Response**:
+
+```http
+GET /plots/locate?latitude=21.000217&longitude=105.843090
+Authorization: Bearer <token_worker_hoac_leader>
+```
+
+- **Response thành công (200 OK - `PlotLocateResponse`)**:
+```json
+{
+  "plot_id": "40000000-0000-0000-0000-000000000001",
+  "org_id": "20000000-0000-0000-0000-000000000001",
+  "code": "DL-01",
+  "area": 5000.0,
+  "status": "active",
+  "current_season_id": "70000000-0000-0000-0000-000000000001",
+  "current_crop_name": "Xà lách Lollo Rossa"
+}
+```
+
+- **Response lỗi ngoại lệ GPS ngoài lô đất (404 Not Found - `EX-15`)**:
+```json
+{
+  "detail": "Không thể xác định vị trí làm việc. Vị trí GPS của bạn không nằm trong bất kỳ lô đất nào thuộc nông trại"
+}
+```
+
+- **Các mã lỗi khác**:
+  - `400 Bad Request`: Người dùng chưa thuộc nông trại nào / Admin thiếu tham số `org_id`.
+  - `401 Unauthorized`: Chưa đăng nhập hoặc Access Token không hợp lệ / hết hạn (`EX-05`).
+  - `403 Forbidden`: Người dùng không có quyền truy cập nông trại chỉ định (`EX-06`).
+  - `422 Unprocessable Entity`: Thiếu hoặc sai định dạng tham số tọa độ (ví dụ vĩ độ ngoài khoảng `[-90, 90]`).
 
 Đợt 1: Module Team (Tổ công nhân)
 Usecase | Method | Endpoint | Mo ta | Trang thai |
@@ -67,7 +117,7 @@ Usecase | Method | Endpoint | Mo ta | Trang thai |
 |UC-SH04.1| GET | /teams/{team_id} | Xem chi tiết tổ kèm danh sách thành viên | Đã xong |
 |UC-O06.1| POST | /teams | Tạo tổ mới; có thể gán luôn Tổ trưởng (kiểm tra người này chưa làm Tổ trưởng của tổ khác) | Đã xong |
 |UC-O06.2 + UC-O06.3| PATCH | /teams/{team_id} | Đổi tên tổ hoặc đổi Tổ trưởng. Tổ trưởng cũ (nếu bị thay) tự động hạ role về worker | Đã xong |
-|-| DELETE | /teams/{team_id} | Xóa tổ (hard delete, bảng teams không có cột status). Chặn nếu đang có nhiệm vụ in_progress; trả 400 nếu tổ đã có lịch sử task/mùa vụ hỗ trợ | Đã xong |
+|-| DELETE | /teams/{team_id} | Xóa tổ (hard delete, bảng teams không có cột status). Chặn nếu đang có nhiệm vụ in_progress hoặc incomplete; trả 400 nếu tổ đã có lịch sử task/mùa vụ hỗ trợ | Đã xong |
 |UC-O06.2| POST | /teams/{team_id}/members | Thêm danh sách công nhân vào tổ | Đã xong |
 |UC-O06.2| DELETE | /teams/{team_id}/members/{user_id} | Gỡ 1 công nhân khỏi tổ. Nếu người đó đang là Tổ trưởng của tổ này, tự động gỡ team_leader_id và hạ role về worker | Đã xong |
 
@@ -87,23 +137,70 @@ Usecase | Method | Endpoint | Mo ta | Trang thai |
 |---|---|---|---|---|
 |UC-W03.1 -> UC-W03.6 + UC-W02.1| GET | /farming-logs | Danh sách nhật ký canh tác, scope theo role. Worker/Leader xem log cả tổ mình; Owner xem theo org mình sở hữu; Admin xem toàn bộ hoặc lọc org_id. Hỗ trợ lọc season_id, chưa phân trang | Đã xong |
 |UC-W03.1 -> UC-W03.6 + UC-T01.1 + UC-O03.5| GET | /farming-logs/{log_id} | Xem chi tiết 1 nhật ký, trả kèm sẵn photos[] và notes[] để FE không cần gọi API ảnh/ghi chú riêng | Đã xong |
-|UC-W03.1 -> UC-W03.6| POST | /farming-logs | Worker/Leader tạo nhật ký canh tác bằng JSON thuần. Bắt buộc activity_type và gps; content optional; activity_type là free text, không enum. Chỉ cho tạo khi season cùng org và status là growing/ready_to_harvest | Đã xong |
+|UC-W03.1 -> UC-W03.6 + BR-14 + EX-15| POST | /farming-logs | Worker/Leader tạo nhật ký canh tác bằng JSON thuần. Bắt buộc activity_type và gps; content optional; activity_type là free text, không enum. Chỉ cho tạo khi season cùng org và status là growing/ready_to_harvest; Tái thẩm định 2 lớp (Double Validation) bằng PostGIS ST_Contains kiểm tra GPS nằm trọn trong ranh giới lô đất của mùa vụ (BR-14, EX-15) | Đã xong |
 |UC-W03.1 -> UC-W03.6| POST | /farming-logs/{log_id}/photos | Tác giả log upload ảnh theo flow bước 2, multipart/form-data key files. Tối đa 5 ảnh/log, 5MB/ảnh, chỉ .jpg/.jpeg, không convert HEIC ở backend | Đã xong |
 
-Ghi chú request/response chính cho FarmingLog:
+Ghi chú nghiệp vụ và Request/Response chính cho FarmingLog:
+
+1. **Cơ chế Thẩm định Không gian 2 lớp (Double Validation - `BR-14`, `EX-15`)**:
+   - Khi client gửi yêu cầu tạo nhật ký, Backend không chỉ tin tưởng client mà bắt buộc thực hiện kiểm tra an toàn tại máy chủ:
+     `crud_farming_log.is_gps_in_season_plot(db, season_id, latitude, longitude)`.
+   - Backend sử dụng hàm PostGIS `ST_Contains(p.boundary_geojson, ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326))` để đối soát tọa độ GPS với lô đất liên kết trực tiếp với mùa vụ (`season_id`).
+   - Nếu tọa độ GPS nằm ngoài lô đất (hoặc nếu client cố tình can thiệp sửa đổi tọa độ GPS), Backend lập tức chặn và trả về `400 Bad Request` chuẩn kịch bản `EX-15`.
+   - Lưu ý thứ tự trục PostGIS: `X = longitude` (kinh độ ~ 105.x), `Y = latitude` (vĩ độ ~ 20.x/21.x), SRID 4326.
+
+2. **Ví dụ Request / Response**:
+
+```http
+POST /farming-logs
+Authorization: Bearer <token_worker_hoac_leader>
+Content-Type: application/json
+```
 
 ```json
-POST /farming-logs
 {
   "season_id": "70000000-0000-0000-0000-000000000001",
-  "activity_type": "bao_cao_su_co",
-  "content": "Phat hien la co dau hieu sau benh o luong A",
+  "activity_type": "Chăm sóc định kỳ",
+  "content": "Kiểm tra sâu bệnh và tỉa lá gốc tại luống A",
   "gps": {
-    "latitude": 11.9415,
-    "longitude": 108.4215
+    "latitude": 21.000217,
+    "longitude": 105.843090
   }
 }
 ```
+
+- **Response thành công (201 Created - `FarmingLogDetail`)**:
+```json
+{
+  "log_id": "a0000000-0000-0000-0000-000000000099",
+  "season_id": "70000000-0000-0000-0000-000000000001",
+  "user_id": "10000000-0000-0000-0000-000000000003",
+  "team_id": "50000000-0000-0000-0000-000000000001",
+  "activity_type": "Chăm sóc định kỳ",
+  "content": "Kiểm tra sâu bệnh và tỉa lá gốc tại luống A",
+  "gps": {
+    "latitude": 21.000217,
+    "longitude": 105.843090
+  },
+  "created_at": "2026-10-21T12:00:00+07:00",
+  "photos": [],
+  "notes": []
+}
+```
+
+- **Response lỗi tọa độ GPS ngoài lô đất canh tác (400 Bad Request - `EX-15`)**:
+```json
+{
+  "detail": "Không thể xác định vị trí làm việc. Vị trí GPS của bạn không nằm trong bất kỳ lô đất nào thuộc nông trại"
+}
+```
+
+- **Các mã phản hồi lỗi khác**:
+  - `400 Bad Request`: "Mua vu da hoan tat, khong the ghi them nhat ky" (khi trạng thái mùa vụ không phải `growing` hoặc `ready_to_harvest` theo `BR-16`).
+  - `401 Unauthorized`: Chưa đăng nhập hoặc Access Token không hợp lệ / hết hạn (`EX-05`).
+  - `403 Forbidden`: Người dùng không thuộc nông trại chứa mùa vụ này hoặc vai trò không phải worker/leader (`EX-06`).
+  - `404 Not Found`: "Khong tim thay mua vu".
+  - `422 Unprocessable Entity`: Sai định dạng dữ liệu (thiếu `season_id`, thiếu `activity_type`, thiếu object `gps` hoặc tọa độ ngoài dải giá trị).
 
 Upload ảnh bằng Postman:
 
@@ -160,38 +257,206 @@ Notification khi có note mới tạm bỏ qua ở đợt 2: không insert vào 
 Đợt 2: Module Tasks (Nhiệm vụ công việc)
 Usecase | Method | Endpoint | Mo ta | Trang thai |
 |---|---|---|---|---|
-|UC-SH04.1| GET | /tasks | Danh sách + tìm kiếm nhiệm vụ, lọc theo org/team/worker/plot/status/keyword/include_cancelled. Scope theo role (Admin: all, Owner: theo org, Leader: chỉ xem tổ mình, Worker: chỉ xem việc của mình) | Đã xong |
-|UC-SH04.1| GET | /tasks/{task_id} | Xem chi tiết nhiệm vụ kèm thông tin mở rộng của team, công nhân phụ trách, mã lô và nông trại | Đã xong |
-|UC-T01.3 + UC-O06.1| POST | /tasks | Admin/Owner/Leader tạo nhiệm vụ mới. Leader chỉ được giao việc cho tổ của mình. Ràng buộc: worker và plot phải thuộc cùng nông trại của team, worker phải active và thuộc đúng tổ phụ trách | Đã xong |
-|UC-T01.3| PUT / PATCH | /tasks/{task_id} | Admin/Owner/Leader cập nhật thông tin nhiệm vụ. Leader không được chuyển nhiệm vụ sang tổ khác. Tự động kiểm tra lại tính hợp lệ nếu thay đổi team, worker hoặc plot | Đã xong |
-|UC-W01.1 + UC-T01.3| PATCH | /tasks/{task_id}/status | Cập nhật nhanh trạng thái nhiệm vụ (in_progress, completed, cancelled). Worker chỉ được cập nhật việc của mình và KHÔNG có quyền hủy (cancelled); Leader/Owner/Admin có quyền cập nhật trong phạm vi quản lý | Đã xong |
-|-| DELETE | /tasks/{task_id} | Hủy/Xóa mềm nhiệm vụ (chuyển status=cancelled). Chỉ Admin, Owner và Leader phụ trách tổ mới có quyền thực hiện | Đã xong |
+|UC-SH04.1| GET | /tasks | Danh sách + tìm kiếm nhiệm vụ, lọc theo org_id/team_id/worker_id/plot_id/status (pending, in_progress, completed, cancelled, incomplete)/keyword/include_cancelled. Tự động tính toán trạng thái theo thời gian thực: task có status IN ('pending', 'in_progress') mà due_at < CURRENT_TIMESTAMP sẽ được trả về với status='incomplete'. Khi lọc status=incomplete sẽ lấy cả task incomplete và task pending/in_progress quá hạn; khi lọc status=pending chỉ lấy task pending chưa quá hạn (due_at >= CURRENT_TIMESTAMP); khi lọc status=in_progress chỉ lấy task in_progress chưa quá hạn (due_at >= CURRENT_TIMESTAMP). Scope theo role (Admin: all, Owner: theo org, Leader: chỉ xem tổ mình, Worker: chỉ xem việc của mình) | Đã xong |
+|UC-SH04.1| GET | /tasks/{task_id} | Xem chi tiết nhiệm vụ kèm thông tin mở rộng của team, công nhân phụ trách, mã lô và nông trại. Trạng thái status được tự động tính toán động (tự chuyển thành 'incomplete' nếu status IN ('pending', 'in_progress') và due_at < CURRENT_TIMESTAMP) | Đã xong |
+|UC-T01.3 + UC-O06.1| POST | /tasks | Admin/Owner/Leader tạo nhiệm vụ mới. Leader chỉ được giao việc cho tổ của mình. Ràng buộc: worker và plot phải thuộc cùng nông trại của team, worker phải active và thuộc đúng tổ phụ trách, due_at > start_at. Mặc định khởi tạo status='pending' ("Đã nhận") | Đã xong |
+|UC-T01.3| PUT / PATCH | /tasks/{task_id} | Admin/Owner/Leader cập nhật thông tin nhiệm vụ (hỗ trợ cập nhật status sang pending, in_progress, completed, incomplete, cancelled). Leader không được chuyển nhiệm vụ sang tổ khác. Tự động kiểm tra ràng buộc due_at > start_at. Logic tự động chuyển trạng thái: nếu cập nhật status='pending' hoặc 'in_progress' mà due_at < now thì tự động chuyển thành 'incomplete' | Đã xong |
+|UC-W01.1 + UC-T01.3| PATCH | /tasks/{task_id}/status | Cập nhật nhanh trạng thái nhiệm vụ (hỗ trợ 5 giá trị enum TaskStatus: pending, in_progress, completed, incomplete, cancelled). Worker chỉ được cập nhật việc của mình (bấm Bắt đầu sang in_progress, hoàn thành sang completed, hoặc incomplete) và KHÔNG có quyền hủy (cancelled); Leader/Owner/Admin có quyền cập nhật trong phạm vi quản lý. Logic tự động: nếu cập nhật status='pending' hoặc 'in_progress' mà task đã quá hạn (due_at < now) thì hệ thống tự động ghi nhận là 'incomplete' | Đã xong |
+|UC-T01.3 + UC-O06.1| DELETE | /tasks/{task_id} | Hủy/Xóa mềm nhiệm vụ (chuyển status='cancelled' ("Đã hủy")). Phân quyền: Chỉ Admin, Owner (thuộc nông trại sở hữu) và Leader (phụ trách tổ được giao việc) mới có quyền thực hiện. Worker tuyệt đối không có quyền hủy nhiệm vụ (bị chặn 403 Forbidden: "Công nhân không có quyền hủy nhiệm vụ"). Trả về thông tin nhiệm vụ với status='cancelled'. Nhiệm vụ sẽ ẩn khỏi danh sách mặc định của GET /tasks (trừ khi truyền include_cancelled=true) | Đã xong |
 
-Ghi chú request/response chính cho Tasks:
+Ghi chú nghiệp vụ, Enum và Request/Response chính cho Tasks:
+
+1. **Enum `TaskStatus` và Vòng đời 5 trạng thái**:
+   - `pending`: "Đã nhận" / Chờ làm (trạng thái khởi tạo mặc định khi mới giao việc, chưa bấm bắt đầu, `due_at >= now`).
+   - `in_progress`: "Đang làm" / Đang thực hiện (công nhân đã bấm "Bắt đầu", `due_at >= now`).
+   - `completed`: "Đã hoàn thành" (công việc đã được hoàn tất).
+   - `incomplete`: "Chưa hoàn thành" / Quá hạn chưa xong (hệ thống tự động gán khi `due_at < now` dù đang ở `pending` hay `in_progress`, hoặc được cập nhật trực tiếp).
+   - `cancelled`: "Đã hủy" (nhiệm vụ bị hủy / xóa mềm bởi Leader, Owner hoặc Admin).
+
+2. **Quy tắc chuyển đổi trạng thái (State Machine) & Logic tự động khi `due_at < now`**:
+   - **Phân quyền chuyển trạng thái (`BR-09`)**:
+     - `worker`: Chỉ được cập nhật nhiệm vụ của chính mình (`tasks.worker_id == current_user["user_id"]`), được phép chuyển sang `in_progress` (khi bấm Bắt đầu), `completed` (khi hoàn thành), `incomplete`. Tuyệt đối **CẤM** chuyển sang `cancelled` (`403 Forbidden: "Công nhân không có quyền hủy nhiệm vụ"`).
+     - `leader`: Chỉ cập nhật hoặc hủy nhiệm vụ trong tổ của mình (`tasks.team_id == current_user["team_id"]`).
+     - `owner`: Chỉ cập nhật hoặc hủy nhiệm vụ thuộc nông trại mình sở hữu (`ensure_owns_org`).
+     - `admin`: Có quyền cập nhật hoặc hủy toàn hệ thống.
+   - **Phân quyền xóa mềm (`DELETE /tasks/{task_id}`)**:
+     - `leader`: Chỉ có quyền hủy nhiệm vụ của tổ mình phụ trách (`tasks.team_id == current_user["team_id"]`). Nếu hủy task thuộc tổ khác $\rightarrow$ `403 Forbidden: "Bạn chỉ có thể hủy nhiệm vụ thuộc tổ của mình"`.
+     - `owner`: Chỉ có quyền hủy nhiệm vụ thuộc nông trại mình sở hữu (`ensure_owns_org`).
+     - `admin`: Có quyền hủy nhiệm vụ trên toàn hệ thống.
+     - `worker`: Tuyệt đối **KHÔNG** có quyền hủy nhiệm vụ $\rightarrow$ `403 Forbidden: "Công nhân không có quyền hủy nhiệm vụ"`.
+   - **Hàm tính toán trạng thái (`_compute_target_status`)**:
+     - Nếu payload `status == "completed"` $\rightarrow$ Lưu `completed`.
+     - Nếu payload `status == "cancelled"` $\rightarrow$ Lưu `cancelled`.
+     - Nếu payload `status == "incomplete"` $\rightarrow$ Lưu `incomplete`.
+     - Nếu payload `status IN ("pending", "in_progress")`: Kiểm tra `due_at < now` (UTC). Nếu đã quá hạn $\rightarrow$ Tự động chuyển thành `incomplete`; nếu chưa quá hạn $\rightarrow$ Ghi nhận `pending` hoặc `in_progress`.
+   - **Truy vấn & Lọc dữ liệu thời gian thực (`crud_tasks`)**:
+     - Cột `status` trong `GET /tasks` và `GET /tasks/{task_id}` luôn được chuẩn hóa qua biểu thức SQL:
+       `CASE WHEN t.status IN ('pending', 'in_progress') AND t.due_at < CURRENT_TIMESTAMP THEN 'incomplete' ELSE t.status END AS status`.
+     - Khi lọc `status=incomplete`: SQL kết hợp `(t.status = 'incomplete' OR (t.status IN ('pending', 'in_progress') AND t.due_at < CURRENT_TIMESTAMP))` để bảo đảm mọi task quá hạn đều được trả về chính xác ngay cả khi chưa cập nhật DB.
+     - Khi lọc `status=pending`: SQL lọc `(t.status = 'pending' AND t.due_at >= CURRENT_TIMESTAMP)`.
+     - Khi lọc `status=in_progress`: SQL lọc `(t.status = 'in_progress' AND t.due_at >= CURRENT_TIMESTAMP)`.
+
+3. **Ví dụ Request / Response**:
+
 ```json
-POST /tasks
+// POST /tasks - Giao nhiệm vụ mới (Status mặc định là pending)
+// Request Body:
 {
   "team_id": "50000000-0000-0000-0000-000000000001",
   "worker_id": "10000000-0000-0000-0000-000000000003",
   "plot_id": "40000000-0000-0000-0000-000000000001",
   "content": "Kiem tra sau benh va phun thuoc luong 1-3",
-  "start_at":"2026-10-05 08:00:00+07:00",
-  "due_at": "2026-10-05 17:00:00+07:00"
+  "start_at": "2026-10-05T08:00:00+07:00",
+  "due_at": "2026-10-05T17:00:00+07:00"
+}
+
+// Response (201 Created):
+{
+  "task_id": "d0000000-0000-0000-0000-000000000001",
+  "team_id": "50000000-0000-0000-0000-000000000001",
+  "team_name": "Tổ Trồng trọt 1",
+  "team_leader_name": "Lê Văn Cường",
+  "worker_id": "10000000-0000-0000-0000-000000000003",
+  "worker_name": "Phạm Thị Dung",
+  "worker_phone": "0901000003",
+  "plot_id": "40000000-0000-0000-0000-000000000001",
+  "plot_code": "PLOT-DL-01",
+  "org_id": "20000000-0000-0000-0000-000000000001",
+  "org_name": "Nông trại Xanh Đà Lạt",
+  "content": "Kiem tra sau benh va phun thuoc luong 1-3",
+  "start_at": "2026-10-05T08:00:00+07:00",
+  "due_at": "2026-10-05T17:00:00+07:00",
+  "status": "pending",
+  "created_at": "2026-10-05T07:30:00+07:00",
+  "updated_at": "2026-10-05T07:30:00+07:00"
 }
 ```
 
 ```json
-PATCH /tasks/{task_id}/status
+// PATCH /tasks/{task_id}/status - Cập nhật trạng thái nhiệm vụ
+// Trường hợp 0: Công nhân bấm "Bắt đầu" (chuyển pending sang in_progress)
+// Request Body:
+{
+  "status": "in_progress"
+}
+// Response (200 OK):
+{
+  "task_id": "d0000000-0000-0000-0000-000000000001",
+  "status": "in_progress",
+  "updated_at": "2026-10-05T08:05:00+07:00"
+}
+
+// Trường hợp 1: Hoàn thành nhiệm vụ
+// Request Body:
 {
   "status": "completed"
 }
-```
-Schema DB bổ sung cho Tasks (Migration 001):
+// Response (200 OK):
+{
+  "task_id": "d0000000-0000-0000-0000-000000000001",
+  "status": "completed",
+  "updated_at": "2026-10-05T16:45:00+07:00"
+}
 
+// Trường hợp 2: Gửi status "in_progress" hoặc "pending" nhưng due_at < now (đã quá hạn) -> Hệ thống tự động chuyển thành "incomplete"
+// Request Body:
+{
+  "status": "in_progress"
+}
+// Response (200 OK):
+{
+  "task_id": "d0000000-0000-0000-0000-000000000001",
+  "status": "incomplete",
+  "updated_at": "2026-10-06T09:00:00+07:00"
+}
+
+// Trường hợp 3: Đánh dấu trực tiếp "incomplete"
+// Request Body:
+{
+  "status": "incomplete"
+}
+// Response (200 OK):
+{
+  "task_id": "d0000000-0000-0000-0000-000000000001",
+  "status": "incomplete",
+  "updated_at": "2026-10-06T09:00:00+07:00"
+}
+```
+
+```json
+// PUT /tasks/{task_id} hoặc PATCH /tasks/{task_id} - Chỉnh sửa thông tin nhiệm vụ
+// Request Body:
+{
+  "content": "Kiem tra sau benh, bo sung bon phan huu co",
+  "due_at": "2026-10-06T18:00:00+07:00",
+  "status": "in_progress"
+}
+// Response (200 OK):
+{
+  "task_id": "d0000000-0000-0000-0000-000000000001",
+  "content": "Kiem tra sau benh, bo sung bon phan huu co",
+  "due_at": "2026-10-06T18:00:00+07:00",
+  "status": "in_progress",
+  "updated_at": "2026-10-05T10:00:00+07:00"
+}
+```
+
+```json
+// GET /tasks?status=incomplete - Lấy danh sách nhiệm vụ chưa hoàn thành / quá hạn
+// Response (200 OK):
+[
+  {
+    "task_id": "d0000000-0000-0000-0000-000000000004",
+    "team_id": "50000000-0000-0000-0000-000000000001",
+    "team_name": "Tổ Trồng trọt 1",
+    "team_leader_name": "Lê Văn Cường",
+    "worker_id": "10000000-0000-0000-0000-000000000003",
+    "worker_name": "Phạm Thị Dung",
+    "worker_phone": "0901000003",
+    "plot_id": "40000000-0000-0000-0000-000000000001",
+    "plot_code": "PLOT-DL-01",
+    "org_id": "20000000-0000-0000-0000-000000000001",
+    "org_name": "Nông trại Xanh Đà Lạt",
+    "content": "Phun thuoc phong tru ray nau dot 2",
+    "start_at": "2026-09-10T08:00:00+07:00",
+    "due_at": "2026-09-11T17:00:00+07:00",
+    "status": "incomplete",
+    "created_at": "2026-09-10T07:00:00+07:00",
+    "updated_at": "2026-09-10T07:00:00+07:00"
+  }
+]
+```
+
+```json
+// DELETE /tasks/{task_id} - Hủy / Xóa mềm nhiệm vụ (Leader trong tổ, Owner nông trại, Admin)
+// Response (200 OK - Trả về chi tiết nhiệm vụ với status chuyển sang "cancelled"):
+{
+  "task_id": "d0000000-0000-0000-0000-000000000001",
+  "team_id": "50000000-0000-0000-0000-000000000001",
+  "team_name": "Tổ Trồng trọt 1",
+  "team_leader_name": "Lê Văn Cường",
+  "worker_id": "10000000-0000-0000-0000-000000000003",
+  "worker_name": "Phạm Thị Dung",
+  "worker_phone": "0901000003",
+  "plot_id": "40000000-0000-0000-0000-000000000001",
+  "plot_code": "PLOT-DL-01",
+  "org_id": "20000000-0000-0000-0000-000000000001",
+  "org_name": "Nông trại Xanh Đà Lạt",
+  "content": "Kiem tra sau benh va phun thuoc luong 1-3",
+  "start_at": "2026-10-05T08:00:00+07:00",
+  "due_at": "2026-10-05T17:00:00+07:00",
+  "status": "cancelled",
+  "created_at": "2026-10-05T07:30:00+07:00",
+  "updated_at": "2026-10-05T08:15:00+07:00"
+}
+```
+
+Schema DB cập nhật cho Tasks (Migration 001):
 ```sql
 ALTER TABLE tasks DROP CONSTRAINT IF EXISTS tasks_status_check;
 ALTER TABLE tasks ADD CONSTRAINT tasks_status_check 
-    CHECK (status IN ('in_progress', 'completed', 'cancelled'));
+    CHECK (status IN ('pending', 'in_progress', 'completed', 'cancelled', 'incomplete'));
+ALTER TABLE tasks ALTER COLUMN status SET DEFAULT 'pending';
 ```
 
 Đợt 2: Module HarvestBatches (Lô thu hoạch & Tem nhãn QR)
