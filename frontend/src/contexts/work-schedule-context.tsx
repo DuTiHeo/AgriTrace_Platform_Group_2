@@ -1,8 +1,10 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type PropsWithChildren } from 'react';
 import { useAuth } from './auth-context';
-import { decodeTaskContent, listMyTasks, type ApiTask } from '@/sevices/farming-log.service';
+import { decodeTaskContent, listMyTasks, updateTaskStatus, type ApiTask, type TaskStatus } from '@/sevices/farming-log.service';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { taskExecutionError } from '@/sevices/journal-filter';
+
+export type TaskDisplayStatus = 'pending' | 'in_progress' | 'incomplete' | 'completed' | 'completed_late';
 
 export type ScheduledTask = {
   id: string;
@@ -21,10 +23,12 @@ export type ScheduledTask = {
   owner?: boolean;
   assigneeStatuses: Record<string, {
     name: string | null;
-    completed: boolean
+    completed: boolean;
+    status?: TaskStatus;
+    displayStatus?: TaskDisplayStatus;
   }>;
   status: 'doing' | 'done';
-  displayStatus: 'in_progress' | 'incomplete' | 'completed' | 'completed_late';
+  displayStatus: TaskDisplayStatus;
   assigneePhones: string[];
   leaderPhone: string;
   orgId: string | null;
@@ -56,7 +60,16 @@ function mapTask(task: ApiTask): ScheduledTask {
   const startDate = localDateKey(task.start_at);
   const dueDate = localDateKey(task.due_at);
   const completedLate = task.status === 'completed' && !!dueDate && !!task.updated_at && localDateKey(task.updated_at) > dueDate;
-  const overdue = !!dueDate && dueDate < localDateKey(new Date().toISOString());
+  const overdue = task.status === 'incomplete' || (['pending', 'in_progress'].includes(task.status) && !!dueDate && dueDate < localDateKey(new Date().toISOString()));
+
+  const displayStatus: TaskDisplayStatus =
+    task.status === 'completed'
+      ? (completedLate ? 'completed_late' : 'completed')
+      : overdue
+        ? 'incomplete'
+        : task.status === 'pending'
+          ? 'pending'
+          : 'in_progress';
 
   return {
     id: task.task_id,
@@ -71,15 +84,17 @@ function mapTask(task: ApiTask): ScheduledTask {
     startTime: content.startTime,
     endTime: content.endTime,
     tools: content.tools ?? '',
-    started: false,
+    started: task.status === 'in_progress' || task.status === 'completed',
     assigneeStatuses: {
       [task.worker_id]: {
         name: task.worker_name,
-        completed: task.status === 'completed'
+        completed: task.status === 'completed',
+        status: task.status,
+        displayStatus: displayStatus,
       }
     },
     status: task.status === 'completed' ? 'done' : 'doing',
-    displayStatus: task.status === 'completed' ? (completedLate ? 'completed_late' : 'completed') : (overdue ? 'incomplete' : 'in_progress'),
+    displayStatus: displayStatus,
     assigneePhones: task.worker_phone ? [task.worker_phone] : [],
     leaderPhone: '',
     orgId: task.org_id,
@@ -112,6 +127,22 @@ function groupLeaderTasks(tasks: ScheduledTask[]) {
     }
 
     const allDone = current.status === 'done' && task.status === 'done';
+    let groupDisplayStatus: TaskDisplayStatus;
+    if (allDone) {
+      groupDisplayStatus = [current.displayStatus, task.displayStatus].includes('completed_late')
+        ? 'completed_late'
+        : 'completed';
+    } else {
+      const statuses = [current.displayStatus, task.displayStatus];
+      if (statuses.includes('incomplete')) {
+        groupDisplayStatus = 'incomplete';
+      } else if (statuses.includes('in_progress')) {
+        groupDisplayStatus = 'in_progress';
+      } else {
+        groupDisplayStatus = 'pending';
+      }
+    }
+
     groups.set(key, {
       ...current,
       memberIds: [...new Set([
@@ -134,15 +165,7 @@ function groupLeaderTasks(tasks: ScheduledTask[]) {
         : new Date(task.updatedAt) > new Date(current.updatedAt) ? task.updatedAt : current.updatedAt,
       workerName: null,
       status: allDone ? 'done' : 'doing',
-      displayStatus: allDone
-        ? ([
-          current.displayStatus,
-          task.displayStatus
-        ].includes('completed_late') ? 'completed_late' : 'completed')
-        : ([
-          current.displayStatus,
-          task.displayStatus
-        ].includes('incomplete') ? 'incomplete' : 'in_progress'),
+      displayStatus: groupDisplayStatus,
     });
   }
 
@@ -188,7 +211,7 @@ function useScheduleState() {
       const startedIds = new Set(Array.isArray(saved) ? saved.filter(id => typeof id === 'string') : []);
       const mapped = result.filter(task => task.status !== 'cancelled').map(task => ({
         ...mapTask(task),
-        started: startedIds.has(task.task_id) || task.status === 'completed',
+        started: task.status === 'in_progress' || task.status === 'completed' || startedIds.has(task.task_id),
         owner: user.role === 'leader' && task.worker_phone === user.phone,
       }));
       setTasks(user.role === 'leader' ? groupLeaderTasks(mapped) : mapped);
@@ -232,6 +255,9 @@ function useScheduleState() {
     }
 
     try {
+      if (accessToken) {
+        await updateTaskStatus(accessToken, taskId, 'in_progress');
+      }
       const key = `worker-started-tasks:${user.phone}`;
       const stored = await AsyncStorage.getItem(key);
       const saved: unknown = stored ? JSON.parse(stored) : [];
@@ -240,14 +266,34 @@ function useScheduleState() {
         ...ids,
         taskId
       ])]));
-      setTasks(old => old.map(task => task.id === taskId ? {
-        ...task,
-        started: true
-      } : task));
-    } catch {
-      setError('Không lưu được trạng thái bắt đầu. Vui lòng thử lại.');
+      setTasks(old => old.map(t => {
+        if (t.id !== taskId) return t;
+        const updatedAssignees = { ...t.assigneeStatuses };
+        for (const workerId of t.memberIds) {
+          if (updatedAssignees[workerId]) {
+            updatedAssignees[workerId] = {
+              ...updatedAssignees[workerId],
+              status: 'in_progress',
+              displayStatus: 'in_progress',
+              completed: false,
+            };
+          }
+        }
+        return {
+          ...t,
+          started: true,
+          status: 'doing',
+          displayStatus: 'in_progress',
+          assigneeStatuses: updatedAssignees,
+        };
+      }));
+      await loadTasks();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Không lưu được trạng thái bắt đầu. Vui lòng thử lại.');
     }
   }, [
+    accessToken,
+    loadTasks,
     tasks,
     user
   ]);

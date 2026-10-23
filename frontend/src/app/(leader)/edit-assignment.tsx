@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Keyboard, Pressable, Text, View } from 'react-native';
+import { Alert, Keyboard, Pressable, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@/contexts/auth-context';
 import { useWorkSchedule } from '@/contexts/work-schedule-context';
-import { decodeTaskContent, encodeTaskContent, listTaskTypes, updateTask } from '@/sevices/farming-log.service';
+import { decodeTaskContent, encodeTaskContent, listTaskTypes, updateTask, deleteTask } from '@/sevices/farming-log.service';
 import { getTaskTypeLabel } from '@/constants/task-types';
 import { DEFAULT_WORK_START_TIME, DEFAULT_WORK_END_TIME } from '@/constants/work-hours';
 import { Button, Calendar, Card, Input, Screen, s } from '@/components/leader/ui';
@@ -104,6 +104,34 @@ export default function EditAssignmentScreen() {
     finally { setBusy(false); }
   }
 
+  const handleCancelAssignment = () => {
+    Alert.alert(
+      "Xác nhận",
+      "Bạn có chắc chắn muốn hủy nhiệm vụ này?",
+      [
+        { text: "Không", style: "cancel" },
+        {
+          text: "Hủy nhiệm vụ",
+          style: "destructive",
+          onPress: async () => {
+            if (!accessToken || !task) return;
+            setBusy(true);
+            try {
+              await Promise.all(task.taskIds.map(taskId => deleteTask(accessToken, taskId)));
+              await loadTasks();
+              allowLeave.current = true;
+              router.back();
+            } catch (err) {
+              setError(err instanceof Error ? err.message : "Không thể hủy nhiệm vụ");
+            } finally {
+              setBusy(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
   if (!task) return <Screen title="Chỉnh sửa công việc" back onBack={() => requestLeave()}><Text style={s.empty}>Không tìm thấy công việc trong tổ của bạn.</Text></Screen>;
   return <Screen title="Chỉnh sửa công việc" back onBack={() => requestLeave()}>
     <Feedback text={error} />
@@ -141,6 +169,7 @@ export default function EditAssignmentScreen() {
       <Calendar label="Ngày bắt đầu *" value={startDate} onChange={setStartDate} />
       <Calendar value={due} onChange={setDue} minimumDate={startDate || undefined} />
       <Button title={busy ? 'Đang lưu…' : 'Lưu thay đổi'} disabled={busy} onPress={save} />
+      <Button danger title="Hủy nhiệm vụ này" disabled={busy} onPress={handleCancelAssignment} />
     </Card>
   </Screen>;
 }

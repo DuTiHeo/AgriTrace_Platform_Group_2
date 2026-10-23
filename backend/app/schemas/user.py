@@ -1,10 +1,9 @@
-# Schemas cho module User - dot 1.
-# Gan UC de sau nay doi chieu lai voi UseCase_PhanRa_ChiTiet.docx cho de:
+# Use case mapping:
 #   UserCreateOwner   -> UC-A01.1
 #   UserCreateStaff   -> UC-O05.1
 #   UserUpdate        -> UC-O05.2
 #   UserRoleUpdate    -> UC-O05.3 + UC-A01.3 + UC-O06.3 (gan team khi phong leader)
-#   UserStatusUpdate  -> UC-O05.4 + UC-A01.2 (da toi gian, bo lock_reason/lock_duration)
+#   UserStatusUpdate  -> UC-O05.4 + UC-A01.2
 #   UserSummary       -> UC-SH04.1 (GET /users - ban rut gon)
 #   UserDetail        -> UC-SH04.1 (GET /users/{id} - ban day du)
 
@@ -52,21 +51,15 @@ class UserBase(BaseModel):
 
 
 # ---- Tao moi ----
-# 2 class tach rieng theo route (POST /users/owners vs POST /users)
-# vi role + org_id bi route tu gan cung, client khong duoc truyen.
-# Ve mat field thi giong het nhau - neu sau nay phat sinh khac biet
-# (vd chi Owner moi duoc nhap them field X) thi sua rieng tung class.
+# Tách schema theo từng route để giới hạn các trường client được phép gửi.
 
 class UserCreateOwner(UserBase):
-    # Chi check do dai toi thieu 8 ky tu - KHONG ap dung full rule
-    # nhu /auth/change-password (khong bat buoc chu+so, cho phep 8 ky tu
-    # giong nhau). Ly do: nguoi tao (Admin) thuong chi nhap nhanh mot mat
-    # khau tam, nguoi duoc tao tai khoan se tu doi lai sau khi dang nhap.
+    # Mật khẩu khi tạo tài khoản chỉ yêu cầu độ dài tối thiểu.
     password: str = Field(min_length=8)
 
 
 class UserCreateStaff(UserBase):
-    # Tuong tu UserCreateOwner (Owner tao nhanh mat khau tam cho worker/leader)
+    # Mật khẩu khi tạo tài khoản chỉ yêu cầu độ dài tối thiểu.
     org_id: UUID
     password: str = Field(min_length=8)
 
@@ -105,7 +98,7 @@ class UserRoleUpdate(BaseModel):
         return self
 
 
-# ---- Khoa / mo khoa (UC-O05.4 / UC-A01.2, da toi gian) ----
+# ---- Khoa / mo khoa (UC-O05.4 / UC-A01.2) ----
 
 class UserStatusUpdate(BaseModel):
     status: UserStatus
@@ -114,12 +107,7 @@ class UserStatusUpdate(BaseModel):
 # ---- Response ----
 
 class UserSummary(BaseModel):
-    """
-    Dung cho GET /users (danh sach) - ban rut gon.
-    Khong dung ORM trong project nay (CRUD dung raw SQL qua text(),
-    tra ve dict/RowMapping) nen khong can model_config(from_attributes=True) -
-    Pydantic parse thang tu dict la du.
-    """
+    """Mô hình phản hồi rút gọn cho GET /users."""
     user_id: UUID
     full_name: str
     phone: str

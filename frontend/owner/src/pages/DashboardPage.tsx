@@ -35,9 +35,11 @@ const emptyData: DashboardData = {
 };
 
 const taskStatus = {
+  pending: { label: "Đã nhận", className: "pending" },
   in_progress: { label: "Đang thực hiện", className: "working" },
   completed: { label: "Đã hoàn thành", className: "completed" },
   cancelled: { label: "Đã hủy", className: "pending" },
+  incomplete: { label: "Chưa hoàn thành", className: "incomplete" },
 } as const;
 
 function formatRelativeTime(value: string) {
@@ -216,7 +218,7 @@ function DashboardPage() {
           <div className="task-list">
             {!loading && visibleTasks.length === 0 && <div className="dashboard-empty">Chưa có công việc. Tạo công việc từ mục Công việc.</div>}
             {visibleTasks.map((task) => {
-              const status = taskStatus[task.status];
+              const status = taskStatus[task.status] ?? { label: task.status, className: "pending" };
               return (
                 <div className="task-row" key={task.id}>
                   <div className="task-time"><Clock3 size={16} /><span>{new Intl.DateTimeFormat("vi-VN", { hour: "2-digit", minute: "2-digit" }).format(new Date(task.dueAt))}</span></div>

@@ -39,13 +39,25 @@ export default function WorkerTaskDetailScreen() {
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={shared.card}>
-          {task?.started && (
-            <Text style={styles.status}>
-              {task.status === 'done'
-                ? (task.displayStatus === 'completed_late' ? 'Hoàn thành muộn' : 'Đã hoàn thành')
-                : 'Đang làm'}
-            </Text>
-          )}
+          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+            {task?.displayStatus === 'incomplete' ? (
+              <Text style={[styles.status, { backgroundColor: '#fef2f2', color: colors.danger }]}>
+                Chưa hoàn thành
+              </Text>
+            ) : task?.status === 'done' ? (
+              <Text style={[styles.status, { backgroundColor: colors.successSoft, color: colors.success }]}>
+                {task.displayStatus === 'completed_late' ? 'Hoàn thành muộn' : 'Đã hoàn thành'}
+              </Text>
+            ) : (task?.displayStatus === 'in_progress' || task?.started) ? (
+              <Text style={styles.status}>
+                Đang làm
+              </Text>
+            ) : (
+              <Text style={[styles.status, { backgroundColor: '#EFF2F0', color: colors.muted }]}>
+                Đã nhận
+              </Text>
+            )}
+          </View>
 
           <Text style={styles.title}>
             {getTaskTypeLabel(task?.title ?? 'Không tìm thấy công việc')}

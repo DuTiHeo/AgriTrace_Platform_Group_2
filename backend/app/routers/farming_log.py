@@ -122,6 +122,18 @@ def create_farming_log(
     if season["status"] not in ("growing", "ready_to_harvest"):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Mua vu da hoan tat, khong the ghi them nhat ky")
 
+    # BR-14, EX-15: Tái thẩm định GPS nằm trọn trong ranh giới lô đất của mùa vụ
+    if not crud_farming_log.is_gps_in_season_plot(
+        db,
+        season_id=payload.season_id,
+        latitude=payload.gps.latitude,
+        longitude=payload.gps.longitude,
+    ):
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "Không thể xác định vị trí làm việc. Vị trí GPS của bạn không nằm trong bất kỳ lô đất nào thuộc nông trại",
+        )
+
     log = crud_farming_log.create_log(
         db,
         season_id=payload.season_id,

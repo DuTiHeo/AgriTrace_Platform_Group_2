@@ -212,26 +212,8 @@ def update_user(db: Session, user_id: UUID, data: dict) -> dict | None:
  
 def update_role(db: Session, user_id: UUID, role: str, team_id: UUID | None) -> dict | None:
     """
-    TODO(team-module): ham nay dung nguoi vao ca bang teams (khong chi
-    users). Tam thoi de o day vi crud/team.py chua ton tai; khi lam module
-    Team that su, can xem xet chuyen phan logic dung teams sang
-    crud/team.py (vi du 2 ham noi bo set_leader()/clear_leader()) va ham
-    nay chi con goi lai chung, thay vi viet thang UPDATE teams tai day.
- 
-    role: "leader" | "worker" (khop AssignableRole ben schema)
-    team_id: bat buoc neu role="leader", phai la None neu role="worker"
-             (da duoc UserRoleUpdate validate truoc khi toi day).
- 
-    Ham nay GIA DINH router da validate xong:
-      - team_id (neu co) thuoc dung org cua caller
-      - team do chua co leader, hoac leader hien tai chinh la user nay
- 
-    Luu y quan trong ve team_id cua chinh user khi ha chuc xuong worker:
-    KHONG dong (clear) users.team_id - vi team_leader_id (ai la truong
-    nhom) va team_id cua 1 user (ai thuoc nhom nao) la 2 khai niem khac
-    nhau. Ha chuc chi go vai tro truong nhom, nguoi do van la thanh vien
-    binh thuong cua team cu (viec doi team cho worker thuoc UC-O06.2,
-    khong xu ly o day).
+    Cập nhật vai trò và đồng bộ trưởng nhóm. Khi hạ vai trò, xóa tham chiếu
+    trưởng nhóm nhưng giữ nguyên tư cách thành viên của người dùng.
     """
     current = get_user(db, user_id)
     if current is None:
@@ -290,14 +272,6 @@ def update_status(db: Session, user_id: UUID, status: str) -> dict | None:
     db.commit()
     return dict(row) if row else None
 
-# HELPER DOC BANG teams - CHI phuc vu validate o route doi role
-
 def get_team(db: Session, team_id: UUID) -> dict | None:
-    """
-    TODO(team-module): thuoc ve crud/team.py trong tuong lai, tam thoi
-    de o day cung ly do voi update_role(). Router dung ham nay de kiem
-    tra: team co ton tai khong, thuoc dung org khong, da co leader chua -
-    truoc khi cho phep phong 1 nguoi lam To truong (UC-O05.3/UC-O06.3).
-    """
     row = db.execute(text("SELECT * FROM teams WHERE team_id = :team_id"), {"team_id": team_id}).mappings().first()
     return dict(row) if row else None

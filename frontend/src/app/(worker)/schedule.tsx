@@ -258,7 +258,20 @@ export default function WorkerScheduleScreen() {
                     Hạn hoàn thành: {task.due}
                   </Text>
 
-                  {task.started && (
+                  {task.displayStatus === 'incomplete' ? (
+                    <Text
+                      style={[
+                        shared.chip,
+                        shared.chipText,
+                        {
+                          color: colors.danger,
+                          backgroundColor: '#fef2f2'
+                        }
+                      ]}
+                    >
+                      Chưa hoàn thành
+                    </Text>
+                  ) : (task.displayStatus === 'in_progress' || task.started) ? (
                     <Text
                       style={[
                         shared.chip,
@@ -270,6 +283,32 @@ export default function WorkerScheduleScreen() {
                       ]}
                     >
                       Đang làm
+                    </Text>
+                  ) : (task.displayStatus === 'completed' || task.displayStatus === 'completed_late') ? (
+                    <Text
+                      style={[
+                        shared.chip,
+                        shared.chipText,
+                        {
+                          color: colors.success,
+                          backgroundColor: colors.successSoft
+                        }
+                      ]}
+                    >
+                      Đã hoàn thành
+                    </Text>
+                  ) : (
+                    <Text
+                      style={[
+                        shared.chip,
+                        shared.chipText,
+                        {
+                          color: colors.muted,
+                          backgroundColor: '#EFF2F0'
+                        }
+                      ]}
+                    >
+                      Đã nhận
                     </Text>
                   )}
                 </View>

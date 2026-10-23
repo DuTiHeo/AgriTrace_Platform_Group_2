@@ -39,7 +39,6 @@ def me(current_user: dict = Depends(get_current_user)):
         team_id=str(current_user["team_id"]) if current_user.get("team_id") else None,
     )
 
-#token_blacklist trong hqtcsdl co the bi phinh to ra, khi do can admin xoa thu cong hoac la set 1 co che tu dong xoa token_blacklist đó
 @router.post("/logout")
 def logout(token: str = Depends(oauth2_scheme), current_user: dict = Depends(get_current_user), db: Session = Depends(get_db),):
     try:

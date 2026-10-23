@@ -1,5 +1,6 @@
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 
@@ -12,6 +13,7 @@ from app.schemas.plot import (
     PlotSummary,
     PlotDetail,
     PlotStatus,
+    PlotLocateResponse,
 )
 from app.routers.user import require_role, ensure_owns_org
 
@@ -61,6 +63,59 @@ def list_plots(
         keyword=keyword,
         owner_id=scope_owner_id,
     )
+
+
+@router.get("/locate", response_model=PlotLocateResponse)
+def locate_plot_by_gps(
+    latitude: float = Query(..., ge=-90, le=90, description="Vĩ độ GPS của thiết bị"),
+    longitude: float = Query(..., ge=-180, le=180, description="Kinh độ GPS của thiết bị"),
+    org_id: UUID | None = Query(None, description="ID nông trại (bắt buộc với Admin nếu không xác định)"),
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Tự động suy luận Lô đất và Mùa vụ từ tọa độ GPS của thiết bị di động (BR-14, UC-W03.4).
+    Định tuyến này BẮT BUỘC nằm trước GET /{plot_id} để tránh xung đột định tuyến UUID.
+    """
+    role = current_user["role"]
+
+    if role in ("worker", "leader"):
+        target_org_id = current_user.get("org_id")
+        if not target_org_id:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Người dùng chưa thuộc nông trại nào")
+    elif role == "owner":
+        if org_id:
+            ensure_owns_org(db, current_user, org_id)
+            target_org_id = org_id
+        else:
+            # Lấy nông trại đầu tiên của owner
+            row = db.execute(
+                text("SELECT org_id FROM organizations WHERE owner_id = :owner_id AND status != 'suspended' ORDER BY created_at ASC LIMIT 1"),
+                {"owner_id": current_user["user_id"]},
+            ).first()
+            if not row:
+                raise HTTPException(status.HTTP_400_BAD_REQUEST, "Chủ sở hữu chưa có nông trại nào")
+            target_org_id = row[0]
+    elif role == "admin":
+        if not org_id:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Admin cần truyền tham số org_id để định vị lô đất")
+        target_org_id = org_id
+    else:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Bạn không có quyền thực hiện thao tác này")
+
+    plot = crud_plot.locate_plot_by_gps(
+        db,
+        org_id=target_org_id,
+        latitude=latitude,
+        longitude=longitude,
+    )
+    if not plot:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            "Không thể xác định vị trí làm việc. Vị trí GPS của bạn không nằm trong bất kỳ lô đất nào thuộc nông trại",
+        )
+
+    return plot
 
 
 @router.get("/{plot_id}", response_model=PlotDetail)

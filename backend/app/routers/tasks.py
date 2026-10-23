@@ -1,4 +1,4 @@
-# backend/app/routers/tasks.py
+from datetime import datetime, timezone
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
@@ -18,6 +18,22 @@ from app.schemas.tasks import (
 )
 
 router = APIRouter()
+
+
+def _compute_target_status(status_val: TaskStatus, due_at: datetime) -> str:
+    """Tính toán trạng thái thực tế dựa trên hạn chót due_at."""
+    if status_val == TaskStatus.completed:
+        return TaskStatus.completed.value
+    elif status_val == TaskStatus.cancelled:
+        return TaskStatus.cancelled.value
+    elif status_val == TaskStatus.incomplete:
+        return TaskStatus.incomplete.value
+    else:  # TaskStatus.pending hoặc TaskStatus.in_progress
+        now = datetime.now(timezone.utc)
+        target_due = due_at
+        if target_due.tzinfo is None:
+            target_due = target_due.replace(tzinfo=timezone.utc)
+        return TaskStatus.incomplete.value if target_due < now else status_val.value
 
 
 @router.get("", response_model=list[TaskSummary])
@@ -186,8 +202,12 @@ def update_task(
         if role == "owner":
             ensure_owns_org(db, current_user, org_id)
 
-    if "status" in data and isinstance(data["status"], TaskStatus):
-        data["status"] = data["status"].value
+    if "status" in data:
+        st = data["status"]
+        if isinstance(st, str):
+            st = TaskStatus(st)
+        effective_due_at = data.get("due_at", task["due_at"])
+        data["status"] = _compute_target_status(st, effective_due_at)
 
     return crud_tasks.update_task(db, task_id, data)
 
@@ -216,7 +236,8 @@ def update_task_status(
     elif role == "owner":
         ensure_owns_org(db, current_user, task["org_id"])
 
-    updated = crud_tasks.update_task(db, task_id, {"status": payload.status.value})
+    target_status = _compute_target_status(payload.status, task["due_at"])
+    updated = crud_tasks.update_task(db, task_id, {"status": target_status})
     return updated
 
 

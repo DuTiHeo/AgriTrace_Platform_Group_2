@@ -13,7 +13,7 @@ import type { TeamSummary } from "../types/team";
 
 type Draft = { farmId: string; plotId: string; teamId: string; assigneeId: string; content: string; startAt: string; dueAt: string };
 type PageData = { tasks: Task[]; plots: Plot[]; teams: TeamSummary[]; personnel: Personnel[] };
-const labels: Record<TaskStatus, string> = { in_progress: "Đang thực hiện", completed: "Đã hoàn thành", cancelled: "Đã hủy" };
+const labels: Record<TaskStatus, string> = { pending: "Chờ thực hiện", in_progress: "Đang thực hiện", completed: "Đã hoàn thành", cancelled: "Đã hủy", incomplete: "Chưa hoàn thành" };
 function localTime(date: Date) { return new Date(date.getTime() - date.getTimezoneOffset()*60000).toISOString().slice(0,16); }
 function emptyDraft(farmId: string): Draft {
   return { farmId, plotId: "", teamId: "", assigneeId: "", content: "", startAt: localTime(new Date()), dueAt: localTime(new Date(Date.now()+86400000)) };
@@ -87,6 +87,7 @@ export default function TasksPage() {
     <section className="task-summary-grid">
       <article className="task-summary card"><ClipboardList size={20}/><span>Tổng công việc</span><strong>{data.tasks.filter(t=>t.status!=="cancelled").length}</strong></article>
       <article className="task-summary task-summary-active card"><CalendarClock size={20}/><span>Đang thực hiện</span><strong>{data.tasks.filter(t=>t.status==="in_progress").length}</strong></article>
+      <article className="task-summary task-summary-incomplete card"><X size={20}/><span>Chưa hoàn thành</span><strong>{data.tasks.filter(t=>t.status==="incomplete").length}</strong></article>
       <article className="task-summary task-summary-completed card"><CheckCheck size={20}/><span>Đã hoàn thành</span><strong>{data.tasks.filter(t=>t.status==="completed").length}</strong></article>
     </section>
     {notice && <div className="task-notice" role="status">{notice}<button aria-label="Đóng thông báo" onClick={()=>setNotice("")}><X size={17}/></button></div>}
@@ -101,7 +102,7 @@ export default function TasksPage() {
           <div className="task-row-title"><h2>{task.content}</h2><span className={`task-status task-status-${task.status}`}>{labels[task.status]}</span></div>
           <div className="task-context-line"><span>{data.plots.find(p=>p.id===task.plotId)?.name??"Vùng trồng"}</span><span>{data.teams.find(t=>t.id===task.teamId)?.name??"Tổ không còn tồn tại"}</span></div>
           <div className="task-assignment-line"><span><UserRound size={15}/>{task.assigneeName} {person ? `· ${person.role==="leader" ? "Tổ trưởng" : "Công nhân"}` : ""}</span><span><CalendarClock size={15}/>Hạn {formatTime(task.dueAt)}</span></div>
-        </div>{task.status==="in_progress" && <div className="task-row-actions"><button className="btn btn-secondary" disabled={saving} onClick={()=>void action(task)}><Send size={16}/>Hoàn thành công việc</button><button className="task-cancel-button" aria-label="Hủy công việc" disabled={saving} onClick={()=>void action(task,true)}><X size={17}/></button></div>}</article>;
+        </div>{["pending", "in_progress", "incomplete"].includes(task.status) && <div className="task-row-actions"><button className="btn btn-secondary" disabled={saving} onClick={()=>void action(task)}><Send size={16}/>Hoàn thành công việc</button><button className="task-cancel-button" aria-label="Hủy công việc" disabled={saving} onClick={()=>void action(task,true)}><X size={17}/></button></div>}</article>;
       })}</div> : <div className="task-empty-state"><ClipboardList size={34}/><strong>Chưa có công việc phù hợp</strong></div>}
     </section>
     {createOpen && <div className="modal-backdrop"><section className="app-modal task-create-modal" role="dialog" aria-modal="true" aria-labelledby="task-create-title">

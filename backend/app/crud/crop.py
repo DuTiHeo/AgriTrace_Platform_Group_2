@@ -14,11 +14,7 @@ def get_crop(db: Session, crop_id: UUID) -> dict | None:
     return dict(row) if row else None
 
 
-# HELPER KIEM TRA TRUNG TEN - de router bao loi than thien (400) thay vi
-# rot xuong loi tho cua Postgres. Bang crop_catalog KHONG co UNIQUE
-# constraint tren name (tranh phai ALTER file init_db.sql dung chung voi
-# ca nhom), nen viec chong trung duoc xu ly hoan toan o tang app, giong
-# huong phone_exists()/national_id_exists() ben crud/user.py.
+# crop_catalog chưa có ràng buộc duy nhất cho name; kiểm tra trùng tại ứng dụng.
 def name_exists(db: Session, name: str, exclude_crop_id: UUID | None = None) -> bool:
     name = name.strip()          
     if not name:                 
@@ -37,9 +33,7 @@ def name_exists(db: Session, name: str, exclude_crop_id: UUID | None = None) -> 
     return row is not None
 
 
-# DANH SACH + TIM KIEM - UC-SH04.1. Khong co org_id/team_id vi day la
-# du lieu dung chung toan he thong (khong multi-tenant), nen khong can
-# logic scope quyen nhu list_users() ben module User.
+# Danh mục cây trồng dùng chung toàn hệ thống, không phân quyền theo nông trại hoặc tổ.
 def list_crops(db: Session, *, keyword: str | None = None) -> list[dict]:
     conditions = []
     params: dict = {}
@@ -74,10 +68,7 @@ def create_crop(db: Session, *, name: str, growth_days: int, planting_guide: str
     return dict(row)
 
 
-# CAP NHAT - UC-A02.1. data: dict field muon sua, lay tu
-# CropUpdate.model_dump(exclude_unset=True) o router - key luon nam
-# trong tap field da duoc Pydantic whitelist san, an toan de dung f-string
-# build SET clause (giong update_user() ben crud/user.py).
+# Các trường cập nhật đã được CropUpdate kiểm tra trước khi tạo SET.
 def update_crop(db: Session, crop_id: UUID, data: dict) -> dict | None:
     if not data:
         return get_crop(db, crop_id)
@@ -93,11 +84,7 @@ def update_crop(db: Session, crop_id: UUID, data: dict) -> dict | None:
     return dict(row) if row else None
 
 
-# XOA - UC-A02.1. Bang crop_catalog CHUA co cot status (khac plots/
-# organizations) nen khong the soft-delete; xoa cung luon va bat
-# IntegrityError khi FK seasons.crop_id (khong co ON DELETE) chan lai vi
-# giong cay dang duoc mot mua vu nao do tham chieu. Rollback truoc khi
-# nem loi len de session khong bi ket o trang thai "failed transaction".
+# Không thể xóa giống cây đang được mùa vụ tham chiếu; rollback trước khi ném lỗi.
 def delete_crop(db: Session, crop_id: UUID) -> None:
     try:
         db.execute(text("DELETE FROM crop_catalog WHERE crop_id = :crop_id"), {"crop_id": crop_id})
@@ -117,9 +104,7 @@ def get_milestone(db: Session, milestone_id: UUID) -> dict | None:
     return dict(row) if row else None
 
 
-# UC-O03.3 (module Season) se import ham nay de doc danh sach moc cham
-# soc chuan cua 1 giong, tu do tu dong sinh reminder_schedules khi khoi
-# tao mua vu - KHONG viet lai truy van nay ben season.py.
+# Dùng khi tạo mùa vụ để khởi tạo lịch nhắc từ các mốc chăm sóc.
 def list_milestones_of_crop(db: Session, crop_id: UUID) -> list[dict]:
     rows = db.execute(
         text("""
@@ -172,8 +157,7 @@ def update_milestone(db: Session, milestone_id: UUID, data: dict) -> dict | None
     return dict(row) if row else None
 
 
-# Khong bang nao FK toi crop_care_milestones nen xoa cung an toan tuyet
-# doi, khong can bat IntegrityError nhu delete_crop() o tren.
+# Không có bảng nào tham chiếu mốc chăm sóc, nên có thể xóa trực tiếp.
 def delete_milestone(db: Session, milestone_id: UUID) -> None:
     db.execute(text("DELETE FROM crop_care_milestones WHERE milestone_id = :milestone_id"), {"milestone_id": milestone_id})
     db.commit()

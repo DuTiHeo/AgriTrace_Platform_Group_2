@@ -13,8 +13,7 @@ import { type ReportDraft, useReports } from '@/contexts/report-context';
 import { useFarmingLogForm } from '@/hooks/use-farming-log-form';
 import { useDiscardWarning } from '@/hooks/use-discard-warning';
 import { useAuth } from '@/contexts/auth-context';
-import { listAssignedPlots, listTaskTypes, type Plot } from '@/sevices/farming-log.service';
-import { AreaPicker } from '@/components/leader/area-picker';
+import { listTaskTypes } from '@/sevices/farming-log.service';
 
 export function FarmingLogFormScreen() {
   const finishTabFlow = useFinishTabFlow();
@@ -55,9 +54,16 @@ export function FarmingLogFormScreen() {
     area,
     taskId
   ]);
-  const { gpsStatus, locate, preparePhoto, submit, activeSeasons } = useFarmingLogForm(draft, updateDraft);
+  const {
+    gpsStatus,
+    locationError,
+    isLocating,
+    locate,
+    preparePhoto,
+    submit,
+    activeSeasons,
+  } = useFarmingLogForm(draft, updateDraft);
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
-  const [plots, setPlots] = useState<Plot[]>([]);
   const [taskTypes, setTaskTypes] = useState<string[]>([]);
   const [catalogLoaded, setCatalogLoaded] = useState(false);
   const [taskPickerOpen, setTaskPickerOpen] = useState(false);
@@ -71,7 +77,6 @@ export function FarmingLogFormScreen() {
   const fieldY = useRef<Record<string, number>>({});
   const pending = useRef(false);
   const submitted = useRef(false);
-  const availablePlots = plots.filter(plot => activeSeasons.some(season => season.plot_id === plot.plot_id));
   const revealInput = useCallback((ref: RefObject<TextInput | null>) => {
     setTimeout(() => {
       const scroll = scrollRef.current;
@@ -100,15 +105,11 @@ export function FarmingLogFormScreen() {
       return;
 
     let active = true;
-    void Promise.all([
-      listAssignedPlots(accessToken, user),
-      listTaskTypes(accessToken)
-    ])
-      .then(([plotList, typeList]) => {
+    void listTaskTypes(accessToken)
+      .then(typeList => {
         if (!active)
           return;
 
-        setPlots(plotList);
         setTaskTypes(typeList);
 
         if (taskTitle && !typeList.includes(taskTitle))
@@ -116,7 +117,7 @@ export function FarmingLogFormScreen() {
       })
       .catch(loadError => {
         if (active)
-          setError(loadError instanceof Error ? loadError.message : 'Không tải được danh sách công việc và khu vực.');
+          setError(loadError instanceof Error ? loadError.message : 'Không tải được danh sách công việc.');
       })
       .finally(() => {
         if (active)
@@ -128,7 +129,6 @@ export function FarmingLogFormScreen() {
     };
   }, [
     accessToken,
-    user,
     taskTitle
   ]));
   const hasUnsentContent = !!(
@@ -180,7 +180,7 @@ export function FarmingLogFormScreen() {
       errors.taskTitle = 'Vui lòng nhập tên công việc.';
 
     if (!draft.area.trim() || !draft.plotId)
-      errors.area = 'Vui lòng chọn khu vực thực hiện.';
+      errors.area = 'Vị trí GPS của bạn không nằm trong bất kỳ lô đất nào thuộc nông trại.';
 
     if (!draft.note.trim())
       errors.note = 'Vui lòng nhập nội dung nhật ký.';
@@ -295,6 +295,8 @@ export function FarmingLogFormScreen() {
     requestLeave(user?.role === 'worker' && !taskId ? () => router.replace('/(worker)') : undefined);
   }
 
+  const isSubmitDisabled = busy || isLocating || !draft.plotId || !draft.seasonId || !draft.gps || !!locationError;
+
   return (
     <SafeAreaView
       style={styles.page}
@@ -363,7 +365,7 @@ export function FarmingLogFormScreen() {
                   ]}
                   accessibilityLiveRegion="polite"
                 >
-                  <Text style={styles.gpsTitle}>📍 Vị trí GPS</Text>
+                  <Text style={styles.gpsTitle}>Vị trí GPS</Text>
                   <Text style={[
                     styles.gpsNote,
                     draft.gps && styles.gpsReadyText
@@ -483,21 +485,36 @@ export function FarmingLogFormScreen() {
                 <View onLayout={event => {
                   fieldY.current.area = event.nativeEvent.layout.y;
                 }}>
-                  <AreaPicker
-                    label="Khu vực làm việc *"
-                    value={draft.area}
-                    options={availablePlots.map(plot => plot.code)}
-                    onChange={value => {
-                      const selectedPlot = availablePlots.find(plot => plot.code === value);
-                      updateDraft(old => ({
-                        ...old,
-                        area: value,
-                        plotId: selectedPlot?.plot_id,
-                        seasonId: undefined
-                      }));
-                      clearFieldError('area');
-                    }}
-                  />
+                  <Text style={styles.label}>Khu vực làm việc *</Text>
+                  <View style={[
+                    styles.readOnlyPlotBox,
+                    !draft.plotId && locationError ? styles.readOnlyPlotBoxError : draft.plotId ? styles.readOnlyPlotBoxSuccess : null
+                  ]}>
+                    <View style={styles.readOnlyPlotRow}>
+                      <Text style={[
+                        styles.readOnlyPlotName,
+                        !draft.plotId && styles.readOnlyPlotMuted
+                      ]}>
+                        {draft.plotId ? `Lô ${draft.area}` : (isLocating ? 'Đang định vị lô đất…' : 'Chưa xác định được lô đất')}
+                      </Text>
+                      {draft.plotId && draft.seasonId ? (
+                        <Text style={styles.readOnlyCropText} numberOfLines={1}>
+                          {activeSeasons.find(s => s.season_id === draft.seasonId)?.crop_name || 'Đang canh tác'}
+                        </Text>
+                      ) : draft.plotId && !draft.seasonId ? (
+                        <Text style={styles.readOnlyWarningText}>
+                          Chưa có mùa vụ
+                        </Text>
+                      ) : null}
+                    </View>
+                  </View>
+
+                  {/* Cảnh báo khi GPS nằm ngoài ranh giới nông trại (EX-15) */}
+                  {!!locationError && (
+                    <View style={styles.alertBanner} accessibilityRole="alert">
+                      <Text style={styles.alertBannerText}>{locationError}</Text>
+                    </View>
+                  )}
                   {fieldError('area')}
                 </View>
                 <View
@@ -612,11 +629,11 @@ export function FarmingLogFormScreen() {
                 </Text>}
               </View>
               <PrimaryButton
-                title="Gửi báo cáo hoàn thành"
-                disabled={busy}
+                title={isLocating ? "Đang xác định vị trí…" : "Gửi báo cáo hoàn thành"}
+                disabled={isSubmitDisabled}
                 style={[
                   styles.submitButton,
-                  (busy) && styles.disabled
+                  isSubmitDisabled && styles.disabled
                 ]}
                 labelStyle={styles.submitButtonText}
                 onPress={submitReport}
@@ -777,5 +794,66 @@ const styles = StyleSheet.create({
   taskPickerHint: {
     ...shared.link,
     paddingVertical: 8
+  },
+  readOnlyPlotBox: {
+    backgroundColor: '#F8FAF8',
+    borderWidth: 1,
+    borderColor: '#D4DDD4',
+    borderRadius: 8,
+    minHeight: 48,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    justifyContent: 'center',
+  },
+  readOnlyPlotBoxSuccess: {
+    backgroundColor: '#F2F8F2',
+    borderColor: '#A8D5A2',
+  },
+  readOnlyPlotBoxError: {
+    backgroundColor: '#FDF2F2',
+    borderColor: '#F8B4B4',
+  },
+  readOnlyPlotRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  readOnlyPlotName: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.title,
+    flexShrink: 0,
+  },
+  readOnlyPlotMuted: {
+    fontSize: 14,
+    color: colors.muted,
+    fontWeight: '400',
+  },
+  readOnlyCropText: {
+    fontSize: 13,
+    color: '#2D6A4F',
+    fontWeight: '500',
+    flexShrink: 1,
+    textAlign: 'right',
+  },
+  readOnlyWarningText: {
+    fontSize: 12,
+    color: colors.danger,
+    fontWeight: '500',
+  },
+  alertBanner: {
+    backgroundColor: '#FDF2F2',
+    borderWidth: 1,
+    borderColor: '#F8B4B4',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginTop: 6,
+  },
+  alertBannerText: {
+    color: '#991B1B',
+    fontSize: 12,
+    lineHeight: 17,
   },
 });
