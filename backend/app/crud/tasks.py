@@ -60,10 +60,15 @@ def get_task(db: Session, task_id: UUID) -> Optional[dict]:
 
     query = text("""
         SELECT t.task_id, t.team_id, tm.name AS team_name, tm.org_id, o.name AS org_name,
-             leader.full_name AS team_leader_name,
+               leader.full_name AS team_leader_name,
                t.worker_id, u.full_name AS worker_name, u.phone AS worker_phone,
                t.plot_id, p.code AS plot_code,
-               t.content, t.start_at, t.due_at, t.status, t.created_at, t.updated_at
+               t.content, t.start_at, t.due_at,
+               CASE 
+                   WHEN t.status IN ('pending', 'in_progress') AND t.due_at < CURRENT_TIMESTAMP THEN 'incomplete'
+                   ELSE t.status
+               END AS status,
+               t.created_at, t.updated_at
         FROM tasks t
         JOIN teams tm ON t.team_id = tm.team_id
         JOIN organizations o ON tm.org_id = o.org_id
@@ -113,8 +118,19 @@ def list_tasks(
         params["plot_id"] = plot_id
 
     if status:
-        conditions.append("t.status = :status")
-        params["status"] = status
+        if status == "incomplete":
+            conditions.append("(t.status = 'incomplete' OR (t.status IN ('pending', 'in_progress') AND t.due_at < CURRENT_TIMESTAMP))")
+        elif status == "in_progress":
+            conditions.append("(t.status = 'in_progress' AND t.due_at >= CURRENT_TIMESTAMP)")
+        elif status == "pending":
+            conditions.append("(t.status = 'pending' AND t.due_at >= CURRENT_TIMESTAMP)")
+        elif status == "completed":
+            conditions.append("t.status = 'completed'")
+        elif status == "cancelled":
+            conditions.append("t.status = 'cancelled'")
+        else:
+            conditions.append("t.status = :status")
+            params["status"] = status
     elif not include_cancelled:
         conditions.append("t.status != 'cancelled'")
 
@@ -128,7 +144,12 @@ def list_tasks(
                leader.full_name AS team_leader_name,
                t.worker_id, u.full_name AS worker_name, u.phone AS worker_phone,
                t.plot_id, p.code AS plot_code,
-               t.content, t.start_at, t.due_at, t.status, t.created_at, t.updated_at
+               t.content, t.start_at, t.due_at,
+               CASE 
+                   WHEN t.status IN ('pending', 'in_progress') AND t.due_at < CURRENT_TIMESTAMP THEN 'incomplete'
+                   ELSE t.status
+               END AS status,
+               t.created_at, t.updated_at
         FROM tasks t
         JOIN teams tm ON t.team_id = tm.team_id
         JOIN organizations o ON tm.org_id = o.org_id
@@ -152,7 +173,7 @@ def create_task(
     content: str,
     start_at: datetime,
     due_at: datetime,
-    status: str = "in_progress",
+    status: str = "pending",
 ) -> dict:
 
     query = text("""

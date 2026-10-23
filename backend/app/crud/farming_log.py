@@ -26,6 +26,35 @@ def get_season_scope(db: Session, season_id: UUID) -> dict | None:
     return dict(row) if row else None
 
 
+def is_gps_in_season_plot(
+    db: Session,
+    *,
+    season_id: UUID,
+    latitude: float,
+    longitude: float,
+) -> bool:
+    """
+    Tái thẩm định tọa độ GPS của Farmer QuickLog có nằm trong ranh giới lô đất của mùa vụ hay không (BR-14, EX-15).
+    """
+    sql = """
+        SELECT ST_Contains(p.boundary_geojson, ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326)) AS is_inside
+        FROM seasons s
+        JOIN plots p ON s.plot_id = p.plot_id
+        WHERE s.season_id = :season_id
+          AND p.boundary_geojson IS NOT NULL;
+    """
+    result = db.execute(
+        text(sql),
+        {
+            "season_id": season_id,
+            "longitude": longitude,
+            "latitude": latitude,
+        },
+    ).scalar()
+    return bool(result)
+
+
+
 def create_log(
     db: Session,
     *,

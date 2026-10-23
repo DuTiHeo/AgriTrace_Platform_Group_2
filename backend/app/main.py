@@ -3,6 +3,7 @@ from pathlib import Path
 import os
 
 from fastapi import FastAPI, Depends
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from sqlalchemy.orm import Session
@@ -22,11 +23,18 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", "uploads"))
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
-# Đăng ký các router nghiệp vụ
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 app.include_router(password_recovery.router, prefix="/auth", tags=["Auth"])
 app.include_router(user.router, prefix="/users", tags=["User"])
@@ -46,8 +54,3 @@ app.include_router(log_note.router, prefix="/log-notes", tags=["LogNote"])
 def health_check(db: Session = Depends(get_db)):
     db.execute(text("SELECT 1"))
     return {"status": "ok", "message": "Backend da ket noi thanh cong voi Database"}
-
-
-# Cac router se duoc gan vao day khi lam CRUD, vi du:
-# from app.routers import farm
-# app.include_router(farm.router, prefix="/farms", tags=["Farms"])

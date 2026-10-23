@@ -43,3 +43,15 @@ class PlotDetail(PlotSummary):
     """Chi tiết lô đất kèm ranh giới GeoJSON"""
     boundary_geojson: Optional[dict] = None
     updated_at: Optional[datetime] = None
+
+
+class PlotLocateResponse(BaseModel):
+    """Kết quả tự động suy luận Lô đất và Mùa vụ từ tọa độ GPS - BR-14, UC-W03.4"""
+    plot_id: UUID = Field(..., description="ID của lô đất chứa tọa độ GPS")
+    org_id: UUID = Field(..., description="ID nông trại chứa lô đất")
+    code: str = Field(..., description="Tên hoặc mã định danh của lô đất (VD: DL-01)")
+    area: Optional[float] = Field(None, description="Diện tích lô đất (ha hoặc m²)")
+    status: str = Field(..., description="Trạng thái lô đất (active)")
+    current_season_id: Optional[UUID] = Field(None, description="ID mùa vụ đang canh tác (growing hoặc ready_to_harvest)")
+    current_crop_name: Optional[str] = Field(None, description="Tên giống cây trồng của mùa vụ hiện tại")
+

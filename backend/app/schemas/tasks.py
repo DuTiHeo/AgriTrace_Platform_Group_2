@@ -6,9 +6,11 @@ from uuid import UUID
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 class TaskStatus(str, Enum):
+    pending = "pending"
     in_progress = "in_progress"
     completed = "completed"
     cancelled = "cancelled"
+    incomplete = "incomplete"
 
 
 class TaskBase(BaseModel):
@@ -55,7 +57,7 @@ class TaskUpdate(BaseModel):
     # Việc so sánh phải làm ở router, sau khi merge với giá trị cũ trong DB (xem mục 4).
 
 class TaskStatusUpdate(BaseModel):
-    status: TaskStatus = Field(..., description="Trạng thái mới: in_progress hoặc completed")
+    status: TaskStatus = Field(..., description="Trạng thái mới: pending, in_progress, completed, incomplete hoặc cancelled")
 
 
 class TaskSummary(BaseModel):
