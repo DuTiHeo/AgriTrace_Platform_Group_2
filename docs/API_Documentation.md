@@ -253,7 +253,7 @@ ALTER TABLE log_notes
     ADD COLUMN IF NOT EXISTS resolved BOOLEAN NOT NULL DEFAULT FALSE;
 ```
 
-Notification khi có note mới tạm bỏ qua ở đợt 2: không insert vào bảng `notifications`.
+Cơ chế thông báo tự động (Event Trigger - Đợt 3): Khi Leader/Owner tạo ghi chú mới (`POST /log-notes`), hệ thống tự động sinh thông báo `type = 'log_note'` gửi đến tác giả nhật ký canh tác (nếu khác người viết ghi chú).
 Đợt 2: Module Tasks (Nhiệm vụ công việc)
 Usecase | Method | Endpoint | Mo ta | Trang thai |
 |---|---|---|---|---|
@@ -529,3 +529,164 @@ ALTER TABLE batch_seasons
     ADD COLUMN IF NOT EXISTS status VARCHAR(20) NOT NULL DEFAULT 'active'
     CHECK (status IN ('active', 'cancelled'));
 ```
+
+Đợt 3: Module Notification (Hộp thư thông báo cá nhân)
+Usecase | Method | Endpoint | Mo ta | Trang thai |
+|---|---|---|---|---|
+|UC-SH04| GET | /notifications | Danh sách thông báo cá nhân của người dùng hiện tại (lọc theo is_read, type; phân trang limit 1..200, offset >= 0; sắp xếp created_at DESC) | Đã xong |
+|UC-SH04| GET | /notifications/unread-count | Đếm số lượng thông báo chưa đọc của người dùng hiện tại (bắt buộc đặt trước /{notification_id} để tránh xung đột định tuyến UUID) | Đã xong |
+|UC-SH04| PATCH | /notifications/read-all | Đánh dấu tất cả thông báo chưa đọc của người dùng hiện tại thành đã đọc (bắt buộc đặt trước /{notification_id}) | Đã xong |
+|UC-SH04| GET | /notifications/{notification_id} | Xem chi tiết 1 thông báo của chính mình (kiểm tra quyền sở hữu: 403 Forbidden nếu không thuộc về mình; 404 Not Found nếu không tồn tại) | Đã xong |
+|UC-SH04| PATCH | /notifications/{notification_id}/read | Đánh dấu 1 thông báo của chính mình thành đã đọc (kiểm tra quyền sở hữu) | Đã xong |
+|UC-SH04| DELETE | /notifications/{notification_id} | Xóa 1 thông báo của chính mình (204 No Content; kiểm tra quyền sở hữu) | Đã xong |
+
+Ghi chú nghiệp vụ, Enum, Event Triggers và Request/Response chính cho Notification:
+
+1. **Quy tắc cô lập hộp thư cá nhân & Phân quyền bảo mật (Personal Inbox Data Isolation)**:
+   - Mọi endpoint `/notifications` đều yêu cầu xác thực qua JWT Access Token (`Authorization: Bearer <token>`). Áp dụng đồng đều cho cả 4 vai trò: `worker`, `leader`, `owner`, `admin`.
+   - Bảng `notifications` lưu `user_id` là người nhận thông báo. Hệ thống chỉ cho phép mỗi người dùng truy vấn, đếm, cập nhật trạng thái đã đọc và xóa các thông báo gửi đích danh cho tài khoản của chính mình (`notifications.user_id == current_user["user_id"]`).
+   - Nghiêm cấm mọi hành vi truy cập chéo thông báo của người dùng khác (kể cả Owner hay Admin trên thông báo của người khác) $\rightarrow$ trả về `403 Forbidden` (`detail: "Bạn không có quyền truy cập thông báo của người dùng khác"`).
+   - Truy vấn thông báo không tồn tại theo `notification_id` $\rightarrow$ trả về `404 Not Found` (`detail: "Không tìm thấy thông báo"`).
+
+2. **Quy tắc chống tự gửi thông báo (No Self-Notification)**:
+   - Khi người dùng tự thao tác trên đối tượng của chính mình (ví dụ: Tổ trưởng tự giao việc cho chính mình hoặc tự viết ghi chú trên nhật ký của mình), hệ thống không tạo thông báo dư thừa gửi lại cho chính họ.
+
+3. **Bất biến định tuyến FastAPI (Route Shadowing Invariant)**:
+   - Route tĩnh `GET /notifications/unread-count` và `PATCH /notifications/read-all` **BẮT BUỘC ĐỨNG TRƯỚC** route động `GET /notifications/{notification_id}`. Nếu đặt sau, FastAPI sẽ nhầm `"unread-count"` hoặc `"read-all"` là tham số kiểu `UUID` và trả về lỗi `422 Unprocessable Entity`.
+
+4. **Cơ chế Event Triggers tự động tại Backend**:
+   - **Trigger Phân công nhiệm vụ (`POST /tasks` & `PUT / PATCH /tasks/{task_id}`)**:
+     - Khi nhiệm vụ mới được tạo hoặc nhiệm vụ được chuyển giao cho công nhân khác (`new_worker_id != task["worker_id"]`), nếu người được giao khác với người thực hiện thao tác (`payload.worker_id != current_user["user_id"]`), Backend tự động tạo bản ghi `notifications`:
+       - `user_id`: `payload.worker_id` / `new_worker_id`
+       - `type`: `"task_assigned"`
+       - `content`: `"Bạn có nhiệm vụ mới: {content}"`
+   - **Trigger Ghi chú phản hồi nhật ký (`POST /log-notes`)**:
+     - Khi Tổ trưởng hoặc Chủ nông trại thêm ghi chú dưới nhật ký canh tác (`POST /log-notes`), nếu người ghi chú khác với tác giả nhật ký (`log["user_id"] != current_user["user_id"]`), Backend tự động tạo bản ghi `notifications`:
+       - `user_id`: `log["user_id"]`
+       - `type`: `"log_note"`
+       - `content`: `"Tổ trưởng vừa để lại ghi chú dưới nhật ký của bạn"` (nếu role là `leader`) hoặc `"Chủ nông trại vừa để lại ghi chú dưới nhật ký của bạn"` (nếu role là `owner`).
+
+5. **Enum Loại thông báo (`NotificationType`)**:
+   - `task_assigned`: Thông báo nhiệm vụ mới được phân công cho công nhân.
+   - `log_note`: Thông báo ghi chú / phản hồi kỹ thuật mới dưới nhật ký canh tác.
+   - `reminder`: Thông báo nhắc nhở lịch mùa vụ / chăm sóc cây trồng theo mốc sinh trưởng.
+   - `error_report`: Thông báo có báo cáo sự cố kỹ thuật / đồng ruộng.
+   - `error_report_response`: Thông báo phản hồi về báo cáo sự cố kỹ thuật.
+
+6. **Ví dụ Request / Response**:
+
+```http
+# 1. GET /notifications - Danh sách thông báo cá nhân (kèm lọc và phân trang)
+GET /notifications?is_read=false&type=task_assigned&limit=20&offset=0
+Authorization: Bearer <token>
+```
+
+- **Response thành công (200 OK - Danh sách `NotificationOut`)**:
+```json
+[
+  {
+    "notification_id": "f0000000-0000-0000-0000-000000000001",
+    "user_id": "10000000-0000-0000-0000-000000000003",
+    "content": "Bạn có nhiệm vụ mới: Kiểm tra độ ẩm lô DL-01",
+    "type": "task_assigned",
+    "is_read": false,
+    "created_at": "2026-10-24T08:00:00+07:00"
+  },
+  {
+    "notification_id": "f0000000-0000-0000-0000-000000000005",
+    "user_id": "10000000-0000-0000-0000-000000000003",
+    "content": "Tổ trưởng vừa để lại ghi chú dưới nhật ký của bạn",
+    "type": "log_note",
+    "is_read": false,
+    "created_at": "2026-10-24T07:30:00+07:00"
+  }
+]
+```
+
+```http
+# 2. GET /notifications/unread-count - Đếm số lượng thông báo chưa đọc
+GET /notifications/unread-count
+Authorization: Bearer <token>
+```
+
+- **Response thành công (200 OK - `UnreadCountOut`)**:
+```json
+{
+  "unread_count": 2
+}
+```
+
+```http
+# 3. PATCH /notifications/read-all - Đánh dấu tất cả thông báo chưa đọc thành đã đọc
+PATCH /notifications/read-all
+Authorization: Bearer <token>
+```
+
+- **Response thành công (200 OK - `MarkAllReadOut`)**:
+```json
+{
+  "updated_count": 2,
+  "message": "Đã đánh dấu tất cả thông báo là đã đọc"
+}
+```
+
+```http
+# 4. GET /notifications/{notification_id} - Xem chi tiết 1 thông báo
+GET /notifications/f0000000-0000-0000-0000-000000000001
+Authorization: Bearer <token>
+```
+
+- **Response thành công (200 OK - `NotificationOut`)**:
+```json
+{
+  "notification_id": "f0000000-0000-0000-0000-000000000001",
+  "user_id": "10000000-0000-0000-0000-000000000003",
+  "content": "Bạn có nhiệm vụ mới: Kiểm tra độ ẩm lô DL-01",
+  "type": "task_assigned",
+  "is_read": false,
+  "created_at": "2026-10-24T08:00:00+07:00"
+}
+```
+
+```http
+# 5. PATCH /notifications/{notification_id}/read - Đánh dấu 1 thông báo thành đã đọc
+PATCH /notifications/f0000000-0000-0000-0000-000000000001/read
+Authorization: Bearer <token>
+```
+
+- **Response thành công (200 OK - `NotificationOut`)**:
+```json
+{
+  "notification_id": "f0000000-0000-0000-0000-000000000001",
+  "user_id": "10000000-0000-0000-0000-000000000003",
+  "content": "Bạn có nhiệm vụ mới: Kiểm tra độ ẩm lô DL-01",
+  "type": "task_assigned",
+  "is_read": true,
+  "created_at": "2026-10-24T08:00:00+07:00"
+}
+```
+
+```http
+# 6. DELETE /notifications/{notification_id} - Xóa 1 thông báo
+DELETE /notifications/f0000000-0000-0000-0000-000000000001
+Authorization: Bearer <token>
+```
+
+- **Response thành công (204 No Content)**:
+*(Không có response body)*
+
+- **Các phản hồi lỗi ngoại lệ chuẩn hóa**:
+  - `401 Unauthorized`: Thiếu header `Authorization`, token hết hạn hoặc nằm trong `token_blacklist` (`EX-05`).
+  - `403 Forbidden`: Người dùng cố gắng xem, cập nhật hoặc xóa thông báo thuộc về tài khoản khác (`EX-06`):
+    ```json
+    {
+      "detail": "Bạn không có quyền truy cập thông báo của người dùng khác"
+    }
+    ```
+  - `404 Not Found`: Không tìm thấy bản ghi thông báo theo `notification_id`:
+    ```json
+    {
+      "detail": "Không tìm thấy thông báo"
+    }
+    ```
+  - `422 Unprocessable Entity`: Sai định dạng UUID hoặc tham số phân trang vượt giới hạn cho phép (`limit < 1`, `limit > 200`, `offset < 0`).
