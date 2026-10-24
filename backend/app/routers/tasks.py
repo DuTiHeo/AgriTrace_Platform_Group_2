@@ -8,6 +8,7 @@ from app.core.security import get_current_user
 from app.routers.user import require_role, ensure_owns_org
 from app.crud import tasks as crud_tasks
 from app.crud import team as crud_team
+from app.crud import notifications as crud_notifications
 from app.schemas.tasks import (
     TaskCreate,
     TaskUpdate,
@@ -154,6 +155,13 @@ def create_task(
         start_at=payload.start_at,
         due_at=payload.due_at,
     )
+    if payload.worker_id != current_user["user_id"]:
+        crud_notifications.create_notification(
+            db,
+            user_id=payload.worker_id,
+            content=f"Bạn có nhiệm vụ mới: {payload.content}",
+            notification_type="task_assigned",
+        )
     return new_task
 
 
@@ -209,7 +217,19 @@ def update_task(
         effective_due_at = data.get("due_at", task["due_at"])
         data["status"] = _compute_target_status(st, effective_due_at)
 
-    return crud_tasks.update_task(db, task_id, data)
+    updated_task = crud_tasks.update_task(db, task_id, data)
+    if (
+        "worker_id" in data
+        and new_worker_id != task["worker_id"]
+        and new_worker_id != current_user["user_id"]
+    ):
+        crud_notifications.create_notification(
+            db,
+            user_id=new_worker_id,
+            content=f"Bạn có nhiệm vụ mới: {updated_task['content']}",
+            notification_type="task_assigned",
+        )
+    return updated_task
 
 
 @router.patch("/{task_id}/status", response_model=TaskDetail)
