@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.crud import farming_log as crud_farming_log
 from app.crud import log_note as crud_log_note
+from app.crud import notifications as crud_notifications
 from app.db.session import get_db
 from app.routers.user import ensure_owns_org, require_role
 from app.schemas.log_note import LogNoteCreate, LogNoteOut, LogNoteUpdate
@@ -37,13 +38,25 @@ def create_log_note(
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Khong tim thay nhat ky canh tac")
     _ensure_can_write_note(log, current_user, db)
 
-    # Dot 2 bo qua notifications: khong insert vao bang notifications o day.
-    return crud_log_note.create_note(
+    note = crud_log_note.create_note(
         db,
         log_id=payload.log_id,
         leader_id=current_user["user_id"],
         content=payload.content,
     )
+    if log["user_id"] != current_user["user_id"]:
+        notif_content = (
+            "Tổ trưởng vừa để lại ghi chú dưới nhật ký của bạn"
+            if current_user["role"] == "leader"
+            else "Chủ nông trại vừa để lại ghi chú dưới nhật ký của bạn"
+        )
+        crud_notifications.create_notification(
+            db,
+            user_id=log["user_id"],
+            content=notif_content,
+            notification_type="log_note",
+        )
+    return note
 
 
 @router.patch("/{note_id}", response_model=LogNoteOut)
