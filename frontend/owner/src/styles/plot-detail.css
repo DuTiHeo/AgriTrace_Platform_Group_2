@@ -26,29 +26,29 @@
   justify-content: center;
   gap: 8px;
   padding: 9px 15px;
-  color: #b91c1c;
+  color: var(--agri-danger-text);
   font: inherit;
   font-weight: 700;
-  background: #ffffff;
-  border: 1px solid #fecaca;
+  background: var(--agri-white);
+  border: 1px solid var(--agri-danger-border-soft);
   border-radius: 8px;
   cursor: pointer;
 }
 
 .plot-delete-button:hover {
-  background: #fef2f2;
-  border-color: #f87171;
+  background: var(--agri-danger-soft);
+  border-color: var(--agri-danger);
 }
 
 .plot-confirm-delete {
-  color: #ffffff;
-  background: #dc2626;
-  border-color: #dc2626;
+  color: var(--agri-white);
+  background: var(--agri-danger);
+  border-color: var(--agri-danger);
 }
 
 .plot-confirm-delete:hover:not(:disabled) {
-  background: #b91c1c;
-  border-color: #b91c1c;
+  background: var(--agri-danger-text);
+  border-color: var(--agri-danger-text);
 }
 
 .plot-confirm-delete:disabled {
@@ -69,8 +69,8 @@
   height: 52px;
   flex-shrink: 0;
   place-items: center;
-  color: #08783e;
-  background: #dcfce7;
+  color: var(--agri-title);
+  background: var(--agri-success-soft);
   border-radius: 14px;
 }
 
@@ -87,13 +87,13 @@
 
 .plot-detail-title h1 {
   margin: 0;
-  color: #123524;
+  color: var(--agri-title);
   font-size: 24px;
 }
 
 .plot-detail-title p {
   margin: 4px 0 0;
-  color: #64748b;
+  color: var(--agri-muted-strong);
 }
 
 .plot-detail-page .status-badge {
@@ -106,13 +106,13 @@
 }
 
 .plot-detail-page .status-active {
-  color: #08783e;
-  background: #dcfce7;
+  color: var(--agri-title);
+  background: var(--agri-success-soft);
 }
 
 .plot-detail-page .status-inactive {
-  color: #64748b;
-  background: #eef2f6;
+  color: var(--agri-muted-strong);
+  background: var(--agri-info-soft);
 }
 
 .plot-detail-grid {
@@ -133,18 +133,18 @@
   gap: 14px;
   margin-bottom: 18px;
   padding-bottom: 14px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--agri-border);
 }
 
 .plot-detail-card-heading h2 {
   margin: 0;
-  color: #123524;
+  color: var(--agri-title);
   font-size: 17px;
 }
 
 .plot-detail-card-heading p {
   margin: 4px 0 0;
-  color: #64748b;
+  color: var(--agri-muted-strong);
   font-size: 12px;
 }
 
@@ -160,14 +160,14 @@
   align-items: flex-start;
   gap: 10px;
   padding: 12px;
-  background: #f8fafc;
+  background: var(--agri-input);
   border-radius: 9px;
 }
 
 .plot-information-item > svg {
   flex-shrink: 0;
   margin-top: 2px;
-  color: #08783e;
+  color: var(--agri-title);
 }
 
 .plot-information-item > div {
@@ -178,12 +178,12 @@
 }
 
 .plot-information-item span {
-  color: #64748b;
+  color: var(--agri-muted-strong);
   font-size: 12px;
 }
 
 .plot-information-item strong {
-  color: #172b20;
+  color: var(--agri-title);
   font-size: 13px;
   line-height: 1.45;
 }
@@ -193,8 +193,8 @@
   align-items: center;
   gap: 12px;
   padding: 15px;
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
+  background: var(--agri-success-soft);
+  border: 1px solid var(--agri-border);
   border-radius: 10px;
 }
 
@@ -204,8 +204,8 @@
   height: 42px;
   flex-shrink: 0;
   place-items: center;
-  color: #08783e;
-  background: #dcfce7;
+  color: var(--agri-title);
+  background: var(--agri-success-soft);
   border-radius: 10px;
 }
 
@@ -216,11 +216,11 @@
 }
 
 .current-season-card strong {
-  color: #14532d;
+  color: var(--agri-title);
 }
 
 .current-season-card span {
-  color: #15803d;
+  color: var(--agri-title);
   font-size: 12px;
 }
 
@@ -231,18 +231,18 @@
   justify-content: center;
   flex-direction: column;
   gap: 6px;
-  color: #64748b;
+  color: var(--agri-muted-strong);
   text-align: center;
-  background: #f8fafc;
+  background: var(--agri-input);
   border-radius: 10px;
 }
 
 .no-current-season svg {
-  color: #94a3b8;
+  color: var(--agri-muted);
 }
 
 .no-current-season strong {
-  color: #334155;
+  color: var(--agri-text);
 }
 
 .no-current-season span {
@@ -255,10 +255,10 @@
   gap: 9px;
   margin-top: 12px;
   padding: 11px 12px;
-  color: #92400e;
+  color: var(--agri-warning-text);
   font-size: 12px;
-  background: #fffbeb;
-  border: 1px solid #fde68a;
+  background: var(--agri-warning-soft);
+  border: 1px solid var(--agri-warning-border);
   border-radius: 9px;
 }
 
@@ -270,8 +270,8 @@
   position: relative;
   height: 410px;
   overflow: hidden;
-  background: #e8f1e5;
-  border: 1px solid #bbd4bc;
+  background: var(--agri-success-soft);
+  border: 1px solid var(--agri-border);
   border-radius: 11px;
 }
 
@@ -280,8 +280,8 @@
   inset: 0;
   opacity: 0.6;
   background-image:
-  linear-gradient(#bfd7c0 1px, transparent 1px),
-  linear-gradient(90deg, #bfd7c0 1px, transparent 1px);
+  linear-gradient(var(--agri-border) 1px, transparent 1px),
+  linear-gradient(90deg, var(--agri-border) 1px, transparent 1px);
   background-size: 40px 40px;
 }
 
@@ -294,15 +294,15 @@
 }
 
 .plot-boundary-preview polygon {
-  fill: rgb(8 120 62 / 30%);
-  stroke: #05703a;
+  fill: rgb(var(--agri-primary-rgb) / 30%);
+  stroke: var(--agri-title);
   stroke-width: 0.7;
   vector-effect: non-scaling-stroke;
 }
 
 .plot-boundary-preview circle {
-  fill: #ffffff;
-  stroke: #05703a;
+  fill: var(--agri-white);
+  stroke: var(--agri-title);
   stroke-width: 2;
   vector-effect: non-scaling-stroke;
 }
@@ -316,13 +316,13 @@
   align-items: center;
   gap: 7px;
   padding: 8px 11px;
-  color: #14532d;
+  color: var(--agri-title);
   font-size: 12px;
   font-weight: 700;
-  background: rgb(255 255 255 / 90%);
-  border: 1px solid #bbf7d0;
+  background: rgb(var(--agri-surface-rgb) / 90%);
+  border: 1px solid var(--agri-border);
   border-radius: 8px;
-  box-shadow: 0 4px 14px rgb(15 23 42 / 10%);
+  box-shadow: 0 4px 14px rgb(var(--agri-shadow-rgb) / 10%);
 }
 
 .plot-coordinate-list {
@@ -338,18 +338,18 @@
   align-items: center;
   gap: 8px;
   padding: 9px 11px;
-  background: #f8fafc;
+  background: var(--agri-input);
   border-radius: 8px;
 }
 
 .plot-coordinate-row span {
-  color: #64748b;
+  color: var(--agri-muted-strong);
   font-size: 12px;
 }
 
 .plot-coordinate-row code {
   overflow: hidden;
-  color: #334155;
+  color: var(--agri-text);
   font-size: 11px;
   text-overflow: ellipsis;
 }
@@ -382,7 +382,7 @@
 }
 
 .plot-edit-form .form-field span {
-  color: #334155;
+  color: var(--agri-text);
   font-size: 12px;
   font-weight: 700;
 }
@@ -391,10 +391,10 @@
 .plot-edit-form textarea {
   width: 100%;
   padding: 10px 11px;
-  color: #172b20;
+  color: var(--agri-title);
   font: inherit;
-  background: #ffffff;
-  border: 1px solid #cbd5e1;
+  background: var(--agri-input);
+  border: 1px solid var(--agri-input-border);
   border-radius: 8px;
   outline: none;
 }
@@ -409,8 +409,8 @@
 
 .plot-edit-form input:focus,
 .plot-edit-form textarea:focus {
-  border-color: #22c55e;
-  box-shadow: 0 0 0 3px rgb(34 197 94 / 12%);
+  border-color: var(--agri-primary);
+  box-shadow: 0 0 0 3px rgb(var(--agri-primary-rgb) / 12%);
 }
 
 .plot-edit-form .app-modal-footer {

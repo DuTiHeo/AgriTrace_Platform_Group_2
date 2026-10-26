@@ -1,15 +1,15 @@
 .trace-page {
   min-height: 100vh;
-  color: #20392a;
+  color: var(--agri-title);
   background:
-    radial-gradient(circle at 8% 5%, rgb(174 221 175 / 28%), transparent 28%),
-    radial-gradient(circle at 92% 28%, rgb(229 205 130 / 18%), transparent 24%),
-    #f5f8f4;
+    radial-gradient(circle at 8% 5%, rgb(var(--agri-primary-rgb) / 28%), transparent 28%),
+    radial-gradient(circle at 92% 28%, rgb(var(--agri-warning-rgb) / 18%), transparent 24%),
+    var(--agri-background);
 }
 
 .trace-header {
-  background: rgb(255 255 255 / 94%);
-  border-bottom: 1px solid #dfe8e0;
+  background: rgb(var(--agri-surface-rgb) / 94%);
+  border-bottom: 1px solid var(--agri-border);
   backdrop-filter: blur(12px);
 }
 
@@ -40,12 +40,12 @@
 }
 
 .trace-brand strong {
-  color: #0b542b;
+  color: var(--agri-title);
   font-size: 15px;
 }
 
 .trace-brand span {
-  color: #6a7c70;
+  color: var(--agri-muted-strong);
   font-size: 11px;
 }
 
@@ -57,9 +57,9 @@
   justify-content: center;
   gap: 7px;
   padding: 8px 12px;
-  color: #285a39;
-  background: #fff;
-  border: 1px solid #ccdacf;
+  color: var(--agri-title);
+  background: var(--agri-white);
+  border: 1px solid var(--agri-border);
   border-radius: 8px;
   font-weight: 700;
 }
@@ -76,9 +76,9 @@
 .trace-error,
 .trace-cancelled-alert {
   padding: 12px 15px;
-  color: #9a3412;
-  background: #fff7ed;
-  border: 1px solid #fed7aa;
+  color: var(--agri-danger-text);
+  background: var(--agri-danger-soft);
+  border: 1px solid var(--agri-danger-border-soft);
   border-radius: 10px;
 }
 
@@ -110,12 +110,12 @@
   gap: 16px;
   overflow: hidden;
   padding: 25px;
-  color: #fff;
+  color: var(--agri-white);
   background:
-    linear-gradient(120deg, rgb(255 255 255 / 9%), transparent 44%),
-    linear-gradient(135deg, #075d2a, #0b7440 62%, #27814d);
+    linear-gradient(120deg, rgb(var(--agri-surface-rgb) / 9%), transparent 44%),
+    linear-gradient(135deg, var(--agri-title), var(--agri-title) 62%, var(--agri-primary));
   border-radius: 18px;
-  box-shadow: 0 14px 34px rgb(13 72 38 / 16%);
+  box-shadow: 0 14px 34px rgb(var(--agri-shadow-rgb) / 16%);
 }
 
 .trace-hero::after {
@@ -124,13 +124,13 @@
   bottom: -90px;
   width: 260px;
   height: 260px;
-  background: rgb(255 255 255 / 7%);
+  background: rgb(var(--agri-surface-rgb) / 7%);
   border-radius: 50%;
   content: "";
 }
 
 .trace-hero.cancelled {
-  background: linear-gradient(135deg, #6b4f36, #8a5d3b);
+  background: linear-gradient(135deg, var(--agri-warning), var(--agri-warning));
 }
 
 .trace-hero-mark {
@@ -138,8 +138,8 @@
   width: 62px;
   height: 62px;
   place-items: center;
-  background: rgb(255 255 255 / 15%);
-  border: 1px solid rgb(255 255 255 / 22%);
+  background: rgb(var(--agri-surface-rgb) / 15%);
+  border: 1px solid rgb(var(--agri-surface-rgb) / 22%);
   border-radius: 16px;
 }
 
@@ -150,7 +150,7 @@
 }
 
 .trace-hero-content > span {
-  color: #d7f5df;
+  color: var(--agri-success-soft);
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.06em;
@@ -160,22 +160,22 @@
 .trace-hero-content h1 {
   overflow-wrap: anywhere;
   margin-top: 4px;
-  color: #fff;
+  color: var(--agri-white);
   font-size: 27px;
   letter-spacing: 0.015em;
 }
 
 .trace-hero-content p {
   margin-top: 3px;
-  color: #dceee1;
+  color: var(--agri-border);
 }
 
 .trace-hero > button {
   position: relative;
   z-index: 1;
-  color: #fff;
-  background: rgb(255 255 255 / 12%);
-  border-color: rgb(255 255 255 / 30%);
+  color: var(--agri-white);
+  background: rgb(var(--agri-surface-rgb) / 12%);
+  border-color: rgb(var(--agri-surface-rgb) / 30%);
 }
 
 .trace-summary-grid {
@@ -186,10 +186,10 @@
 
 .trace-summary-grid article,
 .trace-card {
-  background: #fff;
-  border: 1px solid #e0e8e1;
+  background: var(--agri-white);
+  border: 1px solid var(--agri-input-border);
   border-radius: 13px;
-  box-shadow: 0 2px 10px rgb(29 60 38 / 4%);
+  box-shadow: 0 2px 10px rgb(var(--agri-shadow-rgb) / 4%);
 }
 
 .trace-summary-grid article {
@@ -207,18 +207,18 @@
   height: 36px;
   grid-row: span 2;
   padding: 8px;
-  color: #08783e;
-  background: #eaf7ed;
+  color: var(--agri-title);
+  background: var(--agri-success-soft);
   border-radius: 9px;
 }
 
 .trace-summary-grid span {
-  color: #718078;
+  color: var(--agri-muted-strong);
   font-size: 11px;
 }
 
 .trace-summary-grid strong {
-  color: #173a28;
+  color: var(--agri-title);
   font-size: 14px;
   line-height: 1.4;
 }
@@ -248,17 +248,17 @@
 
 .trace-section-heading svg {
   flex: 0 0 auto;
-  color: #08783e;
+  color: var(--agri-title);
 }
 
 .trace-section-heading h2 {
-  color: #183c29;
+  color: var(--agri-title);
   font-size: 17px;
 }
 
 .trace-section-heading p {
   margin-top: 2px;
-  color: #75847b;
+  color: var(--agri-muted-strong);
   font-size: 11px;
 }
 
@@ -272,8 +272,8 @@
   display: flex;
   gap: 12px;
   padding: 15px;
-  background: #f8fbf8;
-  border: 1px solid #e2eae3;
+  background: var(--agri-header);
+  border: 1px solid var(--agri-background);
   border-radius: 11px;
 }
 
@@ -283,8 +283,8 @@
   height: 31px;
   flex: 0 0 auto;
   place-items: center;
-  color: #fff;
-  background: #138247;
+  color: var(--agri-white);
+  background: var(--agri-title);
   border-radius: 9px;
   font-size: 12px;
   font-weight: 800;
@@ -307,17 +307,17 @@
 }
 
 .trace-season-title h3 {
-  color: #203d2a;
+  color: var(--agri-title);
   font-size: 14px;
 }
 
 .trace-season-title span {
-  color: #77867c;
+  color: var(--agri-muted-strong);
   font-size: 10px;
 }
 
 .trace-season-title > strong {
-  color: #08783e;
+  color: var(--agri-title);
   font-size: 13px;
   white-space: nowrap;
 }
@@ -336,7 +336,7 @@
 }
 
 .trace-season-main dt {
-  color: #809087;
+  color: var(--agri-muted-strong);
   font-size: 10px;
 }
 
@@ -344,7 +344,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  color: #3c5544;
+  color: var(--agri-text);
   font-size: 11px;
   font-weight: 700;
 }
@@ -353,14 +353,14 @@
   height: 5px;
   overflow: hidden;
   margin-top: 12px;
-  background: #dde8df;
+  background: var(--agri-border);
   border-radius: 999px;
 }
 
 .trace-contribution-bar span {
   display: block;
   height: 100%;
-  background: linear-gradient(90deg, #169447, #53ad6d);
+  background: linear-gradient(90deg, var(--agri-primary), var(--agri-primary));
   border-radius: inherit;
 }
 
@@ -376,28 +376,28 @@
   min-height: 110px;
   place-items: center;
   margin-bottom: 14px;
-  color: #287646;
+  color: var(--agri-success-text);
   background:
-    radial-gradient(circle at 50% 110%, #92c995 0 34%, transparent 35%),
-    linear-gradient(150deg, #e9f5e8, #f5ecd0);
+    radial-gradient(circle at 50% 110%, var(--agri-success) 0 34%, transparent 35%),
+    linear-gradient(150deg, var(--agri-success-soft), var(--agri-warning-soft));
   border-radius: 10px;
 }
 
 .trace-farm-card > h3 {
-  color: #1e3d29;
+  color: var(--agri-title);
   font-size: 15px;
 }
 
 .trace-farm-card > p {
   margin-top: 4px;
-  color: #718078;
+  color: var(--agri-muted-strong);
   font-size: 11px;
   line-height: 1.5;
 }
 
 .trace-farm-card > dl {
   margin-top: 14px;
-  border-top: 1px solid #e7ece7;
+  border-top: 1px solid var(--agri-background);
 }
 
 .trace-farm-card > dl div {
@@ -405,16 +405,16 @@
   justify-content: space-between;
   gap: 12px;
   padding: 9px 0;
-  border-bottom: 1px solid #edf1ed;
+  border-bottom: 1px solid var(--agri-background);
 }
 
 .trace-farm-card dt {
-  color: #7a8980;
+  color: var(--agri-muted-strong);
   font-size: 10px;
 }
 
 .trace-farm-card dd {
-  color: #314b39;
+  color: var(--agri-text);
   font-size: 11px;
   font-weight: 700;
   text-align: right;
@@ -424,17 +424,17 @@
   display: flex;
   align-items: center;
   flex-direction: column;
-  color: #587060;
+  color: var(--agri-muted-strong);
   text-align: center;
 }
 
 .trace-verification-card > svg {
-  color: #128147;
+  color: var(--agri-title);
 }
 
 .trace-verification-card h2 {
   margin-top: 8px;
-  color: #1f422d;
+  color: var(--agri-title);
   font-size: 15px;
 }
 
@@ -449,7 +449,7 @@
   align-items: center;
   gap: 5px;
   margin-top: 11px;
-  color: #08783e;
+  color: var(--agri-title);
   font-size: 11px;
   font-weight: 700;
 }
@@ -475,7 +475,7 @@
   right: 0;
   left: 40px;
   height: 2px;
-  background: #dce8de;
+  background: var(--agri-border);
   content: "";
 }
 
@@ -486,28 +486,28 @@
   height: 36px;
   flex: 0 0 auto;
   place-items: center;
-  color: #08783e;
-  background: #e6f5e9;
-  border: 3px solid #fff;
+  color: var(--agri-title);
+  background: var(--agri-success-soft);
+  border: 3px solid var(--agri-white);
   border-radius: 50%;
-  box-shadow: 0 0 0 1px #cfe3d2;
+  box-shadow: 0 0 0 1px var(--agri-border);
 }
 
 .trace-timeline li > div {
   z-index: 1;
   min-width: 0;
   padding-right: 8px;
-  background: #fff;
+  background: var(--agri-white);
 }
 
 .trace-timeline li strong {
-  color: #274331;
+  color: var(--agri-title);
   font-size: 11px;
 }
 
 .trace-timeline li p {
   overflow: hidden;
-  color: #7a8980;
+  color: var(--agri-muted-strong);
   font-size: 10px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -519,7 +519,7 @@
   justify-content: center;
   gap: 9px;
   padding: 10px 0;
-  color: #78877e;
+  color: var(--agri-muted-strong);
 }
 
 .trace-footer img {
@@ -533,7 +533,7 @@
 }
 
 .trace-footer strong {
-  color: #32503b;
+  color: var(--agri-title);
   font-size: 11px;
 }
 
@@ -549,7 +549,7 @@
   flex-direction: column;
   gap: 12px;
   padding: 30px;
-  color: #758078;
+  color: var(--agri-muted-strong);
   text-align: center;
 }
 
@@ -559,11 +559,11 @@
 }
 
 .trace-state-page > svg {
-  color: #138247;
+  color: var(--agri-title);
 }
 
 .trace-state-page h1 {
-  color: #173a28;
+  color: var(--agri-title);
   font-size: 22px;
 }
 
@@ -573,8 +573,8 @@
 
 .trace-code-query {
   padding: 6px 10px;
-  color: #52665a;
-  background: #eef3ef;
+  color: var(--agri-text);
+  background: var(--agri-background);
   border-radius: 7px;
   font-family: ui-monospace, monospace;
   font-size: 11px;
@@ -583,8 +583,8 @@
 .trace-loading-ring {
   width: 32px;
   height: 32px;
-  border: 3px solid #d7e5d9;
-  border-top-color: #138247;
+  border: 3px solid var(--agri-border);
+  border-top-color: var(--agri-title);
   border-radius: 50%;
   animation: trace-spin 0.8s linear infinite;
 }
@@ -671,7 +671,7 @@
 }
 
 @media print {
-  .trace-page { background: #fff; }
+  .trace-page { background: var(--agri-white); }
   .trace-header button,
   .trace-hero > button,
   .trace-verification-card a { display: none; }

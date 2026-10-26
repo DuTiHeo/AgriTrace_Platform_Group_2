@@ -3,6 +3,8 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import AppErrorBoundary from "./components/AppErrorBoundary";
+import "./styles/mobile-palette.css";
+import "./styles/theme.css";
 import "./styles/global.css";
 import "./styles/layout.css";
 import "./styles/shared.css";

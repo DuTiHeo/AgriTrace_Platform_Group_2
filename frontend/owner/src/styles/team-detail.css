@@ -7,9 +7,9 @@
   align-items: flex-start;
   gap: 11px;
   margin-bottom: 18px;
-  border: 1px solid #fed7aa;
+  border: 1px solid var(--agri-warning-border);
   border-radius: var(--radius-md);
-  background: #fff7ed;
+  background: var(--agri-warning-soft);
   padding: 14px 16px;
   color: var(--orange-700);
 }
@@ -184,9 +184,9 @@
   justify-content: center;
   flex-direction: column;
   gap: 7px;
-  border: 1px dashed #e4b37b;
+  border: 1px dashed var(--agri-warning-border);
   border-radius: var(--radius-md);
-  background: #fffaf4;
+  background: var(--agri-warning-soft);
   padding: 24px;
   color: var(--orange-700);
   text-align: center;
@@ -292,7 +292,7 @@
 .team-personnel-options label.selected {
   border-color: var(--green-700);
   background: var(--green-50);
-  box-shadow: 0 0 0 3px rgba(22, 148, 71, 0.1);
+  box-shadow: 0 0 0 3px rgb(var(--agri-primary-rgb) / 0.1);
 }
 
 .team-personnel-options input {

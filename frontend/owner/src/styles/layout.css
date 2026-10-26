@@ -94,7 +94,7 @@
 
 .sidebar-link:hover {
   background: var(--green-50);
-  color: var(--green-800);
+  color: var(--agri-success-text);
 }
 
 .sidebar-link-active {
@@ -166,7 +166,7 @@
   justify-content: space-between;
   gap: 20px;
   border-bottom: 1px solid var(--gray-200);
-  background: rgba(255, 255, 255, 0.96);
+  background: rgb(var(--agri-surface-rgb) / 0.96);
   padding: 0 24px;
   backdrop-filter: blur(10px);
 }
@@ -233,7 +233,7 @@
   height: 7px;
   border: 2px solid var(--white);
   border-radius: 50%;
-  background: #e02d2d;
+  background: var(--agri-danger);
 }
 
 .header-user {
@@ -277,7 +277,7 @@
 
 .app-content {
   min-height: calc(100vh - var(--header-height));
-  background: #f6f8f6;
+  background: var(--agri-header);
 }
 
 @media (max-width: 1024px) {
@@ -300,7 +300,7 @@
     inset: 0;
     display: block;
     border: 0;
-    background: rgba(16, 24, 18, 0.42);
+    background: rgb(var(--agri-shadow-rgb) / 0.42);
   }
 
   .app-main {
@@ -335,9 +335,9 @@
   gap: 8px;
   min-width: 240px;
   padding: 8px 12px;
-  color: #14532d;
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
+  color: var(--agri-title);
+  background: var(--agri-success-soft);
+  border: 1px solid var(--agri-border);
   border-radius: 10px;
 }
 
@@ -348,7 +348,7 @@
 .header-farm-selector select {
   width: 100%;
   min-width: 0;
-  color: #163020;
+  color: var(--agri-title);
   font: inherit;
   font-weight: 600;
   background: transparent;
@@ -358,7 +358,7 @@
 }
 
 .header-farm-selector select:disabled {
-  color: #64748b;
+  color: var(--agri-muted-strong);
   cursor: wait;
 }
 

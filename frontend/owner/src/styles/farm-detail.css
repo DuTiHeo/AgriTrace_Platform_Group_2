@@ -69,9 +69,9 @@
   height: 40px;
   align-items: center;
   justify-content: center;
-  border: 1px solid #fda29b;
+  border: 1px solid var(--agri-danger-border-soft);
   border-radius: var(--radius-sm);
-  background: #fff5f4;
+  background: var(--agri-danger-soft);
   color: var(--red-700);
 }
 
@@ -188,7 +188,7 @@
   overflow: hidden;
   border: 1px solid var(--gray-200);
   border-radius: var(--radius-md);
-  background: #eef4ee;
+  background: var(--agri-background);
   margin-bottom: 16px;
   color: var(--gray-500);
   font-size: 12px;

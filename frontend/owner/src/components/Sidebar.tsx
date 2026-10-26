@@ -120,12 +120,12 @@ function Sidebar({ open, onClose }: SidebarProps) {
         <div className="sidebar-brand">
           <img
             className="sidebar-logo"
-            src="/branding/logo.svg"
-            alt="Farmer QuickLog"
+            src="/branding/agrifarm.png"
+            alt="AgriFarm"
           />
 
           <div className="sidebar-brand-text">
-            <strong>Farmer QuickLog</strong>
+            <strong>AgriFarm</strong>
             <span>Quản trị nông trại</span>
           </div>
 

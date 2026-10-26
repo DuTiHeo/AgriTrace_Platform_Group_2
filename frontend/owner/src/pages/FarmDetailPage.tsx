@@ -522,7 +522,7 @@ function FarmDetailPage() {
                         <path
                           d="M 10 0 L 0 0 0 10"
                           fill="none"
-                          stroke="#d2ddd4"
+                          stroke="var(--agri-border)"
                           strokeWidth="0.35"
                         />
                       </pattern>
@@ -536,8 +536,8 @@ function FarmDetailPage() {
 
                     <polygon
                       points={polygonPoints}
-                      fill="rgba(22, 148, 71, 0.22)"
-                      stroke="#087333"
+                      fill="rgb(var(--agri-primary-rgb) / 0.22)"
+                      stroke="var(--agri-title)"
                       strokeWidth="1.2"
                     />
                   </svg>

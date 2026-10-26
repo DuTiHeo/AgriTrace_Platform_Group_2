@@ -20,7 +20,7 @@
   gap: 12px;
   margin-bottom: 22px;
   padding-bottom: 18px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--agri-border);
 }
 
 .season-form-icon {
@@ -29,20 +29,20 @@
   height: 40px;
   flex-shrink: 0;
   place-items: center;
-  color: #08783e;
-  background: #dcfce7;
+  color: var(--agri-title);
+  background: var(--agri-success-soft);
   border-radius: 10px;
 }
 
 .season-form-heading h2 {
   margin: 0 0 4px;
-  color: #123524;
+  color: var(--agri-title);
   font-size: 18px;
 }
 
 .season-form-heading p {
   margin: 0;
-  color: #64748b;
+  color: var(--agri-muted-strong);
   font-size: 13px;
 }
 
@@ -64,13 +64,13 @@
 }
 
 .season-form-field > span {
-  color: #334155;
+  color: var(--agri-text);
   font-size: 13px;
   font-weight: 700;
 }
 
 .season-form-field b {
-  color: #dc2626;
+  color: var(--agri-danger);
 }
 
 .season-form-field input,
@@ -78,10 +78,10 @@
 .season-form-field textarea {
   width: 100%;
   padding: 11px 12px;
-  color: #172b20;
+  color: var(--agri-title);
   font: inherit;
-  background: #ffffff;
-  border: 1px solid #cbd5e1;
+  background: var(--agri-input);
+  border: 1px solid var(--agri-input-border);
   border-radius: 9px;
   outline: none;
   transition:
@@ -102,19 +102,19 @@
 .season-form-field input:focus,
 .season-form-field select:focus,
 .season-form-field textarea:focus {
-  border-color: #22c55e;
-  box-shadow: 0 0 0 3px rgb(34 197 94 / 12%);
+  border-color: var(--agri-primary);
+  box-shadow: 0 0 0 3px rgb(var(--agri-primary-rgb) / 12%);
 }
 
 .season-form-field input:disabled,
 .season-form-field select:disabled {
-  color: #94a3b8;
-  background: #f8fafc;
+  color: var(--agri-muted);
+  background: var(--agri-input);
   cursor: not-allowed;
 }
 
 .season-form-note {
-  color: #b45309;
+  color: var(--agri-warning-text);
   font-size: 12px;
 }
 
@@ -124,8 +124,8 @@
   align-items: flex-start;
   gap: 12px;
   padding: 14px;
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
+  background: var(--agri-success-soft);
+  border: 1px solid var(--agri-border);
   border-radius: 10px;
 }
 
@@ -135,8 +135,8 @@
   height: 41px;
   flex-shrink: 0;
   place-items: center;
-  color: #08783e;
-  background: #dcfce7;
+  color: var(--agri-title);
+  background: var(--agri-success-soft);
   border-radius: 9px;
 }
 
@@ -148,17 +148,17 @@
 }
 
 .selected-plot-card strong {
-  color: #14532d;
+  color: var(--agri-title);
   font-size: 14px;
 }
 
 .selected-plot-card span {
-  color: #15803d;
+  color: var(--agri-title);
   font-size: 12px;
 }
 
 .selected-plot-card small {
-  color: #64748b;
+  color: var(--agri-muted-strong);
   font-size: 11px;
 }
 
@@ -168,7 +168,7 @@
   gap: 9px;
   width: max-content;
   max-width: 100%;
-  color: #475569;
+  color: var(--agri-muted-strong);
   font-size: 13px;
   cursor: pointer;
 }
@@ -176,7 +176,7 @@
 .manual-date-toggle input {
   width: 17px;
   height: 17px;
-  accent-color: #08783e;
+  accent-color: var(--agri-title);
 }
 
 .harvest-calculation {
@@ -188,8 +188,8 @@
   align-items: center;
   gap: 18px;
   padding: 16px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--agri-input);
+  border: 1px solid var(--agri-border);
   border-radius: 10px;
 }
 
@@ -202,22 +202,22 @@
 }
 
 .harvest-calculation span {
-  color: #64748b;
+  color: var(--agri-muted-strong);
   font-size: 12px;
 }
 
 .harvest-calculation strong {
-  color: #123524;
+  color: var(--agri-title);
   font-size: 15px;
 }
 
 .calculation-arrow {
   padding: 7px 11px;
-  color: #08783e;
+  color: var(--agri-title);
   font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
-  background: #dcfce7;
+  background: var(--agri-success-soft);
   border-radius: 999px;
 }
 
@@ -225,7 +225,7 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   overflow: hidden;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--agri-border);
   border-radius: 10px;
 }
 
@@ -236,8 +236,8 @@
   flex-direction: column;
   gap: 6px;
   padding: 14px 16px;
-  border-right: 1px solid #e2e8f0;
-  border-bottom: 1px solid #e2e8f0;
+  border-right: 1px solid var(--agri-border);
+  border-bottom: 1px solid var(--agri-border);
 }
 
 .season-review-item:nth-child(even) {
@@ -255,12 +255,12 @@
 }
 
 .season-review-item span {
-  color: #64748b;
+  color: var(--agri-muted-strong);
   font-size: 12px;
 }
 
 .season-review-item strong {
-  color: #172b20;
+  color: var(--agri-title);
   font-size: 14px;
   line-height: 1.5;
 }
@@ -271,8 +271,8 @@
   justify-content: space-between;
   gap: 12px;
   padding: 16px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: var(--agri-white);
+  border: 1px solid var(--agri-border);
   border-radius: 12px;
 }
 
@@ -302,11 +302,11 @@
 
   .season-review-item {
     border-right: 0;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--agri-border);
   }
 
   .season-review-item:nth-last-child(2) {
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--agri-border);
   }
 
   .season-form-footer {

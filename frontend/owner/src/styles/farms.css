@@ -7,7 +7,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  border: 1px solid #a7e8b6;
+  border: 1px solid var(--agri-border);
   border-radius: var(--radius-sm);
   background: var(--green-50);
   margin-bottom: 16px;
@@ -55,7 +55,7 @@
 
 .farm-search:focus-within {
   border-color: var(--green-600);
-  box-shadow: 0 0 0 3px rgba(22, 148, 71, 0.12);
+  box-shadow: 0 0 0 3px rgb(var(--agri-primary-rgb) / 0.12);
 }
 
 .farm-search input {
@@ -67,7 +67,7 @@
 }
 
 .farm-search input::placeholder {
-  color: #98a29a;
+  color: var(--agri-muted);
 }
 
 .farm-filter-group {
@@ -89,7 +89,7 @@
 
 .farm-status-filter:focus {
   border-color: var(--green-600);
-  box-shadow: 0 0 0 3px rgba(22, 148, 71, 0.12);
+  box-shadow: 0 0 0 3px rgb(var(--agri-primary-rgb) / 0.12);
 }
 
 .farm-result-count {
@@ -139,7 +139,7 @@
 }
 
 .farm-table tbody tr:hover {
-  background: #fbfdfb;
+  background: var(--agri-header);
 }
 
 .farm-name-cell {
@@ -178,7 +178,7 @@
   justify-content: center;
   border-radius: 10px;
   background: var(--green-100);
-  color: var(--green-800);
+  color: var(--agri-success-text);
 }
 
 .farm-address {
@@ -207,7 +207,7 @@
 
 .boundary-valid {
   background: var(--green-100);
-  color: var(--green-800);
+  color: var(--agri-success-text);
 }
 
 .boundary-missing {
@@ -217,7 +217,7 @@
 
 .status-active {
   background: var(--green-100);
-  color: var(--green-800);
+  color: var(--agri-success-text);
 }
 
 .status-incomplete {
@@ -256,8 +256,8 @@
 }
 
 .table-actions .danger-action:hover {
-  border-color: #fda29b;
-  background: #fff5f4;
+  border-color: var(--agri-danger-border-soft);
+  background: var(--agri-danger-soft);
   color: var(--red-700);
 }
 
@@ -294,7 +294,7 @@
   align-items: center;
   justify-content: center;
   overflow-y: auto;
-  background: rgba(16, 24, 18, 0.52);
+  background: rgb(var(--agri-shadow-rgb) / 0.52);
   padding: 20px;
 }
 
@@ -358,8 +358,8 @@
 }
 
 .btn-danger:hover {
-  border-color: #8f1b13;
-  background: #8f1b13;
+  border-color: var(--agri-danger-text);
+  background: var(--agri-danger-text);
 }
 
 @media (max-width: 760px) {

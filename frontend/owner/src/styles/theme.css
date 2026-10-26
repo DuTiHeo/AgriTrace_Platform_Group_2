@@ -1,0 +1,47 @@
+/* Semantic roles extend the mobile palette for web interaction and data visualization. */
+
+:root {
+  --agri-muted-strong: #526B58;
+  --agri-danger-text: #B42318;
+  --agri-success-text: #2F6F37;
+  --agri-warning-text: #805211;
+  --agri-focus-ring: rgb(var(--agri-primary-rgb) / 16%);
+  --agri-primary-hover: var(--agri-title);
+  --agri-info: #3284D4;
+  --agri-info-text: #1D4ED8;
+  --agri-info-soft: #EFF6FF;
+  --agri-info-border: #DBEAFE;
+  --agri-info-rgb: 50 132 212;
+  --agri-purple: #7E22CE;
+  --agri-purple-soft: #F3E8FF;
+  --agri-purple-border: #D8B4FE;
+  --agri-purple-rgb: 126 34 206;
+  --agri-danger-border-soft: #FECACA;
+  --agri-warning-border: #FDE68A;
+  --agri-on-brand: var(--agri-white);
+  --agri-on-brand-muted: #D6ECDD;
+  --agri-on-brand-accent: #C7EFD2;
+  --agri-shadow-rgb: var(--agri-title-rgb);
+  --agri-overlay-rgb: var(--agri-title-rgb);
+  --agri-login-overlay-start: rgb(var(--agri-title-rgb) / 88%);
+  --agri-login-overlay-end: rgb(var(--agri-primary-rgb) / 68%);
+
+  /* Compatibility aliases keep existing selectors and component structure intact. */
+  --green-900: var(--agri-title);
+  --green-800: var(--agri-primary);
+  --green-700: var(--agri-primary-text);
+  --green-600: var(--agri-primary);
+  --green-100: var(--agri-success-soft);
+  --green-50: var(--agri-primary-soft);
+  --red-700: var(--agri-danger-text);
+  --red-100: var(--agri-danger-soft);
+  --orange-700: var(--agri-warning-text);
+  --orange-100: var(--agri-warning-soft);
+  --gray-900: var(--agri-text);
+  --gray-700: var(--agri-muted-strong);
+  --gray-500: var(--agri-muted-strong);
+  --gray-300: var(--agri-input-border);
+  --gray-200: var(--agri-border);
+  --gray-100: var(--agri-background);
+  --white: var(--agri-white);
+}

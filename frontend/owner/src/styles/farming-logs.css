@@ -34,34 +34,34 @@
   height: 38px;
   grid-row: span 2;
   padding: 9px;
-  color: #08783e;
-  background: #dcfce7;
+  color: var(--agri-title);
+  background: var(--agri-success-soft);
   border-radius: 8px;
 }
 
 .farming-log-summary span {
-  color: #64756a;
+  color: var(--agri-muted-strong);
   font-size: 12px;
 }
 
 .farming-log-summary strong {
-  color: #173a28;
+  color: var(--agri-title);
   font-size: 22px;
 }
 
 .farming-log-summary-today > svg {
-  color: #1d4ed8;
-  background: #dbeafe;
+  color: var(--agri-info-text);
+  background: var(--agri-info-soft);
 }
 
 .farming-log-summary-attention > svg {
-  color: #b45309;
-  background: #ffedd5;
+  color: var(--agri-warning-text);
+  background: var(--agri-warning-soft);
 }
 
 .farming-log-summary-photo > svg {
-  color: #7e22ce;
-  background: #f3e8ff;
+  color: var(--agri-purple);
+  background: var(--agri-purple-soft);
 }
 
 .farming-log-list-panel {
@@ -103,8 +103,8 @@
   min-height: 40px;
   max-width: 190px;
   padding: 0 30px 0 10px;
-  color: #334155;
-  background: #fff;
+  color: var(--agri-text);
+  background: var(--agri-input);
   border: 1px solid var(--gray-300);
   border-radius: 8px;
 }
@@ -115,9 +115,9 @@
   align-items: center;
   gap: 6px;
   padding: 0 10px;
-  color: #8a4b12;
-  background: #fffaf0;
-  border: 1px solid #fed7aa;
+  color: var(--agri-warning-text);
+  background: var(--agri-warning-soft);
+  border: 1px solid var(--agri-warning-border);
   border-radius: 8px;
 }
 
@@ -127,7 +127,7 @@
   gap: 16px;
   padding: 10px 16px;
   color: var(--gray-500);
-  background: #fafcfa;
+  background: var(--agri-header);
   border-bottom: 1px solid var(--gray-200);
   font-size: 12px;
 }
@@ -149,7 +149,7 @@
   gap: 14px;
   align-items: flex-start;
   padding: 18px 20px;
-  border-bottom: 1px solid #edf0ed;
+  border-bottom: 1px solid var(--agri-background);
 }
 
 .farming-log-row:last-child {
@@ -161,7 +161,7 @@
   width: 42px;
   height: 42px;
   place-items: center;
-  color: var(--green-800);
+  color: var(--agri-success-text);
   background: var(--green-50);
   border-radius: 10px;
 }
@@ -174,7 +174,7 @@
 }
 
 .farming-log-row-title h2 {
-  color: #173a28;
+  color: var(--agri-title);
   font-size: 15px;
   line-height: 1.4;
 }
@@ -185,8 +185,8 @@
   min-height: 24px;
   align-items: center;
   padding: 3px 8px;
-  color: #08783e;
-  background: #eaf8ee;
+  color: var(--agri-title);
+  background: var(--agri-success-soft);
   border-radius: 999px;
   font-size: 11px;
   font-weight: 700;
@@ -194,15 +194,15 @@
 }
 
 .farming-log-attention-badge {
-  color: #9a4d00;
-  background: #fff3df;
+  color: var(--agri-warning-text);
+  background: var(--agri-warning-soft);
 }
 
 .farming-log-row-main > p {
   display: -webkit-box;
   overflow: hidden;
   margin-top: 7px;
-  color: #52665a;
+  color: var(--agri-text);
   font-size: 13px;
   line-height: 1.55;
   -webkit-box-orient: vertical;
@@ -215,7 +215,7 @@
   gap: 7px 16px;
   flex-wrap: wrap;
   margin-top: 10px;
-  color: #718078;
+  color: var(--agri-muted-strong);
   font-size: 12px;
 }
 
@@ -229,7 +229,7 @@
   width: 4px;
   height: 4px;
   margin-right: 4px;
-  background: #aab4ac;
+  background: var(--agri-muted);
   border-radius: 50%;
   content: "";
 }
@@ -245,7 +245,7 @@
 .farming-log-row-aside > div {
   display: flex;
   gap: 12px;
-  color: #718078;
+  color: var(--agri-muted-strong);
   font-size: 12px;
 }
 
@@ -286,7 +286,7 @@
 
 .farming-log-empty strong,
 .farming-log-not-found h1 {
-  color: #173a28;
+  color: var(--agri-title);
   font-size: 17px;
 }
 
@@ -307,7 +307,7 @@
   flex: 0 0 auto;
   place-items: center;
   color: var(--gray-700);
-  background: #fff;
+  background: var(--agri-white);
   border: 1px solid var(--gray-200);
   border-radius: 9px;
 }
@@ -340,9 +340,9 @@
 
 .farming-log-notice {
   padding: 11px 14px;
-  color: #175c35;
-  background: #effaf2;
-  border: 1px solid #cbead4;
+  color: var(--agri-title);
+  background: var(--agri-success-soft);
+  border: 1px solid var(--agri-border);
   border-radius: 8px;
 }
 
@@ -389,12 +389,12 @@
 .farming-log-context-card h2,
 .farming-log-gps-card h2 {
   margin: 0;
-  color: #173a28;
+  color: var(--agri-title);
   font-size: 16px;
 }
 
 .farming-log-content {
-  color: #425a4a;
+  color: var(--agri-text);
   font-size: 14px;
   line-height: 1.75;
   white-space: pre-wrap;
@@ -433,7 +433,7 @@
   flex-direction: column;
   gap: 8px;
   color: var(--gray-500);
-  background: #fafcfa;
+  background: var(--agri-header);
   border: 1px dashed var(--gray-300);
   border-radius: 10px;
   font-size: 12px;
@@ -442,9 +442,9 @@
 .farming-log-note-explainer {
   margin-bottom: 16px;
   padding: 10px 12px;
-  color: #53665a;
-  background: #f6f9f6;
-  border-left: 3px solid #91bb9b;
+  color: var(--agri-text);
+  background: var(--agri-header);
+  border-left: 3px solid var(--agri-success);
   border-radius: 0 7px 7px 0;
   font-size: 12px;
 }
@@ -459,14 +459,14 @@
   display: flex;
   gap: 11px;
   padding: 13px;
-  background: #fffaf0;
-  border: 1px solid #fed7aa;
+  background: var(--agri-warning-soft);
+  border: 1px solid var(--agri-warning-border);
   border-radius: 10px;
 }
 
 .farming-log-note-resolved {
-  background: #f3faf5;
-  border-color: #cce8d3;
+  background: var(--agri-success-soft);
+  border-color: var(--agri-border);
 }
 
 .farming-log-note-avatar {
@@ -475,7 +475,7 @@
   height: 34px;
   flex: 0 0 auto;
   place-items: center;
-  color: #fff;
+  color: var(--agri-white);
   background: var(--green-700);
   border-radius: 50%;
   font-size: 11px;
@@ -495,7 +495,7 @@
 }
 
 .farming-log-note-meta strong {
-  color: #233d2c;
+  color: var(--agri-title);
   font-size: 13px;
 }
 
@@ -506,7 +506,7 @@
 
 .farming-log-note-body > p {
   margin-top: 7px;
-  color: #4a5d50;
+  color: var(--agri-text);
   font-size: 13px;
   line-height: 1.55;
 }
@@ -524,7 +524,7 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  color: #a15c14;
+  color: var(--agri-warning-text);
   font-size: 11px;
   font-weight: 700;
 }
@@ -536,8 +536,8 @@
 .farming-log-note-footer button {
   padding: 5px 8px;
   color: var(--green-800);
-  background: #fff;
-  border: 1px solid #cbd8cd;
+  background: var(--agri-white);
+  border: 1px solid var(--agri-border);
   border-radius: 6px;
 }
 
@@ -551,7 +551,7 @@
 }
 
 .farming-log-note-form label {
-  color: #334155;
+  color: var(--agri-text);
   font-size: 12px;
   font-weight: 700;
 }
@@ -562,7 +562,7 @@
   resize: vertical;
   padding: 10px 11px;
   color: var(--gray-900);
-  background: #fff;
+  background: var(--agri-input);
   border: 1px solid var(--gray-300);
   border-radius: 8px;
   outline: 0;
@@ -570,7 +570,7 @@
 
 .farming-log-note-form textarea:focus {
   border-color: var(--green-600);
-  box-shadow: 0 0 0 3px rgb(22 148 71 / 12%);
+  box-shadow: 0 0 0 3px rgb(var(--agri-primary-rgb) / 12%);
 }
 
 .farming-log-note-form > div {
@@ -593,7 +593,7 @@
   display: flex;
   gap: 10px;
   padding: 12px 0;
-  border-top: 1px solid #edf0ed;
+  border-top: 1px solid var(--agri-background);
 }
 
 .farming-log-context-item > svg {
@@ -616,7 +616,7 @@
 
 .farming-log-context-item strong {
   margin: 2px 0;
-  color: #263e2e;
+  color: var(--agri-title);
   font-size: 13px;
 }
 
@@ -631,12 +631,12 @@
   justify-content: center;
   flex-direction: column;
   gap: 7px;
-  color: #285d3a;
+  color: var(--agri-title);
   background:
-    linear-gradient(45deg, rgb(16 99 54 / 6%) 25%, transparent 25%) 0 0 / 24px 24px,
-    linear-gradient(-45deg, rgb(16 99 54 / 6%) 25%, transparent 25%) 0 0 / 24px 24px,
-    #eef7ef;
-  border: 1px solid #d6e9d9;
+    linear-gradient(45deg, rgb(var(--agri-primary-rgb) / 6%) 25%, transparent 25%) 0 0 / 24px 24px,
+    linear-gradient(-45deg, rgb(var(--agri-primary-rgb) / 6%) 25%, transparent 25%) 0 0 / 24px 24px,
+    var(--agri-success-soft);
+  border: 1px solid var(--agri-border);
   border-radius: 10px;
   font-size: 11px;
 }
@@ -650,7 +650,7 @@
 
 .farming-log-gps-card dl div {
   padding: 8px;
-  background: #f7f9f7;
+  background: var(--agri-header);
   border-radius: 7px;
 }
 
@@ -661,7 +661,7 @@
 
 .farming-log-gps-card dd {
   margin-top: 2px;
-  color: #263e2e;
+  color: var(--agri-title);
   font-size: 12px;
   font-weight: 700;
 }

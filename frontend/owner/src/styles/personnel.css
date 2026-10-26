@@ -58,12 +58,12 @@
   justify-content: center;
   border-radius: 12px;
   background: var(--green-100);
-  color: var(--green-800);
+  color: var(--agri-success-text);
 }
 
 .personnel-summary-icon.success {
-  background: #dcfce7;
-  color: #15803d;
+  background: var(--agri-success-soft);
+  color: var(--agri-title);
 }
 
 .personnel-summary-icon.danger {
@@ -129,7 +129,7 @@
 
 .personnel-search:focus-within {
   border-color: var(--green-600);
-  box-shadow: 0 0 0 3px rgba(22, 148, 71, 0.12);
+  box-shadow: 0 0 0 3px rgb(var(--agri-primary-rgb) / 0.12);
 }
 
 .personnel-search input {
@@ -142,7 +142,7 @@
 }
 
 .personnel-search input::placeholder {
-  color: #98a29a;
+  color: var(--agri-muted);
 }
 
 .personnel-filter {
@@ -243,8 +243,8 @@
 }
 
 .personnel-role.role-leader {
-  background: #e0ecff;
-  color: #175cd3;
+  background: var(--agri-info-soft);
+  color: var(--agri-info-text);
 }
 
 .personnel-role.role-worker {

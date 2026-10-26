@@ -205,7 +205,7 @@
   border-radius: 999px;
   background: var(--green-100);
   padding: 4px 9px;
-  color: var(--green-800);
+  color: var(--agri-success-text);
   font-size: 11px;
   font-weight: 700;
 }
@@ -283,7 +283,7 @@
 .boundary-method.active {
   border-color: var(--green-600);
   background: var(--green-50);
-  color: var(--green-800);
+  color: var(--agri-success-text);
 }
 
 .boundary-method > span {
@@ -321,7 +321,7 @@
   border: 1px solid var(--gray-300);
   border-radius: var(--radius-sm);
   outline: 0;
-  background: var(--white);
+  background: var(--agri-input);
   padding: 8px 11px;
   color: var(--gray-700);
 }
@@ -407,10 +407,10 @@
   background:
     linear-gradient(
       35deg,
-      rgba(22, 148, 71, 0.08),
-      rgba(255, 255, 255, 0.2)
+      rgb(var(--agri-primary-rgb) / 0.08),
+      rgb(var(--agri-surface-rgb) / 0.2)
     ),
-    #eef4ee;
+    var(--agri-background);
   padding: 0;
 }
 
@@ -425,7 +425,7 @@
   top: 12px;
   left: 12px;
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.92);
+  background: rgb(var(--agri-surface-rgb) / 0.92);
   padding: 7px 10px;
   color: var(--gray-700);
   font-size: 12px;
@@ -446,7 +446,7 @@
 }
 
 .boundary-result.valid {
-  border-color: #a7e8b6;
+  border-color: var(--agri-border);
   background: var(--green-50);
   color: var(--green-900);
 }
@@ -629,7 +629,7 @@
 }
 
 .form-message-error {
-  border: 1px solid #fda29b;
-  background: #fff5f4;
+  border: 1px solid var(--agri-danger-border-soft);
+  background: var(--agri-danger-soft);
   color: var(--red-700);
 }

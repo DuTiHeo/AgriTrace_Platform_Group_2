@@ -48,7 +48,7 @@
 }
 
 .team-card:hover {
-  border-color: #bfd8c6;
+  border-color: var(--agri-border);
   box-shadow: var(--shadow-md);
   transform: translateY(-2px);
 }
@@ -106,7 +106,7 @@
 
 .team-leader-status.assigned {
   background: var(--green-100);
-  color: var(--green-800);
+  color: var(--agri-success-text);
 }
 
 .team-leader-status.assigned > span {

@@ -39,7 +39,7 @@ function LoginPage() {
     <main className="login-page">
       <section className="login-brand-panel">
         <div className="login-brand-content">
-          <img src="/branding/logo.svg" alt="Farmer QuickLog" />
+          <img src="/branding/agrifarm.png" alt="AgriFarm" />
           <span>Quản trị nông trại</span>
           <h1>Quản lý sản xuất rõ ràng, từ vùng trồng đến thu hoạch.</h1>
           <p>
@@ -57,8 +57,8 @@ function LoginPage() {
       <section className="login-form-panel">
         <form className="login-form-card" onSubmit={submit}>
           <div className="login-mobile-brand">
-            <img src="/branding/logo.svg" alt="" />
-            <strong>Farmer QuickLog</strong>
+            <img src="/branding/agrifarm.png" alt="" />
+            <strong>AgriFarm</strong>
           </div>
           <div className="login-heading">
             <span>Chào mừng trở lại</span>

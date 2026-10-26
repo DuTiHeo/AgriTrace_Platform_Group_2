@@ -20,7 +20,7 @@
   gap: 12px;
   margin-bottom: 22px;
   padding-bottom: 18px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--agri-border);
 }
 
 .plot-form-section-icon {
@@ -29,20 +29,20 @@
   height: 40px;
   flex-shrink: 0;
   place-items: center;
-  color: #08783e;
-  background: #dcfce7;
+  color: var(--agri-title);
+  background: var(--agri-success-soft);
   border-radius: 10px;
 }
 
 .plot-form-section-heading h2 {
   margin: 0 0 4px;
-  color: #123524;
+  color: var(--agri-title);
   font-size: 18px;
 }
 
 .plot-form-section-heading p {
   margin: 0;
-  color: #64748b;
+  color: var(--agri-muted-strong);
   font-size: 13px;
 }
 
@@ -64,13 +64,13 @@
 }
 
 .plot-form-page .form-field > span {
-  color: #334155;
+  color: var(--agri-text);
   font-size: 13px;
   font-weight: 700;
 }
 
 .plot-form-page .form-field b {
-  color: #dc2626;
+  color: var(--agri-danger);
 }
 
 .plot-form-page .form-field input,
@@ -78,10 +78,10 @@
 .plot-form-page .form-field textarea {
   width: 100%;
   padding: 11px 12px;
-  color: #172b20;
+  color: var(--agri-title);
   font: inherit;
-  background: #ffffff;
-  border: 1px solid #cbd5e1;
+  background: var(--agri-input);
+  border: 1px solid var(--agri-input-border);
   border-radius: 9px;
   outline: none;
   transition:
@@ -102,23 +102,23 @@
 .plot-form-page .form-field input:focus,
 .plot-form-page .form-field select:focus,
 .plot-form-page .form-field textarea:focus {
-  border-color: #22c55e;
-  box-shadow: 0 0 0 3px rgb(34 197 94 / 12%);
+  border-color: var(--agri-primary);
+  box-shadow: 0 0 0 3px rgb(var(--agri-primary-rgb) / 12%);
 }
 
 .plot-form-page .form-field input:disabled,
 .plot-form-page .form-field select:disabled {
-  color: #94a3b8;
-  background: #f8fafc;
+  color: var(--agri-muted);
+  background: var(--agri-input);
   cursor: not-allowed;
 }
 
 .boundary-error {
   padding: 11px 13px;
-  color: #b91c1c;
+  color: var(--agri-danger-text);
   font-size: 13px;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
+  background: var(--agri-danger-soft);
+  border: 1px solid var(--agri-danger-border-soft);
   border-radius: 9px;
 }
 
@@ -151,7 +151,7 @@
 }
 
 .boundary-coordinate-inputs label span {
-  color: #475569;
+  color: var(--agri-muted-strong);
   font-size: 12px;
   font-weight: 700;
 }
@@ -160,17 +160,17 @@
   width: 100%;
   height: 40px;
   padding: 0 11px;
-  color: #172b20;
+  color: var(--agri-title);
   font: inherit;
-  background: #ffffff;
-  border: 1px solid #cbd5e1;
+  background: var(--agri-input);
+  border: 1px solid var(--agri-input-border);
   border-radius: 8px;
   outline: none;
 }
 
 .boundary-coordinate-inputs input:focus {
-  border-color: #22c55e;
-  box-shadow: 0 0 0 3px rgb(34 197 94 / 12%);
+  border-color: var(--agri-primary);
+  box-shadow: 0 0 0 3px rgb(var(--agri-primary-rgb) / 12%);
 }
 
 .boundary-actions {
@@ -185,28 +185,28 @@
   height: 40px;
   padding: 0;
   place-items: center;
-  color: #475569;
-  background: #ffffff;
-  border: 1px solid #cbd5e1;
+  color: var(--agri-muted-strong);
+  background: var(--agri-white);
+  border: 1px solid var(--agri-input-border);
   border-radius: 8px;
   cursor: pointer;
 }
 
 .icon-action-button:hover:not(:disabled) {
-  color: #08783e;
-  background: #f0fdf4;
-  border-color: #86efac;
+  color: var(--agri-title);
+  background: var(--agri-success-soft);
+  border-color: var(--agri-border);
 }
 
 .icon-action-button.danger:hover:not(:disabled) {
-  color: #dc2626;
-  background: #fef2f2;
-  border-color: #fecaca;
+  color: var(--agri-danger-text);
+  background: var(--agri-danger-soft);
+  border-color: var(--agri-danger-border-soft);
 }
 
 .icon-action-button:disabled {
-  color: #cbd5e1;
-  background: #f8fafc;
+  color: var(--agri-input-border);
+  background: var(--agri-input);
   cursor: not-allowed;
 }
 
@@ -214,8 +214,8 @@
   position: relative;
   height: 430px;
   overflow: hidden;
-  background: #e8f1e5;
-  border: 1px solid #bbd4bc;
+  background: var(--agri-success-soft);
+  border: 1px solid var(--agri-border);
   border-radius: 12px;
   cursor: crosshair;
 }
@@ -230,8 +230,8 @@
   inset: 0;
   opacity: 0.62;
   background-image:
-  linear-gradient(#bfd7c0 1px, transparent 1px),
-  linear-gradient(90deg, #bfd7c0 1px, transparent 1px);
+  linear-gradient(var(--agri-border) 1px, transparent 1px),
+  linear-gradient(90deg, var(--agri-border) 1px, transparent 1px);
   background-size: 38px 38px;
 }
 
@@ -239,8 +239,8 @@
 .boundary-map::after {
   position: absolute;
   content: "";
-  background: rgb(255 255 255 / 30%);
-  border: 1px solid rgb(120 160 121 / 35%);
+  background: rgb(var(--agri-surface-rgb) / 30%);
+  border: 1px solid rgb(var(--agri-shadow-rgb) / 35%);
   border-radius: 50%;
 }
 
@@ -272,12 +272,12 @@
   width: max-content;
   max-width: calc(100% - 40px);
   padding: 18px 22px;
-  color: #14532d;
+  color: var(--agri-title);
   text-align: center;
-  background: rgb(255 255 255 / 88%);
-  border: 1px solid rgb(187 247 208 / 85%);
+  background: rgb(var(--agri-surface-rgb) / 88%);
+  border: 1px solid rgb(var(--agri-primary-rgb) / 85%);
   border-radius: 12px;
-  box-shadow: 0 8px 24px rgb(15 23 42 / 10%);
+  box-shadow: 0 8px 24px rgb(var(--agri-shadow-rgb) / 10%);
   transform: translate(-50%, -50%);
   pointer-events: none;
 }
@@ -287,7 +287,7 @@
 }
 
 .boundary-map-empty span {
-  color: #64748b;
+  color: var(--agri-muted-strong);
   font-size: 12px;
 }
 
@@ -302,22 +302,22 @@
 }
 
 .boundary-polygon polygon {
-  fill: rgb(8 120 62 / 30%);
-  stroke: #05703a;
+  fill: rgb(var(--agri-primary-rgb) / 30%);
+  stroke: var(--agri-title);
   stroke-width: 0.65;
   vector-effect: non-scaling-stroke;
 }
 
 .boundary-polygon polyline {
   fill: none;
-  stroke: #05703a;
+  stroke: var(--agri-title);
   stroke-width: 2;
   vector-effect: non-scaling-stroke;
 }
 
 .boundary-polygon circle {
-  fill: #ffffff;
-  stroke: #05703a;
+  fill: var(--agri-white);
+  stroke: var(--agri-title);
   stroke-width: 2;
   vector-effect: non-scaling-stroke;
 }
@@ -328,9 +328,9 @@
   justify-content: space-between;
   gap: 12px;
   padding: 11px 13px;
-  color: #475569;
+  color: var(--agri-muted-strong);
   font-size: 13px;
-  background: #f8fafc;
+  background: var(--agri-input);
   border-radius: 9px;
 }
 
@@ -341,13 +341,13 @@
 }
 
 .boundary-footer strong {
-  color: #08783e;
+  color: var(--agri-title);
 }
 
 .boundary-point-list {
   max-height: 220px;
   overflow-y: auto;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--agri-border);
   border-radius: 9px;
 }
 
@@ -358,7 +358,7 @@
   gap: 10px;
   min-height: 44px;
   padding: 7px 10px;
-  border-bottom: 1px solid #edf2f7;
+  border-bottom: 1px solid var(--agri-info-soft);
 }
 
 .boundary-point-row:last-child {
@@ -366,13 +366,13 @@
 }
 
 .boundary-point-row span {
-  color: #64748b;
+  color: var(--agri-muted-strong);
   font-size: 12px;
 }
 
 .boundary-point-row code {
   overflow: hidden;
-  color: #334155;
+  color: var(--agri-text);
   font-size: 12px;
   text-overflow: ellipsis;
 }
@@ -383,7 +383,7 @@
   height: 28px;
   padding: 0;
   place-items: center;
-  color: #94a3b8;
+  color: var(--agri-muted);
   background: transparent;
   border: 0;
   border-radius: 6px;
@@ -391,8 +391,8 @@
 }
 
 .boundary-point-row button:hover {
-  color: #dc2626;
-  background: #fef2f2;
+  color: var(--agri-danger-text);
+  background: var(--agri-danger-soft);
 }
 
 .plot-area-field {
@@ -417,11 +417,11 @@
   height: 44px;
   min-width: 52px;
   place-items: center;
-  color: #475569;
+  color: var(--agri-muted-strong);
   font-size: 13px;
   font-weight: 700;
-  background: #f1f5f9;
-  border: 1px solid #cbd5e1;
+  background: var(--agri-background);
+  border: 1px solid var(--agri-input-border);
   border-left: 0;
   border-radius: 0 9px 9px 0;
 }
@@ -432,25 +432,25 @@
   flex-direction: column;
   gap: 5px;
   padding: 13px 15px;
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
+  background: var(--agri-success-soft);
+  border: 1px solid var(--agri-border);
   border-radius: 9px;
 }
 
 .calculated-area span {
-  color: #64748b;
+  color: var(--agri-muted-strong);
   font-size: 12px;
 }
 
 .calculated-area strong {
-  color: #08783e;
+  color: var(--agri-title);
   font-size: 18px;
 }
 
 .calculated-area button {
   width: max-content;
   padding: 0;
-  color: #08783e;
+  color: var(--agri-title);
   font: inherit;
   font-size: 12px;
   font-weight: 700;
@@ -467,7 +467,7 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   overflow: hidden;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--agri-border);
   border-radius: 10px;
 }
 
@@ -478,8 +478,8 @@
   flex-direction: column;
   gap: 6px;
   padding: 14px 16px;
-  border-right: 1px solid #e2e8f0;
-  border-bottom: 1px solid #e2e8f0;
+  border-right: 1px solid var(--agri-border);
+  border-bottom: 1px solid var(--agri-border);
 }
 
 .plot-review-item:nth-child(even) {
@@ -497,12 +497,12 @@
 }
 
 .plot-review-item span {
-  color: #64748b;
+  color: var(--agri-muted-strong);
   font-size: 12px;
 }
 
 .plot-review-item strong {
-  color: #172b20;
+  color: var(--agri-title);
   font-size: 14px;
   line-height: 1.5;
 }
@@ -513,8 +513,8 @@
   justify-content: space-between;
   gap: 12px;
   padding: 16px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: var(--agri-white);
+  border: 1px solid var(--agri-border);
   border-radius: 12px;
 }
 
@@ -557,11 +557,11 @@
 
   .plot-review-item {
     border-right: 0;
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--agri-border);
   }
 
   .plot-review-item:nth-last-child(2) {
-    border-bottom: 1px solid #e2e8f0;
+    border-bottom: 1px solid var(--agri-border);
   }
 
   .boundary-map {

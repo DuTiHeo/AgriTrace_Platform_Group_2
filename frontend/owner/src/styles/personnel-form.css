@@ -59,7 +59,7 @@
   justify-content: center;
   border-radius: 10px;
   background: var(--green-100);
-  color: var(--green-800);
+  color: var(--agri-success-text);
 }
 
 .personnel-section-heading h2 {
@@ -153,7 +153,7 @@
 .personnel-role-options label.selected {
   border-color: var(--green-700);
   background: var(--green-50);
-  box-shadow: 0 0 0 3px rgba(22, 148, 71, 0.1);
+  box-shadow: 0 0 0 3px rgb(var(--agri-primary-rgb) / 0.1);
 }
 
 .personnel-role-options input {
@@ -176,7 +176,7 @@
 
 .personnel-role-options label.selected > span {
   background: var(--green-100);
-  color: var(--green-800);
+  color: var(--agri-success-text);
 }
 
 .personnel-role-options label > div {
@@ -265,7 +265,7 @@
 }
 
 .personnel-form-error {
-  border: 1px solid #f5b7b1;
+  border: 1px solid var(--agri-danger-border-soft);
   border-radius: var(--radius-sm);
   background: var(--red-100);
   padding: 12px 14px;
@@ -296,7 +296,7 @@
   justify-content: center;
   border-radius: 50%;
   background: var(--green-100);
-  color: var(--green-800);
+  color: var(--agri-success-text);
 }
 
 .personnel-success-card h1 {
@@ -349,9 +349,9 @@
   align-items: flex-start;
   gap: 10px;
   margin-top: 16px;
-  border: 1px solid #fed7aa;
+  border: 1px solid var(--agri-warning-border);
   border-radius: var(--radius-sm);
-  background: #fff7ed;
+  background: var(--agri-warning-soft);
   padding: 13px;
   color: var(--orange-700);
   text-align: left;
