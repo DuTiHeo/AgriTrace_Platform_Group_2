@@ -51,11 +51,33 @@ export default function AssignmentsScreen() {
       {!visible.length && <Text style={s.empty}>Không có lần giao việc nào trong khoảng thời gian này.</Text>}
 
       {visible.map(task => {
-        const assignees = task.memberIds.map(id => ({
-          id,
-          name: task.assigneeStatuses?.[id]?.name || members.find(member => member.id === id)?.name || 'Công nhân',
-          completed: task.assigneeStatuses?.[id]?.completed ?? false,
-        }));
+        const assignees = task.memberIds.map(id => {
+          const info = task.assigneeStatuses?.[id];
+          const status = info?.displayStatus || info?.status || (info?.completed ? 'completed' : (task.displayStatus || task.status));
+          let label = 'Đã nhận';
+          let tone: 'green' | 'amber' | 'muted' | 'danger' = 'muted';
+
+          if (status === 'completed' || status === 'completed_late') {
+            label = 'Hoàn thành';
+            tone = 'green';
+          } else if (status === 'incomplete') {
+            label = 'Chưa hoàn thành';
+            tone = 'danger';
+          } else if (status === 'in_progress') {
+            label = 'Đang làm';
+            tone = 'amber';
+          } else {
+            label = 'Đã nhận';
+            tone = 'muted';
+          }
+
+          return {
+            id,
+            name: info?.name || members.find(member => member.id === id)?.name || 'Công nhân',
+            label,
+            tone,
+          };
+        });
         return (
           <Card key={task.id}>
             <View style={[s.row, { alignItems: 'flex-start' }]}>
@@ -78,7 +100,7 @@ export default function AssignmentsScreen() {
               {assignees.map(member => (
                 <View key={member.id} style={s.row}>
                   <Text style={[s.body, { flex: 1 }]}>• {member.name}</Text>
-                  <Chip text={member.completed ? 'Hoàn thành' : 'Đang làm'} tone={member.completed ? 'green' : 'amber'} />
+                  <Chip text={member.label} tone={member.tone} />
                 </View>
               ))}
             </View>

@@ -152,7 +152,7 @@ export function Chip({
   tone = 'green'
 }: {
   text: string;
-  tone?: 'green' | 'amber' | 'gray' | 'danger'
+  tone?: 'green' | 'amber' | 'gray' | 'muted' | 'danger'
 }) {
   return (
     <View
@@ -161,7 +161,7 @@ export function Chip({
         tone === 'amber' && {
           backgroundColor: '#FFF2DC'
         },
-        tone === 'gray' && {
+        (tone === 'gray' || tone === 'muted') && {
           backgroundColor: '#EFF2F0'
         },
         tone === 'danger' && {
@@ -178,7 +178,7 @@ export function Chip({
               ? '#A66B16'
               : tone === 'danger'
                 ? colors.danger
-                : tone === 'gray'
+                : (tone === 'gray' || tone === 'muted')
                   ? '#728078'
                   : '#278046'
         }}

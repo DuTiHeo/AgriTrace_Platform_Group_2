@@ -1,4 +1,4 @@
-# backend/app/routers/tasks.py
+from datetime import datetime, timezone
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
@@ -8,6 +8,7 @@ from app.core.security import get_current_user
 from app.routers.user import require_role, ensure_owns_org
 from app.crud import tasks as crud_tasks
 from app.crud import team as crud_team
+from app.crud import notifications as crud_notifications
 from app.schemas.tasks import (
     TaskCreate,
     TaskUpdate,
@@ -18,6 +19,22 @@ from app.schemas.tasks import (
 )
 
 router = APIRouter()
+
+
+def _compute_target_status(status_val: TaskStatus, due_at: datetime) -> str:
+    """Tính toán trạng thái thực tế dựa trên hạn chót due_at."""
+    if status_val == TaskStatus.completed:
+        return TaskStatus.completed.value
+    elif status_val == TaskStatus.cancelled:
+        return TaskStatus.cancelled.value
+    elif status_val == TaskStatus.incomplete:
+        return TaskStatus.incomplete.value
+    else:  # TaskStatus.pending hoặc TaskStatus.in_progress
+        now = datetime.now(timezone.utc)
+        target_due = due_at
+        if target_due.tzinfo is None:
+            target_due = target_due.replace(tzinfo=timezone.utc)
+        return TaskStatus.incomplete.value if target_due < now else status_val.value
 
 
 @router.get("", response_model=list[TaskSummary])
@@ -138,6 +155,13 @@ def create_task(
         start_at=payload.start_at,
         due_at=payload.due_at,
     )
+    if payload.worker_id != current_user["user_id"]:
+        crud_notifications.create_notification(
+            db,
+            user_id=payload.worker_id,
+            content=f"Bạn có nhiệm vụ mới: {payload.content}",
+            notification_type="task_assigned",
+        )
     return new_task
 
 
@@ -186,10 +210,26 @@ def update_task(
         if role == "owner":
             ensure_owns_org(db, current_user, org_id)
 
-    if "status" in data and isinstance(data["status"], TaskStatus):
-        data["status"] = data["status"].value
+    if "status" in data:
+        st = data["status"]
+        if isinstance(st, str):
+            st = TaskStatus(st)
+        effective_due_at = data.get("due_at", task["due_at"])
+        data["status"] = _compute_target_status(st, effective_due_at)
 
-    return crud_tasks.update_task(db, task_id, data)
+    updated_task = crud_tasks.update_task(db, task_id, data)
+    if (
+        "worker_id" in data
+        and new_worker_id != task["worker_id"]
+        and new_worker_id != current_user["user_id"]
+    ):
+        crud_notifications.create_notification(
+            db,
+            user_id=new_worker_id,
+            content=f"Bạn có nhiệm vụ mới: {updated_task['content']}",
+            notification_type="task_assigned",
+        )
+    return updated_task
 
 
 @router.patch("/{task_id}/status", response_model=TaskDetail)
@@ -216,7 +256,8 @@ def update_task_status(
     elif role == "owner":
         ensure_owns_org(db, current_user, task["org_id"])
 
-    updated = crud_tasks.update_task(db, task_id, {"status": payload.status.value})
+    target_status = _compute_target_status(payload.status, task["due_at"])
+    updated = crud_tasks.update_task(db, task_id, {"status": target_status})
     return updated
 
 

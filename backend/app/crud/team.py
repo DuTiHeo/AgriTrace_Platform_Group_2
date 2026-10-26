@@ -38,7 +38,7 @@ def is_leader_of_another_team(
 def has_active_tasks(db: Session, team_id: UUID) -> bool:
     """Kiem tra to co cong viec dang thuc hien chua hoan thanh khong."""
     row = db.execute(
-        text("SELECT 1 FROM tasks WHERE team_id = :team_id AND status = 'in_progress'"),
+        text("SELECT 1 FROM tasks WHERE team_id = :team_id AND status IN ('pending', 'in_progress', 'incomplete')"),
         {"team_id": team_id},
     ).first()
     return row is not None

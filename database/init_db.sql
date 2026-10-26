@@ -308,8 +308,8 @@ CREATE TABLE tasks (
     content             TEXT NOT NULL,
     start_at            TIMESTAMPTZ NOT NULL,
     due_at              TIMESTAMPTZ NOT NULL,
-    status              VARCHAR(20) NOT NULL DEFAULT 'in_progress'
-                        CHECK (status IN ('in_progress', 'completed', 'cancelled')),
+    status              VARCHAR(20) NOT NULL DEFAULT 'pending'
+                        CHECK (status IN ('pending', 'in_progress', 'completed', 'cancelled', 'incomplete')),
     created_at          TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at          TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT chk_tasks_time_range CHECK (due_at > start_at)
@@ -317,7 +317,7 @@ CREATE TABLE tasks (
 
 COMMENT ON TABLE tasks IS 'Nhiệm vụ do Tổ trưởng giao cho công nhân';
 COMMENT ON COLUMN tasks.worker_id IS 'user_id của công nhân được giao việc';
-COMMENT ON COLUMN tasks.status IS 'in_progress | completed | cancelled (xóa mềm)';
+COMMENT ON COLUMN tasks.status IS 'pending (đã nhận) | in_progress (đang làm) | completed (đã hoàn thành) | cancelled (xóa mềm/hủy) | incomplete (quá hạn chưa hoàn thành)';
 
 CREATE INDEX idx_tasks_worker ON tasks(worker_id);
 CREATE INDEX idx_tasks_team ON tasks(team_id);

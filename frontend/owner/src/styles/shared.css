@@ -1,0 +1,290 @@
+/* Shared loading states, form feedback, steps, and dialogs. */
+.table-action-button {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  color: #475569;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  transition:
+  color 150ms ease,
+  background 150ms ease,
+  border-color 150ms ease;
+}
+
+.table-action-button:hover {
+  color: #08783e;
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+
+.page-loading,
+.page-error {
+  padding: 56px 20px;
+  text-align: center;
+}
+
+.page-loading {
+  color: #64748b;
+}
+
+.page-error {
+  color: #b91c1c;
+  background: #fef2f2;
+}
+
+.form-stepper {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 20px 0;
+  padding: 16px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+}
+
+.form-step {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.form-step:not(:last-child)::after {
+  position: absolute;
+  top: 50%;
+  right: -12%;
+  width: 24%;
+  height: 2px;
+  content: "";
+  background: #e2e8f0;
+  transform: translateY(-50%);
+}
+
+.form-step-number {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  background: #f1f5f9;
+  border-radius: 50%;
+}
+
+.form-step.active {
+  color: #08783e;
+}
+
+.form-step.active .form-step-number {
+  color: #ffffff;
+  background: #08783e;
+  box-shadow: 0 0 0 4px rgb(8 120 62 / 12%);
+}
+
+.form-step.completed {
+  color: #15803d;
+}
+
+.form-step.completed .form-step-number {
+  color: #ffffff;
+  background: #22c55e;
+}
+
+.form-step.completed::after {
+  background: #86efac;
+}
+
+.form-error {
+  color: #dc2626;
+  font-size: 12px;
+}
+
+.form-error-block {
+  padding: 11px 13px;
+  color: #b91c1c;
+  font-size: 13px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 9px;
+}
+
+@media (max-width: 640px) {
+  .form-stepper {
+    padding: 12px 8px;
+  }
+
+  .form-step {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .form-step:not(:last-child)::after {
+    display: none;
+  }
+
+  .form-step span {
+    font-size: 11px;
+  }
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #475569;
+  font-weight: 700;
+}
+
+.back-link:hover {
+  color: #08783e;
+}
+
+.not-found-card {
+  display: flex;
+  min-height: 380px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 14px;
+  padding: 30px;
+  color: #08783e;
+  text-align: center;
+}
+
+.not-found-card h1 {
+  color: #123524;
+  font-size: 21px;
+}
+
+.modal-backdrop {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgb(15 23 42 / 48%);
+  backdrop-filter: blur(2px);
+}
+
+.app-modal {
+  width: min(100%, 580px);
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 24px 70px rgb(15 23 42 / 28%);
+}
+
+.app-modal-large {
+  width: min(100%, 1050px);
+}
+
+.app-modal-header {
+  position: sticky;
+  z-index: 5;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 17px 20px;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.app-modal-header h2 {
+  margin: 0;
+  color: #123524;
+  font-size: 18px;
+}
+
+.app-modal-header > button {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  place-items: center;
+  color: #64748b;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+}
+
+.app-modal-header > button:hover {
+  color: #172b20;
+  background: #f1f5f9;
+}
+
+.app-modal-body {
+  padding: 20px;
+}
+
+.app-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.app-modal-body > p {
+  margin: 0;
+  color: #475569;
+  line-height: 1.65;
+}
+
+.app-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 9px;
+  padding: 15px 20px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+
+.blocked-delete-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+}
+
+.blocked-delete-message > svg {
+  flex-shrink: 0;
+}
+
+.blocked-delete-message strong {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.blocked-delete-message p {
+  margin: 0;
+  color: #7f1d1d;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+@media (max-width: 700px) {
+  .app-modal-footer {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .app-modal-footer .btn {
+    width: 100%;
+  }
+}
+
+.account-success {
+  padding: 9px 11px; color: #17623a; background: #effaf2; border: 1px solid #cbead4; border-radius: 7px; font-size: 11px;
+}

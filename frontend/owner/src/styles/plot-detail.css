@@ -1,0 +1,483 @@
+.plot-detail-page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.plot-detail-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.plot-detail-actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+
+.plot-delete-button,
+.plot-confirm-delete {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 15px;
+  color: #b91c1c;
+  font: inherit;
+  font-weight: 700;
+  background: #ffffff;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.plot-delete-button:hover {
+  background: #fef2f2;
+  border-color: #f87171;
+}
+
+.plot-confirm-delete {
+  color: #ffffff;
+  background: #dc2626;
+  border-color: #dc2626;
+}
+
+.plot-confirm-delete:hover:not(:disabled) {
+  background: #b91c1c;
+  border-color: #b91c1c;
+}
+
+.plot-confirm-delete:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.plot-detail-hero {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 20px;
+}
+
+.plot-detail-hero-icon {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  place-items: center;
+  color: #08783e;
+  background: #dcfce7;
+  border-radius: 14px;
+}
+
+.plot-detail-title {
+  min-width: 0;
+}
+
+.plot-detail-title > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.plot-detail-title h1 {
+  margin: 0;
+  color: #123524;
+  font-size: 24px;
+}
+
+.plot-detail-title p {
+  margin: 4px 0 0;
+  color: #64748b;
+}
+
+.plot-detail-page .status-badge {
+  display: inline-flex;
+  width: max-content;
+  padding: 5px 9px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 999px;
+}
+
+.plot-detail-page .status-active {
+  color: #08783e;
+  background: #dcfce7;
+}
+
+.plot-detail-page .status-inactive {
+  color: #64748b;
+  background: #eef2f6;
+}
+
+.plot-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.65fr);
+  gap: 18px;
+}
+
+.plot-detail-card,
+.plot-boundary-section {
+  padding: 20px;
+}
+
+.plot-detail-card-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.plot-detail-card-heading h2 {
+  margin: 0;
+  color: #123524;
+  font-size: 17px;
+}
+
+.plot-detail-card-heading p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.plot-information-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.plot-information-item {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 9px;
+}
+
+.plot-information-item > svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: #08783e;
+}
+
+.plot-information-item > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.plot-information-item span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.plot-information-item strong {
+  color: #172b20;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.current-season-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+}
+
+.current-season-icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  place-items: center;
+  color: #08783e;
+  background: #dcfce7;
+  border-radius: 10px;
+}
+
+.current-season-card > div:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.current-season-card strong {
+  color: #14532d;
+}
+
+.current-season-card span {
+  color: #15803d;
+  font-size: 12px;
+}
+
+.no-current-season {
+  display: flex;
+  min-height: 120px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 6px;
+  color: #64748b;
+  text-align: center;
+  background: #f8fafc;
+  border-radius: 10px;
+}
+
+.no-current-season svg {
+  color: #94a3b8;
+}
+
+.no-current-season strong {
+  color: #334155;
+}
+
+.no-current-season span {
+  font-size: 12px;
+}
+
+.boundary-lock-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-top: 12px;
+  padding: 11px 12px;
+  color: #92400e;
+  font-size: 12px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 9px;
+}
+
+.boundary-lock-notice svg {
+  flex-shrink: 0;
+}
+
+.plot-boundary-preview {
+  position: relative;
+  height: 410px;
+  overflow: hidden;
+  background: #e8f1e5;
+  border: 1px solid #bbd4bc;
+  border-radius: 11px;
+}
+
+.plot-boundary-grid {
+  position: absolute;
+  inset: 0;
+  opacity: 0.6;
+  background-image:
+  linear-gradient(#bfd7c0 1px, transparent 1px),
+  linear-gradient(90deg, #bfd7c0 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.plot-boundary-preview svg {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.plot-boundary-preview polygon {
+  fill: rgb(8 120 62 / 30%);
+  stroke: #05703a;
+  stroke-width: 0.7;
+  vector-effect: non-scaling-stroke;
+}
+
+.plot-boundary-preview circle {
+  fill: #ffffff;
+  stroke: #05703a;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.plot-boundary-label {
+  position: absolute;
+  z-index: 3;
+  right: 14px;
+  bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 11px;
+  color: #14532d;
+  font-size: 12px;
+  font-weight: 700;
+  background: rgb(255 255 255 / 90%);
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgb(15 23 42 / 10%);
+}
+
+.plot-coordinate-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.plot-coordinate-row {
+  display: grid;
+  grid-template-columns: 65px minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 9px 11px;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.plot-coordinate-row span {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.plot-coordinate-row code {
+  overflow: hidden;
+  color: #334155;
+  font-size: 11px;
+  text-overflow: ellipsis;
+}
+
+.plot-edit-form {
+  padding: 20px;
+}
+
+.plot-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.plot-edit-form .form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 15px;
+}
+
+.plot-edit-form .form-field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.plot-edit-form .form-field-full {
+  grid-column: 1 / -1;
+}
+
+.plot-edit-form .form-field span {
+  color: #334155;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.plot-edit-form input,
+.plot-edit-form textarea {
+  width: 100%;
+  padding: 10px 11px;
+  color: #172b20;
+  font: inherit;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  outline: none;
+}
+
+.plot-edit-form input {
+  height: 42px;
+}
+
+.plot-edit-form textarea {
+  resize: vertical;
+}
+
+.plot-edit-form input:focus,
+.plot-edit-form textarea:focus {
+  border-color: #22c55e;
+  box-shadow: 0 0 0 3px rgb(34 197 94 / 12%);
+}
+
+.plot-edit-form .app-modal-footer {
+  margin: 0 -20px -20px;
+}
+
+@media (max-width: 900px) {
+  .plot-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .plot-coordinate-list {
+    grid-template-columns: 1fr;
+  }
+
+
+}
+
+@media (max-width: 700px) {
+  .plot-detail-topbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .plot-detail-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .plot-detail-actions .btn,
+  .plot-delete-button {
+    width: 100%;
+  }
+
+  .plot-information-list,
+  .plot-edit-form .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .plot-edit-form .form-field-full {
+    grid-column: auto;
+  }
+
+  .plot-detail-card-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .plot-detail-card-heading .btn {
+    width: 100%;
+  }
+
+  .plot-boundary-preview {
+    height: 330px;
+  }
+
+  .plot-coordinate-row {
+    grid-template-columns: 60px 1fr;
+  }
+
+  .plot-coordinate-row code:last-child {
+    grid-column: 2;
+  }
+
+  .plot-confirm-delete {
+    width: 100%;
+  }
+
+
+}

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { type ReportDraft, useReports } from '@/contexts/report-context';
 import { getLogLocation, prepareLogPhoto, uploadDraftPhotos } from '@/sevices/log-media';
-import { updateTaskStatus } from '@/sevices/farming-log.service';
+import { updateTaskStatus, locatePlot } from '@/sevices/farming-log.service';
 import { useWorkSchedule } from '@/contexts/work-schedule-context';
 import { taskExecutionError } from '@/sevices/journal-filter';
 
@@ -11,6 +11,8 @@ export function useFarmingLogForm(draft: ReportDraft, updateDraft: (update: (old
   const { seasons, createReport, storeDetail } = useReports();
   const { loadWorkerTasks, workerTasks, leaderTasks } = useWorkSchedule();
   const [gpsStatus, setGpsStatus] = useState('Đang lấy vị trí hiện tại…');
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
   const locating = useRef(false);
   const activeSeasons = seasons.filter(season => [
     'growing',
@@ -22,7 +24,9 @@ export function useFarmingLogForm(draft: ReportDraft, updateDraft: (update: (old
       return;
 
     locating.current = true;
-    setGpsStatus('Đang lấy vị trí hiện tại…');
+    setIsLocating(true);
+    setLocationError(null);
+    setGpsStatus('Đang lấy vị trí GPS từ vệ tinh…');
 
     try {
       const gps = await getLogLocation();
@@ -30,37 +34,62 @@ export function useFarmingLogForm(draft: ReportDraft, updateDraft: (update: (old
         ...old,
         gps
       }));
-      const accuracy = typeof gps.accuracy === 'number' ? ` · sai số khoảng ${Math.round(gps.accuracy)} m` : '';
-      setGpsStatus(`Đã lấy GPS thực: ${gps.latitude.toFixed(6)}, ${gps.longitude.toFixed(6)}${accuracy}`);
+      const accuracy = typeof gps.accuracy === 'number' ? ` · sai số ±${Math.round(gps.accuracy)}m` : '';
+      setGpsStatus(`Đang đối soát không gian GPS (${gps.latitude.toFixed(6)}, ${gps.longitude.toFixed(6)})${accuracy}…`);
+
+      if (accessToken) {
+        try {
+          const located = await locatePlot(accessToken, gps.latitude, gps.longitude);
+          updateDraft(old => ({
+            ...old,
+            area: located.code,
+            plotId: located.plot_id,
+            seasonId: located.current_season_id || undefined,
+          }));
+          const cropInfo = located.current_crop_name ? ` · Cây trồng: ${located.current_crop_name}` : '';
+          setGpsStatus(`Đã định vị: Lô ${located.code}${cropInfo}${accuracy}`);
+          setLocationError(null);
+        } catch (plotErr) {
+          // EX-15: GPS nằm ngoài mọi lô đất của nông trại
+          updateDraft(old => ({
+            ...old,
+            area: '',
+            plotId: undefined,
+            seasonId: undefined,
+          }));
+          const msg = plotErr instanceof Error ? plotErr.message : 'Vị trí GPS của bạn không nằm trong bất kỳ lô đất nào thuộc nông trại.';
+          setLocationError(msg);
+          setGpsStatus(`Ngoài vùng canh tác: ${gps.latitude.toFixed(6)}, ${gps.longitude.toFixed(6)}`);
+        }
+      }
     } catch (error) {
-      setGpsStatus(error instanceof Error ? error.message : 'Không lấy được vị trí hiện tại.');
+      const msg = error instanceof Error ? error.message : 'Không lấy được vị trí GPS hiện tại.';
+      setLocationError(msg);
+      setGpsStatus('Không thể xác định tọa độ GPS');
     } finally {
       locating.current = false;
+      setIsLocating(false);
     }
-  }, [updateDraft]);
+  }, [accessToken, updateDraft]);
+
+  // Tự động định vị khi mở màn hình nếu chưa có GPS
+  useEffect(() => {
+    if (!draft.gps) {
+      void locate();
+    }
+  }, [draft.gps, locate]);
 
   useEffect(() => {
-    if (!draft.gps)
-      // The native GPS request must publish its loading state before asking for permission.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      void locate();
-  }, [
-    draft.gps,
-    locate
-  ]);
-  useEffect(() => {
-    if (draft.seasonId || !activeSeasons.length)
+    if (draft.seasonId || !draft.plotId || !activeSeasons.length)
       return;
 
-    const season = draft.plotId
-      ? activeSeasons.find(item => item.plot_id === draft.plotId)
-      : activeSeasons.length === 1 ? activeSeasons[0] : undefined;
-
-    if (season)
+    const season = activeSeasons.find(item => item.plot_id === draft.plotId);
+    if (season) {
       updateDraft(old => ({
         ...old,
         seasonId: season.season_id
       }));
+    }
   }, [
     activeSeasons,
     draft.plotId,
@@ -95,11 +124,16 @@ export function useFarmingLogForm(draft: ReportDraft, updateDraft: (update: (old
     };
     checkExecutionDate();
 
-    if (!draft.seasonId)
-      throw new Error('Lô đất của công việc chưa có mùa vụ đang canh tác. Vui lòng báo tổ trưởng hoặc chủ nông trại thiết lập mùa vụ trước khi gửi báo cáo.');
-
     if (!draft.gps)
       throw new Error('Chưa lấy được vị trí GPS. Vui lòng chờ hoặc thử lại.');
+
+    if (!draft.plotId || !draft.area) {
+      throw new Error('Không thể xác định vị trí làm việc. Vị trí GPS của bạn không nằm trong bất kỳ lô đất nào thuộc nông trại.');
+    }
+
+    if (!draft.seasonId) {
+      throw new Error('Lô đất này hiện chưa có mùa vụ đang canh tác (growing/ready_to_harvest). Vui lòng liên hệ tổ trưởng hoặc chủ nông trại.');
+    }
 
     const detail = draft.savedLogId
       ? {
@@ -129,6 +163,8 @@ export function useFarmingLogForm(draft: ReportDraft, updateDraft: (update: (old
 
   return {
     gpsStatus,
+    locationError,
+    isLocating,
     locate,
     preparePhoto,
     submit,

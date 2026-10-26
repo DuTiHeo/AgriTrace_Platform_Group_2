@@ -75,7 +75,7 @@ Do Expo Go trên điện thoại chạy độc lập, điện thoại không th�
 Mở PowerShell hoặc CMD và gõ:
 
 ```powershell
-ipconfig
+ipconfig getifaddr en0
 ```
 
 Cuộn tìm card mạng đang dùng:
@@ -145,7 +145,49 @@ npx expo start -c
 
 ---
 
-## 7. XỬ LÝ LỖI THƯỜNG GẶP (TROUBLESHOOTING)
+## 7. KHỞI CHẠY ỨNG DỤNG WEB CHỦ NÔNG TRẠI (OWNER WEB - PORT 5173)
+
+Ứng dụng Web dành riêng cho Chủ sở hữu nông trại (`owner`) nằm tại thư mục `frontend/owner/`, xây dựng trên công nghệ React 19 + Vite + TypeScript.
+
+### Cách 1: Khởi chạy từ thư mục `frontend/` (Khuyên dùng)
+Mở một cửa sổ Terminal mới tại thư mục `frontend/`:
+```bash
+# Cài đặt dependencies cho Owner Web (chỉ cần làm lần đầu)
+npm run owner:install
+
+# Khởi chạy Vite Dev Server
+npm run owner:dev
+```
+
+### Cách 2: Khởi chạy trực tiếp từ thư mục `frontend/owner/`
+```bash
+cd frontend/owner
+
+# Cài đặt thư viện theo package-lock.json
+npm ci
+
+# Khởi chạy
+npm run dev
+```
+
+### Cách 3 (Dành cho Windows):
+Click đúp tệp tin `frontend/owner/START_OWNER.cmd` để script tự động cài đặt và mở server.
+
+### Đăng nhập và Trải nghiệm:
+- **Địa chỉ truy cập**: `http://localhost:5173`
+- **Tài khoản đăng nhập mẫu**:
+  - Số điện thoại: **`0901000001`**
+  - Mật khẩu: **`Test@1234`**
+- **Tính năng chính trên Owner Web**:
+  - Bản đồ địa không gian: Vẽ và chỉnh sửa ranh giới nông trại (`organizations`) và lô đất (`plots`) trên nền WGS84.
+  - Quản lý mùa vụ: Duyệt kế hoạch, theo dõi mùa vụ đang canh tác, xem lịch nhắc nhở.
+  - Quản lý nhân sự & Tổ: Thêm nhân sự, gán công nhân vào tổ, bổ nhiệm hoặc thay đổi Tổ trưởng.
+  - Phân công nhiệm vụ: Điều phối công việc hàng ngày cho các tổ.
+  - Thu hoạch & Tem QR: Gom mùa vụ vào Lô thu hoạch (`harvest_batches`), sinh mã `batch_code` và phát hành mã QR tem nhãn truy xuất nguồn gốc.
+
+---
+
+## 8. XỬ LÝ LỖI THƯỜNG GẶP (TROUBLESHOOTING)
 
 ### Lỗi 1: Điện thoại báo `Network request failed` hoặc không đăng nhập được
 
