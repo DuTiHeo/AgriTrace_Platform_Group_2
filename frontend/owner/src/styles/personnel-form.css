@@ -136,7 +136,7 @@
   align-items: center;
   gap: 12px;
   border: 1px solid var(--gray-300);
-  border-radius: var(--radius-md);
+  border-radius: var(--agri-radius-card);
   background: var(--white);
   padding: 15px;
   cursor: pointer;
@@ -201,7 +201,7 @@
   align-items: flex-start;
   gap: 11px;
   border: 1px solid var(--gray-200);
-  border-radius: var(--radius-md);
+  border-radius: var(--agri-radius-card);
   background: var(--gray-100);
   padding: 14px;
   cursor: pointer;
@@ -254,19 +254,19 @@
   justify-content: center;
   transform: translateY(-50%);
   border: 0;
-  border-radius: 7px;
+  border-radius: var(--agri-radius-control);
   background: transparent;
   color: var(--gray-500);
 }
 
-.personnel-password-input button:hover {
+.personnel-password-input button:hover:not(:disabled) {
   background: var(--gray-100);
   color: var(--gray-900);
 }
 
 .personnel-form-error {
   border: 1px solid var(--agri-danger-border-soft);
-  border-radius: var(--radius-sm);
+  border-radius: var(--agri-radius-card);
   background: var(--red-100);
   padding: 12px 14px;
   color: var(--red-700);
@@ -327,7 +327,7 @@
   min-width: 0;
   flex-direction: column;
   border: 1px solid var(--gray-200);
-  border-radius: var(--radius-sm);
+  border-radius: var(--agri-radius-card);
   background: var(--gray-100);
   padding: 14px;
 }
@@ -350,7 +350,7 @@
   gap: 10px;
   margin-top: 16px;
   border: 1px solid var(--agri-warning-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--agri-radius-card);
   background: var(--agri-warning-soft);
   padding: 13px;
   color: var(--orange-700);

@@ -23,6 +23,14 @@ Nguồn trực tiếp là `frontend/src/styles/theme.ts`; không lấy bảng n�
 
 Owner bổ sung màu chữ đậm `muted-strong`, `success-text`, `warning-text`, `danger-text` để đọc trên nền sáng. Các alias `--green-*`, `--gray-*` phục vụ component cũ; code mới ưu tiên tên ngữ nghĩa `--agri-*`. Không viết lại màu ở CSS/JSX từng trang. Màu có alpha dùng RGB token, không chép lại các kênh RGB.
 
+## Lớp phủ phía sau hộp thoại và menu
+
+- Giữ màu tự nhiên của trang phía sau, chỉ làm tối nhẹ và làm mờ để nổi bật hộp thoại. Không dùng màu xanh thương hiệu, màu tiêu đề hoặc token shadow có sắc xanh để phủ toàn trang.
+- Owner dùng chung `--agri-backdrop` và `--agri-backdrop-blur` trong `src/styles/theme.css`: đen trung tính 24% và blur 2px. Màu RGB của overlay có ba kênh bằng nhau; chỉnh độ tối/blur tại token chung thay vì đặt riêng ở mỗi trang.
+- Áp dụng cho xác nhận xóa/tạm ngưng, form trong modal, hộp thoại nhân sự/tổ và lớp phủ sidebar khi mở ở màn hình nhỏ. Hộp thoại và chữ bên trong vẫn rõ, không đặt opacity/filter lên toàn bộ phần tử cha chứa hộp thoại.
+- Ảnh nền đăng nhập có lớp phủ thương hiệu riêng. Quy tắc lớp phủ modal không đổi màu nền trang, nút hoặc badge.
+- Khi sửa theo yêu cầu chỉ dành cho web, giữ nguyên app Worker/Leader; quy tắc chung không mở rộng phạm vi chỉnh sửa.
+
 ## Ảnh và thao tác xóa
 
 - Bản nháp chụp/đính kèm ảnh: nút **×** nhỏ trong vòng tròn ở góc trên bên phải thumbnail, không có ô chữ “Xóa ảnh 1” bên dưới.

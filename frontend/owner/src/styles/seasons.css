@@ -84,8 +84,8 @@
   padding: 0 12px;
   color: var(--agri-muted-strong);
   background: var(--agri-input);
-  border: 1px solid var(--agri-info-border);
-  border-radius: 9px;
+  border: 1px solid var(--agri-input-border);
+  border-radius: var(--agri-radius-control);
 }
 
 .seasons-search:focus-within {
@@ -117,8 +117,8 @@
   color: var(--agri-text);
   font: inherit;
   background: var(--agri-input);
-  border: 1px solid var(--agri-info-border);
-  border-radius: 9px;
+  border: 1px solid var(--agri-input-border);
+  border-radius: var(--agri-radius-control);
   outline: none;
   cursor: pointer;
 }
@@ -156,7 +156,7 @@
   color: var(--agri-text);
   font-size: 13px;
   vertical-align: middle;
-  border-bottom: 1px solid var(--agri-info-soft);
+  border-bottom: 1px solid var(--agri-divider);
 }
 
 .seasons-table tbody tr:last-child td {
@@ -224,7 +224,7 @@
   font-size: 11px;
   font-weight: 700;
   white-space: nowrap;
-  border-radius: 999px;
+  border-radius: var(--agri-radius-chip);
 }
 
 .season-status-planned {
@@ -249,7 +249,7 @@
 
 .season-status-cancelled {
   color: var(--agri-muted-strong);
-  background: var(--agri-info-soft);
+  background: var(--agri-background);
 }
 
 .seasons-empty {

@@ -10,6 +10,13 @@ assert(colorsBlock, 'Cannot read the mobile palette');
 const colors = [...colorsBlock[1].matchAll(/(\w+):\s*'(#[0-9a-f]+)'/gi)];
 const kebab = value => value.replace(/[A-Z]/g, char => '-' + char.toLowerCase());
 const declarations = colors.map(([, name, value]) => `  --agri-${kebab(name)}: ${value.toUpperCase()};`);
+const radiusBlock = source.match(/export const radius = \{([\s\S]*?)\} as const/);
+assert(radiusBlock, 'Cannot read the mobile corner radii');
+const radii = [...radiusBlock[1].matchAll(/(\w+):\s*(\d+)/g)];
+assert.equal(radii.length, 3, 'Expected card, control and chip radii');
+for (const [, name, value] of radii) {
+  declarations.push(`  --agri-radius-${kebab(name)}: ${value}px;`);
+}
 for (const name of ['primary', 'title', 'surface', 'warning', 'success', 'danger', 'primarySoft']) {
   const [, , hex] = colors.find(([, key]) => key === name);
   const rgb = hex.slice(1).match(/../g).map(value => parseInt(value, 16)).join(' ');
@@ -69,7 +76,7 @@ function luminance(name) {
   return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
 }
 for (const [foreground, background] of [
-  ['white', 'primary'], ['title', 'background'], ['text', 'surface'],
+  ['white', 'primary'], ['white', 'danger'], ['title', 'background'], ['text', 'surface'],
   ['muted-strong', 'surface'], ['muted-strong', 'background'],
   ['success-text', 'success-soft'], ['success-text', 'primary-soft'],
   ['warning-text', 'warning-soft'], ['danger-text', 'danger-soft'], ['info-text', 'info-soft'],
@@ -78,4 +85,4 @@ for (const [foreground, background] of [
   assert((Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05) >= 4.5,
     `Insufficient text contrast: ${foreground} on ${background}`);
 }
-console.log(`Theme check passed: ${colors.length} mobile tokens, matching brand assets, ${files.length} source files checked.`);
+console.log(`Theme check passed: ${colors.length} mobile colors, ${radii.length} mobile radii, matching brand assets, ${files.length} source files checked.`);

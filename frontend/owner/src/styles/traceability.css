@@ -60,7 +60,7 @@
   color: var(--agri-title);
   background: var(--agri-white);
   border: 1px solid var(--agri-border);
-  border-radius: 8px;
+  border-radius: var(--agri-radius-control);
   font-weight: 700;
 }
 
@@ -79,7 +79,7 @@
   color: var(--agri-danger-text);
   background: var(--agri-danger-soft);
   border: 1px solid var(--agri-danger-border-soft);
-  border-radius: 10px;
+  border-radius: var(--agri-radius-card);
 }
 
 .trace-cancelled-alert {
@@ -114,7 +114,7 @@
   background:
     linear-gradient(120deg, rgb(var(--agri-surface-rgb) / 9%), transparent 44%),
     linear-gradient(135deg, var(--agri-title), var(--agri-title) 62%, var(--agri-primary));
-  border-radius: 18px;
+  border-radius: var(--agri-radius-card);
   box-shadow: 0 14px 34px rgb(var(--agri-shadow-rgb) / 16%);
 }
 
@@ -188,7 +188,7 @@
 .trace-card {
   background: var(--agri-white);
   border: 1px solid var(--agri-input-border);
-  border-radius: 13px;
+  border-radius: var(--agri-radius-card);
   box-shadow: 0 2px 10px rgb(var(--agri-shadow-rgb) / 4%);
 }
 
@@ -274,7 +274,7 @@
   padding: 15px;
   background: var(--agri-header);
   border: 1px solid var(--agri-background);
-  border-radius: 11px;
+  border-radius: var(--agri-radius-card);
 }
 
 .trace-season-index {
@@ -380,7 +380,7 @@
   background:
     radial-gradient(circle at 50% 110%, var(--agri-success) 0 34%, transparent 35%),
     linear-gradient(150deg, var(--agri-success-soft), var(--agri-warning-soft));
-  border-radius: 10px;
+  border-radius: var(--agri-radius-card);
 }
 
 .trace-farm-card > h3 {
@@ -575,7 +575,7 @@
   padding: 6px 10px;
   color: var(--agri-text);
   background: var(--agri-background);
-  border-radius: 7px;
+  border-radius: var(--agri-radius-control);
   font-family: ui-monospace, monospace;
   font-size: 11px;
 }

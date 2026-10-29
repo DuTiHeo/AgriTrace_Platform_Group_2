@@ -75,8 +75,8 @@
   padding: 0 12px;
   color: var(--agri-muted-strong);
   background: var(--agri-input);
-  border: 1px solid var(--agri-info-border);
-  border-radius: 10px;
+  border: 1px solid var(--agri-input-border);
+  border-radius: var(--agri-radius-control);
 }
 
 .plots-search:focus-within {
@@ -107,9 +107,9 @@
   padding: 0 36px 0 12px;
   color: var(--agri-text);
   font: inherit;
-  background: var(--agri-white);
-  border: 1px solid var(--agri-info-border);
-  border-radius: 10px;
+  background: var(--agri-input);
+  border: 1px solid var(--agri-input-border);
+  border-radius: var(--agri-radius-control);
   outline: none;
   cursor: pointer;
 }
@@ -123,7 +123,7 @@
   display: flex;
   padding: 3px;
   background: var(--agri-background);
-  border-radius: 10px;
+  border-radius: var(--agri-radius-control);
 }
 
 .view-switcher button {
@@ -135,11 +135,11 @@
   color: var(--agri-muted-strong);
   background: transparent;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--agri-radius-control);
   cursor: pointer;
 }
 
-.view-switcher button:hover {
+.view-switcher button:hover:not(:disabled) {
   color: var(--agri-title);
 }
 
@@ -177,7 +177,7 @@
   color: var(--agri-text);
   font-size: 14px;
   vertical-align: middle;
-  border-bottom: 1px solid var(--agri-info-soft);
+  border-bottom: 1px solid var(--agri-divider);
 }
 
 .plots-table tbody tr:last-child td {
@@ -235,7 +235,7 @@
   font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
-  border-radius: 999px;
+  border-radius: var(--agri-radius-chip);
 }
 
 .plots-page .status-active {
@@ -245,7 +245,7 @@
 
 .plots-page .status-inactive {
   color: var(--agri-muted-strong);
-  background: var(--agri-info-soft);
+  background: var(--agri-background);
 }
 
 .plots-empty {
@@ -391,7 +391,7 @@
   gap: 12px;
   padding: 15px 16px;
   color: var(--agri-text);
-  border-bottom: 1px solid var(--agri-info-soft);
+  border-bottom: 1px solid var(--agri-divider);
 }
 
 .plots-map-item:hover {

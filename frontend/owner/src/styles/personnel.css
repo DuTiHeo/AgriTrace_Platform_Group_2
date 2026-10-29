@@ -117,9 +117,9 @@
   min-height: 42px;
   align-items: center;
   gap: 9px;
-  border: 1px solid var(--gray-300);
-  border-radius: var(--radius-sm);
-  background: var(--white);
+  border: 1px solid var(--agri-input-border);
+  border-radius: var(--agri-radius-control);
+  background: var(--agri-input);
   padding: 0 12px;
   color: var(--gray-500);
   transition:
@@ -235,7 +235,7 @@
 .personnel-role {
   display: inline-flex;
   align-items: center;
-  border-radius: 999px;
+  border-radius: var(--agri-radius-chip);
   padding: 4px 9px;
   font-size: 12px;
   font-weight: 700;
@@ -357,6 +357,7 @@
 
   .personnel-search {
     grid-column: 1 / -1;
+    background: var(--agri-input);
   }
 }
 
@@ -385,6 +386,7 @@
 
   .personnel-search {
     grid-column: auto;
+    background: var(--agri-input);
   }
 
   .personnel-toolbar .btn {

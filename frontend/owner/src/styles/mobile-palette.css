@@ -23,6 +23,9 @@
   --agri-nav-inactive: #728273;
   --agri-capture: #00A947;
   --agri-white: #FFFFFF;
+  --agri-radius-card: 0px;
+  --agri-radius-control: 6px;
+  --agri-radius-chip: 4px;
   --agri-primary-rgb: 46 131 61;
   --agri-title-rgb: 33 61 41;
   --agri-surface-rgb: 255 255 255;

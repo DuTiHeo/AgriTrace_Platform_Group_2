@@ -75,7 +75,7 @@
   color: var(--agri-title);
   background: var(--agri-success-soft);
   border: 1px solid var(--agri-border);
-  border-radius: 8px;
+  border-radius: var(--agri-radius-card);
 }
 
 .task-notice button {
@@ -87,10 +87,10 @@
   color: inherit;
   background: transparent;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--agri-radius-control);
 }
 
-.task-notice button:hover {
+.task-notice button:hover:not(:disabled) {
   background: var(--agri-success-soft);
 }
 
@@ -115,9 +115,9 @@
   gap: 9px;
   padding: 0 11px;
   color: var(--agri-muted-strong);
-  background: var(--agri-white);
-  border: 1px solid var(--agri-border);
-  border-radius: 8px;
+  background: var(--agri-input);
+  border: 1px solid var(--agri-input-border);
+  border-radius: var(--agri-radius-control);
 }
 
 .task-search input {
@@ -134,8 +134,8 @@
   padding: 0 32px 0 11px;
   color: var(--agri-text);
   background: var(--agri-input);
-  border: 1px solid var(--agri-border);
-  border-radius: 8px;
+  border: 1px solid var(--agri-input-border);
+  border-radius: var(--agri-radius-control);
 }
 
 .task-result-count {
@@ -189,7 +189,7 @@
   padding: 3px 8px;
   color: var(--agri-muted-strong);
   background: var(--agri-background);
-  border-radius: 999px;
+  border-radius: var(--agri-radius-chip);
   font-size: 11px;
   font-weight: 700;
   white-space: nowrap;
@@ -290,10 +290,10 @@
   color: var(--agri-danger-text);
   background: transparent;
   border: 1px solid var(--agri-danger-border-soft);
-  border-radius: 8px;
+  border-radius: var(--agri-radius-control);
 }
 
-.task-cancel-button:hover {
+.task-cancel-button:hover:not(:disabled) {
   color: var(--agri-danger-text);
   background: var(--agri-danger-soft);
   border-color: var(--agri-danger-border-soft);
@@ -364,8 +364,8 @@
   padding: 9px 11px;
   color: var(--agri-title);
   background: var(--agri-input);
-  border: 1px solid var(--agri-border);
-  border-radius: 8px;
+  border: 1px solid var(--agri-input-border);
+  border-radius: var(--agri-radius-control);
   outline: 0;
 }
 
@@ -440,6 +440,7 @@
 
   .task-toolbar > select {
     width: 100%;
+    background: var(--agri-input);
   }
 
   .task-row-card {

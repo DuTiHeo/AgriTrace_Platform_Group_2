@@ -82,7 +82,7 @@
   font: inherit;
   background: var(--agri-input);
   border: 1px solid var(--agri-input-border);
-  border-radius: 9px;
+  border-radius: var(--agri-radius-control);
   outline: none;
   transition:
     border-color 150ms ease,
@@ -126,7 +126,7 @@
   padding: 14px;
   background: var(--agri-success-soft);
   border: 1px solid var(--agri-border);
-  border-radius: 10px;
+  border-radius: var(--agri-radius-card);
 }
 
 .selected-plot-icon {
@@ -190,7 +190,7 @@
   padding: 16px;
   background: var(--agri-input);
   border: 1px solid var(--agri-border);
-  border-radius: 10px;
+  border-radius: var(--agri-radius-card);
 }
 
 .harvest-calculation > div:not(
@@ -226,7 +226,7 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   overflow: hidden;
   border: 1px solid var(--agri-border);
-  border-radius: 10px;
+  border-radius: var(--agri-radius-card);
 }
 
 .season-review-item {
@@ -273,7 +273,7 @@
   padding: 16px;
   background: var(--agri-white);
   border: 1px solid var(--agri-border);
-  border-radius: 12px;
+  border-radius: var(--agri-radius-card);
 }
 
 @media (max-width: 700px) {

@@ -7,10 +7,6 @@
   background: var(--agri-background);
   --sidebar-width: 252px;
   --header-height: 68px;
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-
   --shadow-sm: 0 1px 3px rgb(var(--agri-shadow-rgb) / 0.08);
   --shadow-md: 0 8px 24px rgb(var(--agri-shadow-rgb) / 0.1);
 }
@@ -78,6 +74,16 @@ textarea {
   font: inherit;
 }
 
+:where(button, input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea) {
+  border-radius: var(--agri-radius-control);
+}
+
+:where(button) {
+  color: var(--agri-text);
+  background: var(--agri-input);
+  border-color: var(--agri-input-border);
+}
+
 button {
   cursor: pointer;
 }
@@ -129,7 +135,7 @@ img {
 
 .card {
   border: 1px solid var(--gray-200);
-  border-radius: var(--radius-md);
+  border-radius: var(--agri-radius-card);
   background: var(--white);
   box-shadow: var(--shadow-sm);
 }
@@ -141,7 +147,7 @@ img {
   justify-content: center;
   gap: 8px;
   border: 1px solid transparent;
-  border-radius: var(--radius-sm);
+  border-radius: var(--agri-radius-control);
   padding: 9px 15px;
   font-weight: 600;
   transition:
@@ -151,7 +157,7 @@ img {
     transform 0.2s ease;
 }
 
-.btn:active {
+.btn:active:not(:disabled) {
   transform: translateY(1px);
 }
 
@@ -161,9 +167,9 @@ img {
   color: var(--white);
 }
 
-.btn-primary:hover {
-  border-color: var(--green-900);
-  background: var(--green-900);
+.btn-primary:hover:not(:disabled) {
+  border-color: var(--agri-primary-hover);
+  background: var(--agri-primary-hover);
 }
 
 .btn-secondary {
@@ -172,16 +178,27 @@ img {
   color: var(--agri-success-text);
 }
 
-.btn-secondary:hover {
+.btn-secondary:hover:not(:disabled) {
   border-color: var(--green-700);
   color: var(--green-800);
+}
+
+.btn-danger {
+  border-color: var(--agri-danger);
+  background: var(--agri-danger);
+  color: var(--agri-white);
+}
+
+.btn-danger:hover:not(:disabled) {
+  border-color: var(--agri-danger-text);
+  background: var(--agri-danger-text);
 }
 
 .input {
   width: 100%;
   min-height: 42px;
   border: 1px solid var(--gray-300);
-  border-radius: var(--radius-sm);
+  border-radius: var(--agri-radius-control);
   outline: none;
   background: var(--agri-input);
   padding: 9px 12px;

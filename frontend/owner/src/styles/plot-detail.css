@@ -31,11 +31,11 @@
   font-weight: 700;
   background: var(--agri-white);
   border: 1px solid var(--agri-danger-border-soft);
-  border-radius: 8px;
+  border-radius: var(--agri-radius-control);
   cursor: pointer;
 }
 
-.plot-delete-button:hover {
+.plot-delete-button:hover:not(:disabled) {
   background: var(--agri-danger-soft);
   border-color: var(--agri-danger);
 }
@@ -102,7 +102,7 @@
   padding: 5px 9px;
   font-size: 12px;
   font-weight: 700;
-  border-radius: 999px;
+  border-radius: var(--agri-radius-chip);
 }
 
 .plot-detail-page .status-active {
@@ -112,7 +112,7 @@
 
 .plot-detail-page .status-inactive {
   color: var(--agri-muted-strong);
-  background: var(--agri-info-soft);
+  background: var(--agri-background);
 }
 
 .plot-detail-grid {
@@ -161,7 +161,7 @@
   gap: 10px;
   padding: 12px;
   background: var(--agri-input);
-  border-radius: 9px;
+  border-radius: var(--agri-radius-card);
 }
 
 .plot-information-item > svg {
@@ -195,7 +195,7 @@
   padding: 15px;
   background: var(--agri-success-soft);
   border: 1px solid var(--agri-border);
-  border-radius: 10px;
+  border-radius: var(--agri-radius-card);
 }
 
 .current-season-icon {
@@ -234,7 +234,7 @@
   color: var(--agri-muted-strong);
   text-align: center;
   background: var(--agri-input);
-  border-radius: 10px;
+  border-radius: var(--agri-radius-card);
 }
 
 .no-current-season svg {
@@ -259,7 +259,7 @@
   font-size: 12px;
   background: var(--agri-warning-soft);
   border: 1px solid var(--agri-warning-border);
-  border-radius: 9px;
+  border-radius: var(--agri-radius-card);
 }
 
 .boundary-lock-notice svg {
@@ -272,7 +272,7 @@
   overflow: hidden;
   background: var(--agri-success-soft);
   border: 1px solid var(--agri-border);
-  border-radius: 11px;
+  border-radius: var(--agri-radius-card);
 }
 
 .plot-boundary-grid {
@@ -321,7 +321,7 @@
   font-weight: 700;
   background: rgb(var(--agri-surface-rgb) / 90%);
   border: 1px solid var(--agri-border);
-  border-radius: 8px;
+  border-radius: var(--agri-radius-chip);
   box-shadow: 0 4px 14px rgb(var(--agri-shadow-rgb) / 10%);
 }
 
@@ -339,7 +339,7 @@
   gap: 8px;
   padding: 9px 11px;
   background: var(--agri-input);
-  border-radius: 8px;
+  border-radius: var(--agri-radius-card);
 }
 
 .plot-coordinate-row span {
@@ -395,7 +395,7 @@
   font: inherit;
   background: var(--agri-input);
   border: 1px solid var(--agri-input-border);
-  border-radius: 8px;
+  border-radius: var(--agri-radius-control);
   outline: none;
 }
 

@@ -22,7 +22,9 @@
   --agri-on-brand-muted: #D6ECDD;
   --agri-on-brand-accent: #C7EFD2;
   --agri-shadow-rgb: var(--agri-title-rgb);
-  --agri-overlay-rgb: var(--agri-title-rgb);
+  --agri-overlay-rgb: 0 0 0;
+  --agri-backdrop: rgb(var(--agri-overlay-rgb) / 24%);
+  --agri-backdrop-blur: 2px;
   --agri-login-overlay-start: rgb(var(--agri-title-rgb) / 88%);
   --agri-login-overlay-end: rgb(var(--agri-primary-rgb) / 68%);
 

@@ -8,7 +8,7 @@
   justify-content: space-between;
   gap: 16px;
   border: 1px solid var(--agri-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--agri-radius-card);
   background: var(--green-50);
   margin-bottom: 16px;
   padding: 12px 14px;
@@ -46,9 +46,9 @@
   min-height: 42px;
   align-items: center;
   gap: 9px;
-  border: 1px solid var(--gray-300);
-  border-radius: var(--radius-sm);
-  background: var(--white);
+  border: 1px solid var(--agri-input-border);
+  border-radius: var(--agri-radius-control);
+  background: var(--agri-input);
   padding: 0 12px;
   color: var(--gray-500);
 }
@@ -78,10 +78,10 @@
 
 .farm-status-filter {
   min-height: 40px;
-  border: 1px solid var(--gray-300);
-  border-radius: var(--radius-sm);
+  border: 1px solid var(--agri-input-border);
+  border-radius: var(--agri-radius-control);
   outline: none;
-  background: var(--white);
+  background: var(--agri-input);
   padding: 8px 34px 8px 11px;
   color: var(--gray-700);
   font-weight: 600;
@@ -198,7 +198,7 @@
 .boundary-status {
   display: inline-flex;
   align-items: center;
-  border-radius: 999px;
+  border-radius: var(--agri-radius-chip);
   padding: 4px 9px;
   font-size: 11px;
   font-weight: 700;
@@ -244,18 +244,18 @@
   align-items: center;
   justify-content: center;
   border: 1px solid var(--gray-200);
-  border-radius: 8px;
+  border-radius: var(--agri-radius-control);
   background: var(--white);
   color: var(--gray-700);
 }
 
-.table-actions button:hover,
-.table-actions a:hover {
+.table-actions button:hover:not(:disabled),
+.table-actions a:hover:not(:disabled) {
   border-color: var(--green-600);
   color: var(--green-800);
 }
 
-.table-actions .danger-action:hover {
+.table-actions .danger-action:hover:not(:disabled) {
   border-color: var(--agri-danger-border-soft);
   background: var(--agri-danger-soft);
   color: var(--red-700);
@@ -294,14 +294,15 @@
   align-items: center;
   justify-content: center;
   overflow-y: auto;
-  background: rgb(var(--agri-shadow-rgb) / 0.52);
+  background: var(--agri-backdrop);
+  backdrop-filter: blur(var(--agri-backdrop-blur));
   padding: 20px;
 }
 
 .confirm-modal {
   width: 100%;
   max-width: 440px;
-  border-radius: var(--radius-lg);
+  border-radius: var(--agri-radius-card);
   background: var(--white);
   box-shadow: var(--shadow-md);
   padding: 25px;
@@ -351,17 +352,6 @@
   padding-top: 17px;
 }
 
-.btn-danger {
-  border-color: var(--red-700);
-  background: var(--red-700);
-  color: var(--white);
-}
-
-.btn-danger:hover {
-  border-color: var(--agri-danger-text);
-  background: var(--agri-danger-text);
-}
-
 @media (max-width: 760px) {
   .farms-page .page-heading {
     align-items: stretch;
@@ -378,6 +368,7 @@
 
   .farm-search {
     max-width: none;
+    background: var(--agri-input);
   }
 
   .farm-filter-group {
@@ -387,6 +378,7 @@
 
   .farm-status-filter {
     width: 100%;
+    background: var(--agri-input);
   }
 
   .confirm-actions {

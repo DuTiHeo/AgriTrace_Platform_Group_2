@@ -32,6 +32,7 @@ Các đường dẫn trong skill tính từ gốc repository `AgriTrace_Platform
 - Nền trang, nền card, tiêu đề, chữ, đường viền, input và nút dùng token tương ứng. Màu chủ đạo xanh lá, không gộp lỗi/cảnh báo/thông tin thành xanh lá.
 - Trên nền sáng, dùng token `*-text` có tương phản phù hợp cho chữ nhỏ. `--agri-muted` của mobile dành cho phần phụ/disabled; Owner dùng `--agri-muted-strong` cho nội dung phụ cần đọc.
 - Nút chính dùng `--agri-primary` với chữ trắng; active/filter nhẹ dùng `--agri-primary-soft` với chữ đậm. Hover và keyboard focus cần phân biệt được trạng thái; giữ disabled thật.
+- Lớp phủ sau hộp thoại/menu dùng đen hoặc xám trung tính trong suốt và làm mờ nhẹ, không ám xanh theo màu thương hiệu. Xem mục lớp phủ trong [references/ui-rules.md](references/ui-rules.md).
 - Thông tin/xếp loại dữ liệu có thể dùng bộ info/purple riêng của web trong `theme.css`; giữ nhãn/icon để không phụ thuộc màu duy nhất. Giữ màu tương phản của QR và các vùng bản đồ.
 - Tham khảo mobile nhưng giữ bố cục responsive, kích thước bảng/sidebar và kiểu điều hướng web. Đừng áp toàn bộ kích thước hoặc bo góc mobile lên Owner nếu chỉ được yêu cầu đồng bộ màu.
 - Ưu tiên component/style chung cho hành vi thực sự giống nhau. Không gom những phần khác nhau về quyền hoặc nghiệp vụ chỉ vì hình thức tương tự.

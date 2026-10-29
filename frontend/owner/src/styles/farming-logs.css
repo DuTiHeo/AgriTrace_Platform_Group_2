@@ -86,8 +86,9 @@
   gap: 9px;
   padding: 0 11px;
   color: var(--gray-500);
-  border: 1px solid var(--gray-300);
-  border-radius: 8px;
+  border: 1px solid var(--agri-input-border);
+  border-radius: var(--agri-radius-control);
+  background: var(--agri-input);
 }
 
 .farming-log-search input {
@@ -105,8 +106,8 @@
   padding: 0 30px 0 10px;
   color: var(--agri-text);
   background: var(--agri-input);
-  border: 1px solid var(--gray-300);
-  border-radius: 8px;
+  border: 1px solid var(--agri-input-border);
+  border-radius: var(--agri-radius-control);
 }
 
 .farming-log-reset {
@@ -118,7 +119,7 @@
   color: var(--agri-warning-text);
   background: var(--agri-warning-soft);
   border: 1px solid var(--agri-warning-border);
-  border-radius: 8px;
+  border-radius: var(--agri-radius-control);
 }
 
 .farming-log-result-bar {
@@ -187,7 +188,7 @@
   padding: 3px 8px;
   color: var(--agri-title);
   background: var(--agri-success-soft);
-  border-radius: 999px;
+  border-radius: var(--agri-radius-chip);
   font-size: 11px;
   font-weight: 700;
   white-space: nowrap;
@@ -309,7 +310,7 @@
   color: var(--gray-700);
   background: var(--agri-white);
   border: 1px solid var(--gray-200);
-  border-radius: 9px;
+  border-radius: var(--agri-radius-control);
 }
 
 .farming-log-detail-header h1 {
@@ -343,7 +344,7 @@
   color: var(--agri-title);
   background: var(--agri-success-soft);
   border: 1px solid var(--agri-border);
-  border-radius: 8px;
+  border-radius: var(--agri-radius-card);
 }
 
 .farming-log-detail-layout {
@@ -409,7 +410,7 @@
 .farming-log-photo-grid figure {
   overflow: hidden;
   border: 1px solid var(--gray-200);
-  border-radius: 10px;
+  border-radius: var(--agri-radius-control);
 }
 
 .farming-log-photo-grid img {
@@ -435,7 +436,7 @@
   color: var(--gray-500);
   background: var(--agri-header);
   border: 1px dashed var(--gray-300);
-  border-radius: 10px;
+  border-radius: var(--agri-radius-card);
   font-size: 12px;
 }
 
@@ -445,7 +446,7 @@
   color: var(--agri-text);
   background: var(--agri-header);
   border-left: 3px solid var(--agri-success);
-  border-radius: 0 7px 7px 0;
+  border-radius: var(--agri-radius-card);
   font-size: 12px;
 }
 
@@ -461,7 +462,7 @@
   padding: 13px;
   background: var(--agri-warning-soft);
   border: 1px solid var(--agri-warning-border);
-  border-radius: 10px;
+  border-radius: var(--agri-radius-card);
 }
 
 .farming-log-note-resolved {
@@ -538,7 +539,7 @@
   color: var(--green-800);
   background: var(--agri-white);
   border: 1px solid var(--agri-border);
-  border-radius: 6px;
+  border-radius: var(--agri-radius-control);
 }
 
 .farming-log-note-form {
@@ -563,8 +564,8 @@
   padding: 10px 11px;
   color: var(--gray-900);
   background: var(--agri-input);
-  border: 1px solid var(--gray-300);
-  border-radius: 8px;
+  border: 1px solid var(--agri-input-border);
+  border-radius: var(--agri-radius-control);
   outline: 0;
 }
 
@@ -637,7 +638,7 @@
     linear-gradient(-45deg, rgb(var(--agri-primary-rgb) / 6%) 25%, transparent 25%) 0 0 / 24px 24px,
     var(--agri-success-soft);
   border: 1px solid var(--agri-border);
-  border-radius: 10px;
+  border-radius: var(--agri-radius-card);
   font-size: 11px;
 }
 
@@ -651,7 +652,7 @@
 .farming-log-gps-card dl div {
   padding: 8px;
   background: var(--agri-header);
-  border-radius: 7px;
+  border-radius: var(--agri-radius-card);
 }
 
 .farming-log-gps-card dt {

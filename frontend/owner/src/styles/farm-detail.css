@@ -25,7 +25,7 @@
   font-weight: 600;
 }
 
-.detail-back-button:hover {
+.detail-back-button:hover:not(:disabled) {
   color: var(--green-800);
 }
 
@@ -70,12 +70,12 @@
   align-items: center;
   justify-content: center;
   border: 1px solid var(--agri-danger-border-soft);
-  border-radius: var(--radius-sm);
+  border-radius: var(--agri-radius-control);
   background: var(--agri-danger-soft);
   color: var(--red-700);
 }
 
-.detail-delete-button:hover {
+.detail-delete-button:hover:not(:disabled) {
   border-color: var(--red-700);
   background: var(--red-100);
 }
@@ -163,7 +163,7 @@
 .boundary-summary > div {
   display: flex;
   flex-direction: column;
-  border-radius: var(--radius-sm);
+  border-radius: var(--agri-radius-card);
   background: var(--gray-100);
   padding: 12px;
 }
@@ -187,7 +187,7 @@
   justify-content: center;
   overflow: hidden;
   border: 1px solid var(--gray-200);
-  border-radius: var(--radius-md);
+  border-radius: var(--agri-radius-card);
   background: var(--agri-background);
   margin-bottom: 16px;
   color: var(--gray-500);
@@ -226,7 +226,7 @@
 .farm-detail-modal,
 .boundary-edit-modal {
   width: 100%;
-  border-radius: var(--radius-lg);
+  border-radius: var(--agri-radius-card);
   background: var(--white);
   box-shadow: var(--shadow-md);
 }
@@ -267,12 +267,12 @@
   align-items: center;
   justify-content: center;
   border: 1px solid var(--gray-200);
-  border-radius: var(--radius-sm);
+  border-radius: var(--agri-radius-control);
   background: var(--white);
   color: var(--gray-700);
 }
 
-.detail-modal-heading > button:hover {
+.detail-modal-heading > button:hover:not(:disabled) {
   background: var(--gray-100);
 }
 
@@ -301,7 +301,7 @@
   display: flex;
   flex-direction: column;
   border: 1px solid var(--gray-200);
-  border-radius: var(--radius-sm);
+  border-radius: var(--agri-radius-control);
   background: var(--gray-100);
   padding: 9px 12px;
 }

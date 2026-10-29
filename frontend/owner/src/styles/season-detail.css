@@ -31,11 +31,11 @@
   font-weight: 700;
   background: var(--agri-white);
   border: 1px solid var(--agri-danger-border-soft);
-  border-radius: 8px;
+  border-radius: var(--agri-radius-control);
   cursor: pointer;
 }
 
-.season-delete-button:hover {
+.season-delete-button:hover:not(:disabled) {
   background: var(--agri-danger-soft);
   border-color: var(--agri-danger);
 }
@@ -177,7 +177,7 @@
   gap: 10px;
   padding: 12px;
   background: var(--agri-input);
-  border-radius: 9px;
+  border-radius: var(--agri-radius-card);
 }
 
 .season-information-item > svg {
@@ -212,7 +212,7 @@
   padding: 14px;
   color: var(--agri-muted-strong);
   background: var(--agri-input);
-  border-radius: 9px;
+  border-radius: var(--agri-radius-card);
 }
 
 .season-notes svg {
@@ -257,7 +257,7 @@
   padding: 14px;
   background: var(--agri-input);
   border: 1px solid var(--agri-border);
-  border-radius: 9px;
+  border-radius: var(--agri-radius-card);
   overflow-wrap: anywhere;
 }
 
@@ -333,7 +333,7 @@
   color: var(--agri-title);
   background: var(--agri-input);
   border: 1px solid var(--agri-input-border);
-  border-radius: 8px;
+  border-radius: var(--agri-radius-control);
 }
 
 .season-team-list {
@@ -352,7 +352,7 @@
   padding: 12px;
   background: var(--agri-header);
   border: 1px solid var(--agri-border);
-  border-radius: 8px;
+  border-radius: var(--agri-radius-card);
 }
 
 .season-team-avatar {
@@ -400,10 +400,10 @@
   color: var(--agri-muted-strong);
   background: transparent;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--agri-radius-control);
 }
 
-.season-team-remove:hover {
+.season-team-remove:hover:not(:disabled) {
   color: var(--agri-danger-text);
   background: var(--agri-danger-soft);
 }
@@ -457,7 +457,7 @@
   font: inherit;
   background: var(--agri-input);
   border: 1px solid var(--agri-input-border);
-  border-radius: 8px;
+  border-radius: var(--agri-radius-control);
   outline: none;
 }
 

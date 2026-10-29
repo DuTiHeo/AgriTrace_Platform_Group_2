@@ -7,14 +7,14 @@
   color: var(--agri-muted-strong);
   background: var(--agri-input);
   border: 1px solid var(--agri-border);
-  border-radius: 8px;
+  border-radius: var(--agri-radius-control);
   transition:
   color 150ms ease,
   background 150ms ease,
   border-color 150ms ease;
 }
 
-.table-action-button:hover {
+.table-action-button:hover:not(:disabled) {
   color: var(--agri-title);
   background: var(--agri-success-soft);
   border-color: var(--agri-border);
@@ -42,7 +42,7 @@
   padding: 16px;
   background: var(--agri-white);
   border: 1px solid var(--agri-border);
-  border-radius: 14px;
+  border-radius: var(--agri-radius-card);
 }
 
 .form-step {
@@ -110,7 +110,7 @@
   font-size: 13px;
   background: var(--agri-danger-soft);
   border: 1px solid var(--agri-danger-border-soft);
-  border-radius: 9px;
+  border-radius: var(--agri-radius-card);
 }
 
 @media (max-width: 640px) {
@@ -168,8 +168,8 @@
   display: grid;
   place-items: center;
   padding: 20px;
-  background: rgb(var(--agri-shadow-rgb) / 48%);
-  backdrop-filter: blur(2px);
+  background: var(--agri-backdrop);
+  backdrop-filter: blur(var(--agri-backdrop-blur));
 }
 
 .app-modal {
@@ -177,7 +177,7 @@
   max-height: calc(100vh - 40px);
   overflow-y: auto;
   background: var(--agri-white);
-  border-radius: 14px;
+  border-radius: var(--agri-radius-card);
   box-shadow: 0 24px 70px rgb(var(--agri-shadow-rgb) / 28%);
 }
 
@@ -213,10 +213,10 @@
   color: var(--agri-muted-strong);
   background: transparent;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--agri-radius-control);
 }
 
-.app-modal-header > button:hover {
+.app-modal-header > button:hover:not(:disabled) {
   color: var(--agri-title);
   background: var(--agri-background);
 }
@@ -255,7 +255,7 @@
   color: var(--agri-danger-text);
   background: var(--agri-danger-soft);
   border: 1px solid var(--agri-danger-border-soft);
-  border-radius: 10px;
+  border-radius: var(--agri-radius-card);
 }
 
 .blocked-delete-message > svg {
@@ -286,5 +286,5 @@
 }
 
 .account-success {
-  padding: 9px 11px; color: var(--agri-title); background: var(--agri-success-soft); border: 1px solid var(--agri-border); border-radius: 7px; font-size: 11px;
+  padding: 9px 11px; color: var(--agri-title); background: var(--agri-success-soft); border: 1px solid var(--agri-border); border-radius: var(--agri-radius-card); font-size: 11px;
 }

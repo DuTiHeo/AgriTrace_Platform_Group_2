@@ -11,7 +11,7 @@
   color: var(--agri-white);
   background: var(--agri-danger);
   border: 2px solid var(--agri-white);
-  border-radius: 999px;
+  border-radius: var(--agri-radius-chip);
   font-size: 9px;
   font-weight: 800;
   line-height: 1;
@@ -91,12 +91,12 @@
   color: var(--agri-muted-strong);
   background: var(--agri-white);
   border: 1px solid var(--agri-border);
-  border-radius: 8px;
+  border-radius: var(--agri-radius-control);
   font-size: 12px;
   white-space: nowrap;
 }
 
-.notification-filters button:hover,
+.notification-filters button:hover:not(:disabled),
 .notification-filters button.active {
   color: var(--agri-title);
   background: var(--agri-success-soft);
@@ -114,7 +114,7 @@
   padding: 0 5px;
   color: inherit;
   background: rgb(var(--agri-primary-rgb) / 8%);
-  border-radius: 999px;
+  border-radius: var(--agri-radius-chip);
   font-size: 10px;
 }
 
@@ -233,8 +233,8 @@
 
 .notification-open-button { padding: 5px 0; }
 .notification-read-button { color: var(--agri-muted-strong); font-weight: 500; }
-.notification-open-button:hover { color: var(--agri-title); }
-.notification-read-button:hover { color: var(--agri-text); }
+.notification-open-button:hover:not(:disabled) { color: var(--agri-title); }
+.notification-read-button:hover:not(:disabled) { color: var(--agri-text); }
 
 .notification-empty {
   display: flex;
