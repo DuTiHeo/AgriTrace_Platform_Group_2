@@ -165,3 +165,58 @@ def delete_reminder(db: Session, reminder_id: UUID) -> bool:
     )
     db.commit()
     return (res.rowcount or 0) > 0
+
+
+def dispatch_due_reminders(
+    db: Session,
+    target_date: Optional[date] = None,
+    scope_org_id: Optional[UUID] = None,
+    scope_owner_id: Optional[UUID] = None,
+    season_id: Optional[UUID] = None,
+) -> list[UUID]:
+    """
+    Quét và cập nhật các lịch nhắc nhở có remind_date <= target_date (mặc định CURRENT_DATE) và status = 'scheduled'
+    sang status = 'sent'.
+    Nhờ Trigger trg_notify_on_reminder_sent trong DB, thông báo notifications sẽ tự động được sinh ra!
+    Trả về danh sách reminder_id đã phát hành.
+    """
+    conditions = [
+        "r.status = 'scheduled'",
+    ]
+    params: dict[str, Any] = {}
+
+    if target_date:
+        conditions.append("r.remind_date <= :target_date")
+        params["target_date"] = target_date
+    else:
+        conditions.append("r.remind_date <= CURRENT_DATE")
+
+    if season_id:
+        conditions.append("r.season_id = :season_id")
+        params["season_id"] = season_id
+
+    if scope_org_id:
+        conditions.append("p.org_id = :scope_org_id")
+        params["scope_org_id"] = scope_org_id
+    elif scope_owner_id:
+        conditions.append("o.owner_id = :scope_owner_id")
+        params["scope_owner_id"] = scope_owner_id
+
+    where_clause = " AND ".join(conditions)
+
+    rows = db.execute(
+        text(f"""
+            UPDATE reminder_schedules r
+            SET status = 'sent'
+            FROM seasons s
+            JOIN plots p ON s.plot_id = p.plot_id
+            JOIN organizations o ON p.org_id = o.org_id
+            WHERE r.season_id = s.season_id
+              AND {where_clause}
+            RETURNING r.reminder_id
+        """),
+        params,
+    ).mappings().all()
+
+    db.commit()
+    return [r["reminder_id"] for r in rows]
