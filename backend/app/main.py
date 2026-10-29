@@ -20,6 +20,7 @@ from app.routers import (
     farming_log,
     havest_batches,
     log_note,
+    notifications,
     organization,
     password_recovery,
     plot,
@@ -65,6 +66,7 @@ app.include_router(havest_batches.router, prefix="/harvest-batches", tags=["Harv
 app.include_router(batch_seasons.router, prefix="/batch-seasons", tags=["BatchSeasons"])
 app.include_router(farming_log.router, prefix="/farming-logs", tags=["FarmingLog"])
 app.include_router(log_note.router, prefix="/log-notes", tags=["LogNote"])
+app.include_router(notifications.router, prefix="/notifications", tags=["Notifications"])
 app.include_router(reminder_schedules.router, prefix="/reminders", tags=["ReminderSchedules"])
 app.include_router(error_reports.router, prefix="/error-reports", tags=["ErrorReports"])
 app.include_router(system_logs.router, prefix="/system-logs", tags=["SystemLogs"])
