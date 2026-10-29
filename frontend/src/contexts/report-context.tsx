@@ -1,4 +1,4 @@
-import { createContext, type PropsWithChildren, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { createContext, type PropsWithChildren, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { useWorkSchedule } from '@/contexts/work-schedule-context';
 import * as api from '@/sevices/farming-log.service';
@@ -20,20 +20,14 @@ export type ReportDraft = {
 export type WorkReport = ReportDraft & {
   id: string;
   completedAt: string;
-  workerPhone: string;
   workerName: string;
   workerId: string;
-  orgId: string | null;
-  teamId: string | null;
-  leaderPhone?: string;
   review?: 'passed' | 'rejected';
-  reviewedBy?: string;
   comments?: {
     id: string;
     author: string;
     text: string;
-    time: string;
-    resolved: boolean
+    time: string
   }[];
 };
 export const reviewLabel = (report: Pick<WorkReport, 'review'>) => report.review === 'rejected' ? 'Không đạt' : report.review === 'passed' ? 'Đạt' : 'Đã ghi nhận';
@@ -48,17 +42,13 @@ function mapReport(log: api.FarmingLog, detail?: api.FarmingLogDetail, season?: 
       gps: log.gps,
       completedAt: log.logged_at,
       workerId: log.user_id,
-      workerPhone: '',
       workerName: log.user_name ?? 'Người ghi nhật ký',
-      orgId: log.org_id,
-      teamId: log.team_id,
       photos: detail?.photos.map(p => api.photoUrl(p.url)) ?? [],
       comments: detail?.notes.map(n => ({
         id: n.note_id,
         author: n.leader_name ?? 'Người quản lý',
         text: n.content,
-        time: n.created_at,
-        resolved: n.resolved
+        time: n.created_at
       })),
       ...latestReview(detail?.notes ?? []),
     };
@@ -66,12 +56,17 @@ function mapReport(log: api.FarmingLog, detail?: api.FarmingLogDetail, season?: 
 
 function useReportState() {
   const { accessToken, user } = useAuth();
+  const role = user?.role;
+  const teamId = user?.team_id;
   const { workerTasks, leaderTasks, ready: scheduleReady } = useWorkSchedule();
   const assignedPlotKey = [...new Set((user?.role === 'worker' ? workerTasks : user?.role === 'leader' ? leaderTasks : [])
     .map(task => task.plotId)
     .filter(Boolean))].sort().join('|');
   const session = useRef(accessToken);
-  session.current = accessToken;
+  useLayoutEffect(() => {
+    session.current = accessToken;
+    return () => { session.current = null; };
+  }, [accessToken]);
   const [notificationReports, setNotificationReports] = useState<WorkReport[]>([]);
   const [notificationsReady, setNotificationsReady] = useState(false);
   const [notificationsError, setNotificationsError] = useState('');
@@ -82,8 +77,8 @@ function useReportState() {
     try {
       const userId = sessionUserId(accessToken);
       if (!userId) throw new Error('Không xác định được tài khoản nhận thông báo. Vui lòng đăng nhập lại.');
-      const allLogs = notificationLogs(await api.listLogs(accessToken), user?.role, user?.team_id, userId);
-      const results = user?.role === 'worker'
+      const allLogs = notificationLogs(await api.listLogs(accessToken), role, teamId, userId);
+      const results = role === 'worker'
         ? await Promise.allSettled(allLogs.map(log => api.getLog(accessToken, log.log_id)))
         : allLogs.map(() => ({ status: 'rejected' as const }));
       if (session.current !== accessToken || sequence !== notificationSequence.current) return;
@@ -91,15 +86,17 @@ function useReportState() {
         const result = results[index];
         return mapReport(log, result.status === 'fulfilled' ? result.value : undefined);
       }));
-      setNotificationsError(user?.role === 'worker' && results.some(result => result.status === 'rejected') ? 'Một số nhận xét hoặc đánh giá chưa tải được. Vui lòng thử lại.' : '');
+      setNotificationsError(role === 'worker' && results.some(result => result.status === 'rejected') ? 'Một số nhận xét hoặc đánh giá chưa tải được. Vui lòng thử lại.' : '');
       setNotificationsReady(true);
     } catch (e) {
       if (session.current === accessToken && sequence === notificationSequence.current)
         setNotificationsError(e instanceof Error ? e.message : 'Không tải được thông báo nhật ký.');
     }
-  }, [accessToken, user?.role, user?.team_id]);
+  }, [accessToken, role, teamId]);
   useEffect(() => {
     ++notificationSequence.current;
+    // Clear the previous account's notifications before loading this account's events.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setNotificationReports([]);
     setNotificationsReady(false);
     setNotificationsError('');
@@ -114,7 +111,6 @@ function useReportState() {
   const seasonsRef = useRef<api.Season[]>([]);
   const [selectedSeasonId, updateSelectedSeasonId] = useState<string | null>('all');
   const selectedSeasonRef = useRef<string | null>('all');
-  const [ready, setReady] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [seasonsError, setSeasonsError] = useState('');
@@ -147,7 +143,7 @@ function useReportState() {
       const scopedSeasons = seasonId.startsWith('plot:')
         ? seasonsRef.current.filter(season => season.plot_id === seasonId.slice(5))
         : seasonsRef.current;
-      const seasonLogs = seasonId.startsWith('plot:') || (seasonId === 'all' && user?.role === 'worker')
+      const seasonLogs = seasonId.startsWith('plot:') || (seasonId === 'all' && role === 'worker')
         ? (await Promise.all(scopedSeasons.map(season => api.listLogs(accessToken, season.season_id))))
           .flat().sort((a, b) => new Date(b.logged_at).getTime() - new Date(a.logged_at).getTime())
         : await api.listLogs(accessToken, seasonId === 'all' ? undefined : seasonId);
@@ -159,7 +155,6 @@ function useReportState() {
       detailsRef.current = {};
       pendingDetails.current.clear();
       setLogs(seasonLogs);
-      setReady(true);
       lastLoadedAt.current = Date.now();
     } catch (loadError) {
       if (session.current === accessToken && sequence === listSequence.current) {
@@ -171,7 +166,7 @@ function useReportState() {
     }
   }, [
     accessToken,
-    user?.role
+    role
   ]);
   const refresh = useCallback((options: {
     skipIfFresh?: boolean
@@ -182,7 +177,7 @@ function useReportState() {
     if ([
       'worker',
       'leader'
-    ].includes(user?.role ?? '') && !scheduleReady)
+    ].includes(role ?? '') && !scheduleReady)
       return Promise.resolve();
 
     if (refreshInFlight.current)
@@ -197,7 +192,7 @@ function useReportState() {
       setSeasonsError('');
 
       try {
-        const availableSeasons = await api.listSeasons(token, user?.team_id);
+        const availableSeasons = await api.listSeasons(token, teamId);
 
         if (session.current !== token)
           return;
@@ -206,9 +201,9 @@ function useReportState() {
         const seasonList = [
           'worker',
           'leader'
-        ].includes(user?.role ?? '')
-          ? availableSeasons.filter(season => (user?.role === 'leader' || assignedPlotIds.has(season.plot_id))
-            && (user?.role !== 'worker' || [
+        ].includes(role ?? '')
+          ? availableSeasons.filter(season => (role === 'leader' || assignedPlotIds.has(season.plot_id))
+            && (role !== 'worker' || [
               'growing',
               'ready_to_harvest'
             ].includes(season.status)))
@@ -237,7 +232,6 @@ function useReportState() {
           setDetails({});
           detailsRef.current = {};
           pendingDetails.current.clear();
-          setReady(true);
           setLoading(false);
           lastLoadedAt.current = Date.now();
 
@@ -267,8 +261,8 @@ function useReportState() {
     assignedPlotKey,
     loadSeasonLogs,
     scheduleReady,
-    user?.role,
-    user?.team_id
+    role,
+    teamId
   ]);
   const selectSeason = useCallback((seasonId: string) => {
     if (!seasonId || seasonId === selectedSeasonRef.current)
@@ -278,8 +272,14 @@ function useReportState() {
     updateSelectedSeasonId(seasonId);
     void loadSeasonLogs(seasonId);
   }, [loadSeasonLogs]);
+  const invalidateRequests = useCallback(() => {
+    ++listSequence.current;
+    session.current = null;
+  }, []);
   useEffect(() => {
     session.current = accessToken;
+    // Reset the old session/scope before any new request or draft can use its cache.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCacheOwner(accessToken);
     selectedSeasonRef.current = 'all';
     lastLoadedAt.current = 0;
@@ -293,19 +293,16 @@ function useReportState() {
     setSeasons([]);
     updateSelectedSeasonId('all');
     updateDrafts({});
-    setReady(false);
     setError('');
     setSeasonsError('');
     setLoading(false);
     void refresh();
 
-    return () => {
-      ++listSequence.current;
-      session.current = null;
-    };
+    return invalidateRequests;
   }, [
     refresh,
-    accessToken
+    accessToken,
+    invalidateRequests
   ]);
 
   const storeDetail = useCallback((detail: api.FarmingLogDetail, token: string) => {
@@ -385,7 +382,11 @@ function useReportState() {
     storeDetail
   ]);
 
-  const reports: WorkReport[] = (cacheOwner === accessToken ? logs : []).map(log => mapReport(log, details[log.log_id], seasons.find(s => s.season_id === log.season_id)));
+  const reports = useMemo<WorkReport[]>(() => {
+    if (cacheOwner !== accessToken) return [];
+    const seasonsById = new Map(seasons.map(season => [season.season_id, season]));
+    return logs.map(log => mapReport(log, details[log.log_id], seasonsById.get(log.season_id)));
+  }, [accessToken, cacheOwner, logs, details, seasons]);
 
   async function createReport(input: ReportDraft) {
     if (!accessToken || !user || ![
@@ -458,32 +459,6 @@ function useReportState() {
     return note;
   }
 
-  async function setNoteResolved(id: string, noteId: string, resolved: boolean) {
-    if (!accessToken)
-      throw new Error('Vui lòng đăng nhập lại.');
-
-    const note = await api.resolveNote(accessToken, noteId, resolved);
-
-    if (session.current === accessToken) {
-      const existing = detailsRef.current[id];
-
-      if (existing) {
-        const updated = {
-          ...existing,
-          notes: existing.notes.map(n => n.note_id === noteId ? note : n)
-        };
-        detailsRef.current = {
-          ...detailsRef.current,
-          [id]: updated
-        };
-        setDetails(old => ({
-          ...old,
-          [id]: updated
-        }));
-      }
-    }
-  }
-
   async function reviewReport(id: string, review: 'passed' | 'rejected') {
     if (user?.role !== 'leader')
       throw new Error('Chỉ tổ trưởng được đánh giá nhật ký.');
@@ -502,8 +477,6 @@ function useReportState() {
     createReport,
     reviewReport,
     addReportComment,
-    setNoteResolved,
-    ready,
     loading,
     error,
     seasonsError,
@@ -514,8 +487,7 @@ function useReportState() {
     ensureReportDetails,
     loadReport,
     storeDetail,
-    getReport: (id: string | undefined) => reports.find(r => r.id === id),
-    hasDetail: (id: string) => !!details[id]
+    getReport: (id: string | undefined) => reports.find(r => r.id === id)
   };
 }
 

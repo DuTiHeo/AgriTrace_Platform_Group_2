@@ -18,9 +18,9 @@
 .farm-selector select {
   min-height: 42px;
   border: 1px solid var(--gray-300);
-  border-radius: var(--radius-sm);
+  border-radius: var(--agri-radius-control);
   outline: none;
-  background: var(--white);
+  background: var(--agri-input);
   padding: 8px 36px 8px 12px;
   color: var(--gray-900);
   font-weight: 600;
@@ -28,7 +28,7 @@
 
 .farm-selector select:focus {
   border-color: var(--green-600);
-  box-shadow: 0 0 0 3px rgba(22, 148, 71, 0.12);
+  box-shadow: 0 0 0 3px rgb(var(--agri-primary-rgb) / 0.12);
 }
 
 .summary-grid {
@@ -58,7 +58,7 @@
 
 .dashboard-card-link:hover {
   transform: translateY(-2px);
-  box-shadow: 0 10px 24px rgb(25 69 38 / 10%);
+  box-shadow: 0 10px 24px rgb(var(--agri-shadow-rgb) / 10%);
 }
 
 .summary-icon {
@@ -72,23 +72,23 @@
 }
 
 .summary-icon-green {
-  background: #dcfce7;
-  color: #087333;
+  background: var(--agri-success-soft);
+  color: var(--agri-title);
 }
 
 .summary-icon-lime {
-  background: #ecfccb;
-  color: #4d7c0f;
+  background: var(--agri-success-soft);
+  color: var(--agri-success-text);
 }
 
 .summary-icon-blue {
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: var(--agri-info-soft);
+  color: var(--agri-info-text);
 }
 
 .summary-icon-orange {
-  background: #ffedd5;
-  color: #c2410c;
+  background: var(--agri-warning-soft);
+  color: var(--agri-warning-text);
 }
 
 .summary-content {
@@ -232,7 +232,7 @@
   display: inline-flex;
   min-height: 26px;
   align-items: center;
-  border-radius: 999px;
+  border-radius: var(--agri-radius-chip);
   padding: 4px 9px;
   font-size: 11px;
   font-weight: 700;
@@ -240,8 +240,8 @@
 }
 
 .status-working {
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: var(--agri-info-soft);
+  color: var(--agri-info-text);
 }
 
 .status-pending {
@@ -251,12 +251,12 @@
 
 .status-completed {
   background: var(--green-100);
-  color: var(--green-800);
+  color: var(--agri-success-text);
 }
 
 .status-incomplete {
-  background: #fef2f2;
-  color: #b91c1c;
+  background: var(--agri-danger-soft);
+  color: var(--agri-danger-text);
 }
 
 .activity-row {
@@ -276,7 +276,7 @@
   justify-content: center;
   border-radius: 9px;
   background: var(--green-50);
-  color: var(--green-700);
+  color: var(--agri-success-text);
 }
 
 .activity-row time {

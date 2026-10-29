@@ -1,43 +1,11 @@
 import { sharedStyles as shared } from '@/styles/role-styles';
-import { useState } from 'react';
-import { Image, Keyboard, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { FullScreenImageViewer } from '@/components/common/full-screen-image-viewer';
+import { StyleSheet, Text, View } from 'react-native';
+import { ReportPhotos as SharedReportPhotos } from '@/components/common/report-photos';
 import { type WorkReport } from '@/contexts/report-context';
 import { noticeTime } from '@/contexts/notification-context';
 
-export function ReportPhotos({ photos }: {
-  photos: string[]
-}) {
-  const [selected, setSelected] = useState<string | null>(null);
-
-  return <>
-    {photos.length ? <ScrollView
-      horizontal
-      keyboardShouldPersistTaps="handled"
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={s.photos}
-    >
-      {photos.map((uri, index) => <Pressable
-        key={`${uri}-${index}`}
-        accessibilityLabel={`Xem toàn màn hình ảnh ${index + 1}`}
-        onPress={() => {
-          Keyboard.dismiss();
-          setSelected(uri);
-        }}
-      >
-        <Image
-          source={{
-            uri
-          }}
-          style={s.photo}
-        />
-      </Pressable>)}
-    </ScrollView> : <Text style={s.muted}>Chưa có ảnh minh chứng.</Text>}
-    <FullScreenImageViewer
-      uri={selected}
-      onClose={() => setSelected(null)}
-    />
-  </>;
+export function ReportPhotos({ photos }: { photos: string[] }) {
+  return <SharedReportPhotos photos={photos} emptyText="Chưa có ảnh minh chứng." labelPrefix="Xem toàn màn hình ảnh" />;
 }
 
 // Worker chỉ đọc nhận xét; không có ô nhập hoặc thao tác gửi/sửa/xóa.
@@ -113,12 +81,6 @@ export const s = StyleSheet.create({
   },
   input: {
     ...shared.input
-  },
-  photos: {
-    ...shared.photoList
-  },
-  photo: {
-    ...shared.photo
   },
   comment: {
     ...shared.secondary,

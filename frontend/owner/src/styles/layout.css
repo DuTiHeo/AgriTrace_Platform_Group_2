@@ -83,7 +83,7 @@
   min-height: 43px;
   align-items: center;
   gap: 12px;
-  border-radius: 9px;
+  border-radius: var(--agri-radius-control);
   padding: 10px 12px;
   color: var(--gray-700);
   font-weight: 500;
@@ -94,12 +94,12 @@
 
 .sidebar-link:hover {
   background: var(--green-50);
-  color: var(--green-800);
+  color: var(--agri-success-text);
 }
 
 .sidebar-link-active {
-  background: var(--green-100);
-  color: var(--green-900);
+  background: var(--agri-primary-soft);
+  color: var(--agri-primary-text);
   font-weight: 700;
 }
 
@@ -166,7 +166,7 @@
   justify-content: space-between;
   gap: 20px;
   border-bottom: 1px solid var(--gray-200);
-  background: rgba(255, 255, 255, 0.96);
+  background: var(--agri-header);
   padding: 0 24px;
   backdrop-filter: blur(10px);
 }
@@ -195,7 +195,7 @@
   align-items: center;
   justify-content: center;
   border: 1px solid var(--gray-200);
-  border-radius: 9px;
+  border-radius: var(--agri-radius-control);
   background: var(--white);
   color: var(--gray-700);
 }
@@ -204,8 +204,8 @@
   display: none;
 }
 
-.header-icon-button:hover,
-.header-menu-button:hover {
+.header-icon-button:hover:not(:disabled),
+.header-menu-button:hover:not(:disabled) {
   border-color: var(--green-600);
   color: var(--green-800);
 }
@@ -233,7 +233,7 @@
   height: 7px;
   border: 2px solid var(--white);
   border-radius: 50%;
-  background: #e02d2d;
+  background: var(--agri-danger);
 }
 
 .header-user {
@@ -242,7 +242,7 @@
   align-items: center;
   gap: 10px;
   border: 0;
-  border-radius: 10px;
+  border-radius: var(--agri-radius-control);
   background: transparent;
   padding: 4px 7px;
   color: var(--gray-700);
@@ -277,7 +277,7 @@
 
 .app-content {
   min-height: calc(100vh - var(--header-height));
-  background: #f6f8f6;
+  background: var(--agri-header);
 }
 
 @media (max-width: 1024px) {
@@ -300,7 +300,8 @@
     inset: 0;
     display: block;
     border: 0;
-    background: rgba(16, 24, 18, 0.42);
+    background: var(--agri-backdrop);
+    backdrop-filter: blur(var(--agri-backdrop-blur));
   }
 
   .app-main {
@@ -335,10 +336,10 @@
   gap: 8px;
   min-width: 240px;
   padding: 8px 12px;
-  color: #14532d;
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  border-radius: 10px;
+  color: var(--agri-title);
+  background: var(--agri-success-soft);
+  border: 1px solid var(--agri-border);
+  border-radius: var(--agri-radius-control);
 }
 
 .header-farm-selector svg {
@@ -348,7 +349,7 @@
 .header-farm-selector select {
   width: 100%;
   min-width: 0;
-  color: #163020;
+  color: var(--agri-title);
   font: inherit;
   font-weight: 600;
   background: transparent;
@@ -358,7 +359,7 @@
 }
 
 .header-farm-selector select:disabled {
-  color: #64748b;
+  color: var(--agri-muted-strong);
   cursor: wait;
 }
 

@@ -24,16 +24,16 @@
   width: 82px;
   height: 82px;
   place-items: center;
-  color: #fff;
-  background: linear-gradient(145deg, #087333, #29a45b);
-  border: 5px solid #e8f7ec;
+  color: var(--agri-white);
+  background: linear-gradient(145deg, var(--agri-title), var(--agri-primary));
+  border: 5px solid var(--agri-on-brand-muted);
   border-radius: 50%;
   font-size: 23px;
   font-weight: 800;
 }
 
 .account-identity-card h2 {
-  margin-top: 13px; color: #173a28; font-size: 19px;
+  margin-top: 13px; color: var(--agri-title); font-size: 19px;
 }
 
 .account-identity-card > span {
@@ -41,7 +41,7 @@
 }
 
 .account-verified-badge {
-  display: inline-flex; align-items: center; gap: 5px; margin-top: 12px; padding: 5px 9px; color: #08783e; background: #eaf8ee; border-radius: 999px; font-size: 10px; font-weight: 700;
+  display: inline-flex; align-items: center; gap: 5px; margin-top: 12px; padding: 5px 9px; color: var(--agri-title); background: var(--agri-success-soft); border-radius: var(--agri-radius-chip); font-size: 10px; font-weight: 700;
 }
 
 .account-identity-card dl {
@@ -49,7 +49,7 @@
 }
 
 .account-identity-card dl div {
-  display: flex; justify-content: space-between; gap: 10px; padding: 11px 0; border-bottom: 1px solid #edf0ed; text-align: left;
+  display: flex; justify-content: space-between; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--agri-background); text-align: left;
 }
 
 .account-identity-card dt {
@@ -57,7 +57,7 @@
 }
 
 .account-identity-card dd {
-  color: #33483a; font-size: 10px; font-weight: 700; text-align: right;
+  color: var(--agri-text); font-size: 10px; font-weight: 700; text-align: right;
 }
 
 .account-logout-button {
@@ -67,15 +67,15 @@
   justify-content: center;
   gap: 7px;
   padding: 9px 14px;
-  color: #b42318;
-  background: #fff;
-  border: 1px solid #fecaca;
-  border-radius: 9px;
+  color: var(--agri-danger-text);
+  background: var(--agri-white);
+  border: 1px solid var(--agri-danger-border-soft);
+  border-radius: var(--agri-radius-control);
   font-weight: 700;
 }
 
-.account-logout-button:hover {
-  background: #fff5f4; border-color: #fda29b;
+.account-logout-button:hover:not(:disabled) {
+  background: var(--agri-danger-soft); border-color: var(--agri-danger-border-soft);
 }
 
 .account-section-card {
@@ -87,19 +87,19 @@
 }
 
 .account-section-icon {
-  display: grid; width: 39px; height: 39px; flex: 0 0 auto; place-items: center; color: #08783e; background: #dcfce7; border-radius: 9px;
+  display: grid; width: 39px; height: 39px; flex: 0 0 auto; place-items: center; color: var(--agri-title); background: var(--agri-success-soft); border-radius: 9px;
 }
 
 .account-section-icon.security {
-  color: #1d4ed8; background: #dbeafe;
+  color: var(--agri-info-text); background: var(--agri-info-soft);
 }
 
 .account-section-icon.notification {
-  color: #b45309; background: #ffedd5;
+  color: var(--agri-warning-text); background: var(--agri-warning-soft);
 }
 
 .account-section-heading h2 {
-  color: #173a28; font-size: 17px;
+  color: var(--agri-title); font-size: 17px;
 }
 
 .account-section-heading p {
@@ -117,7 +117,7 @@
 
 .account-profile-form label > span,
 .account-password-form label > span {
-  color: #334155; font-size: 12px; font-weight: 700;
+  color: var(--agri-text); font-size: 12px; font-weight: 700;
 }
 
 .account-profile-form label > div,
@@ -127,7 +127,7 @@
 
 .account-profile-form label svg,
 .account-password-form label svg {
-  position: absolute; z-index: 1; left: 11px; color: #7c8b81;
+  position: absolute; z-index: 1; left: 11px; color: var(--agri-muted-strong);
 }
 
 .account-profile-form input,
@@ -135,16 +135,16 @@
   width: 100%;
   min-height: 42px;
   padding: 9px 11px 9px 35px;
-  color: #17251b;
-  background: #fff;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
+  color: var(--agri-title);
+  background: var(--agri-input);
+  border: 1px solid var(--agri-input-border);
+  border-radius: var(--agri-radius-control);
   outline: 0;
 }
 
 .account-profile-form input:focus,
 .account-password-form input:focus {
-  border-color: var(--green-600); box-shadow: 0 0 0 3px rgb(22 148 71 / 12%);
+  border-color: var(--green-600); box-shadow: 0 0 0 3px rgb(var(--agri-primary-rgb) / 12%);
 }
 
 .account-field-full {
@@ -164,7 +164,7 @@
 }
 
 .account-show-password {
-  display: inline-flex; width: max-content; align-items: center; gap: 5px; color: #64756a; background: transparent; border: 0; font-size: 11px;
+  display: inline-flex; width: max-content; align-items: center; gap: 5px; color: var(--agri-muted-strong); background: transparent; border: 0; font-size: 11px;
 }
 
 .account-preference-list {
@@ -172,7 +172,7 @@
 }
 
 .account-preference-list > label {
-  position: relative; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 13px 0; border-bottom: 1px solid #edf0ed; cursor: pointer;
+  position: relative; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 13px 0; border-bottom: 1px solid var(--agri-background); cursor: pointer;
 }
 
 .account-preference-list > label:first-child {
@@ -184,7 +184,7 @@
 }
 
 .account-preference-list strong {
-  color: #2c4635; font-size: 13px;
+  color: var(--agri-title); font-size: 13px;
 }
 
 .account-preference-list div span {
@@ -196,11 +196,11 @@
 }
 
 .account-toggle {
-  position: relative; width: 42px; height: 23px; flex: 0 0 auto; background: #cfd7d1; border-radius: 999px; transition: 150ms ease;
+  position: relative; width: 42px; height: 23px; flex: 0 0 auto; background: var(--agri-border); border-radius: 999px; transition: 150ms ease;
 }
 
 .account-toggle::after {
-  position: absolute; top: 3px; left: 3px; width: 17px; height: 17px; background: #fff; border-radius: 50%; box-shadow: 0 1px 3px rgb(0 0 0 / 20%); transition: 150ms ease; content: "";
+  position: absolute; top: 3px; left: 3px; width: 17px; height: 17px; background: var(--agri-white); border-radius: 50%; box-shadow: 0 1px 3px rgb(var(--agri-shadow-rgb) / 20%); transition: 150ms ease; content: "";
 }
 
 .account-preference-list input:checked + .account-toggle {
@@ -220,7 +220,7 @@
 }
 
 .login-page {
-  display: grid; min-height: 100vh; grid-template-columns: minmax(380px, 0.9fr) minmax(480px, 1.1fr); background: #f7faf7;
+  display: grid; min-height: 100vh; grid-template-columns: minmax(380px, 0.9fr) minmax(480px, 1.1fr); background: var(--agri-header);
 }
 
 .login-brand-panel {
@@ -229,14 +229,14 @@
   align-items: center;
   overflow: hidden;
   padding: clamp(35px, 6vw, 80px);
-  color: #fff;
+  color: var(--agri-white);
   background:
-  radial-gradient(circle at 85% 12%, rgb(255 255 255 / 14%), transparent 25%),
-  linear-gradient(145deg, #064e25, #08733a 65%, #219052);
+    linear-gradient(145deg, var(--agri-login-overlay-start), var(--agri-login-overlay-end)),
+    url('/branding/login-background.png') center / cover no-repeat;
 }
 
 .login-brand-panel::after {
-  position: absolute; right: -120px; bottom: -170px; width: 430px; height: 430px; background: rgb(255 255 255 / 6%); border-radius: 50%; content: "";
+  position: absolute; right: -120px; bottom: -170px; width: 430px; height: 430px; background: rgb(var(--agri-surface-rgb) / 6%); border-radius: 50%; content: "";
 }
 
 .login-brand-content {
@@ -244,19 +244,19 @@
 }
 
 .login-brand-content > img {
-  width: 78px; height: 78px; padding: 7px; background: #fff; border-radius: 19px;
+  width: 78px; height: 78px; padding: 7px; object-fit: contain; background: var(--agri-white); border-radius: 19px;
 }
 
 .login-brand-content > span {
-  display: block; margin-top: 30px; color: #c7efd2; font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+  display: block; margin-top: 30px; color: var(--agri-on-brand-accent); font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
 }
 
 .login-brand-content h1 {
-  margin-top: 10px; color: #fff; font-size: clamp(30px, 4vw, 46px); line-height: 1.16;
+  margin-top: 10px; color: var(--agri-white); font-size: clamp(30px, 4vw, 46px); line-height: 1.16;
 }
 
 .login-brand-content > p {
-  margin-top: 17px; color: #d6ecdd; font-size: 14px; line-height: 1.7;
+  margin-top: 17px; color: var(--agri-on-brand-muted); font-size: 14px; line-height: 1.7;
 }
 
 .login-feature-list {
@@ -264,11 +264,11 @@
 }
 
 .login-feature-list div {
-  display: flex; align-items: center; gap: 9px; color: #e8f7ec; font-size: 12px;
+  display: flex; align-items: center; gap: 9px; color: var(--agri-on-brand-muted); font-size: 12px;
 }
 
 .login-feature-list svg {
-  color: #98e0ab;
+  color: var(--agri-on-brand-accent);
 }
 
 .login-form-panel {
@@ -276,15 +276,15 @@
 }
 
 .login-form-card {
-  display: flex; width: min(430px, 100%); flex-direction: column; gap: 16px; padding: 32px; background: #fff; border: 1px solid #e1e8e2; border-radius: 17px; box-shadow: 0 18px 50px rgb(30 67 40 / 10%);
+  display: flex; width: min(430px, 100%); flex-direction: column; gap: 16px; padding: 32px; background: var(--agri-white); border: 1px solid var(--agri-border); border-radius: var(--agri-radius-card); box-shadow: 0 18px 50px rgb(var(--agri-shadow-rgb) / 10%);
 }
 
 .login-mobile-brand {
-  display: none; align-items: center; gap: 8px; color: #075d2a;
+  display: none; align-items: center; gap: 8px; color: var(--agri-title);
 }
 
 .login-mobile-brand img {
-  width: 38px; height: 38px;
+  width: 38px; height: 38px; object-fit: contain;
 }
 
 .login-heading {
@@ -292,11 +292,11 @@
 }
 
 .login-heading > span {
-  color: #08783e; font-size: 11px; font-weight: 800; text-transform: uppercase;
+  color: var(--agri-title); font-size: 11px; font-weight: 800; text-transform: uppercase;
 }
 
 .login-heading h2 {
-  margin-top: 4px; color: #173a28; font-size: 25px;
+  margin-top: 4px; color: var(--agri-title); font-size: 25px;
 }
 
 .login-heading p {
@@ -308,7 +308,7 @@
 }
 
 .login-form-card > label > span {
-  color: #33483a; font-size: 12px; font-weight: 700;
+  color: var(--agri-text); font-size: 12px; font-weight: 700;
 }
 
 .login-form-card > label > div {
@@ -316,23 +316,23 @@
 }
 
 .login-form-card > label > div > svg {
-  position: absolute; left: 11px; color: #78877e;
+  position: absolute; left: 11px; color: var(--agri-muted-strong);
 }
 
 .login-form-card input {
-  width: 100%; min-height: 45px; padding: 10px 43px 10px 36px; color: #17251b; background: #fff; border: 1px solid #cbd5e1; border-radius: 9px; outline: 0;
+  width: 100%; min-height: 45px; padding: 10px 43px 10px 36px; color: var(--agri-title); background: var(--agri-input); border: 1px solid var(--agri-input-border); border-radius: var(--agri-radius-control); outline: 0;
 }
 
 .login-form-card input:focus {
-  border-color: var(--green-600); box-shadow: 0 0 0 3px rgb(22 148 71 / 12%);
+  border-color: var(--green-600); box-shadow: 0 0 0 3px rgb(var(--agri-primary-rgb) / 12%);
 }
 
 .login-form-card label button {
-  position: absolute; right: 7px; display: grid; width: 32px; height: 32px; place-items: center; color: #718078; background: transparent; border: 0;
+  position: absolute; right: 7px; display: grid; width: 32px; height: 32px; place-items: center; color: var(--agri-muted-strong); background: transparent; border: 0;
 }
 
 .login-demo-hint {
-  padding: 9px 11px; color: #775219; background: #fff8e8; border: 1px solid #fde4a7; border-radius: 7px; font-size: 10px;
+  padding: 9px 11px; color: var(--agri-warning-text); background: var(--agri-warning-soft); border: 1px solid var(--agri-warning-border); border-radius: var(--agri-radius-card); font-size: 10px;
 }
 
 .login-forgot-link {
@@ -356,7 +356,7 @@
 }
 
 .recovery-success {
-  display: flex; align-items: center; flex-direction: column; gap: 9px; padding: 18px; color: #08783e; background: #effaf2; border-radius: 10px; text-align: center;
+  display: flex; align-items: center; flex-direction: column; gap: 9px; padding: 18px; color: var(--agri-title); background: var(--agri-success-soft); border-radius: var(--agri-radius-card); text-align: center;
 }
 
 @media (max-width: 980px) {

@@ -225,7 +225,6 @@ export const getLog = (token: string, id: string) => request<FarmingLogDetail>(t
 export const listSeasons = (token: string, teamId?: string | null) => request<Season[]>(token, `/seasons${teamId ? `?team_id=${encodeURIComponent(teamId)}` : ''}`);
 export const listTeamMembers = (token: string) => request<TeamMember[]>(token, '/users?role=worker');
 export const getUserDetail = (token: string, id: string) => request<UserDetail>(token, `/users/${encodeURIComponent(id)}`);
-export const listMemberTasks = (token: string, userId: string) => request<MemberTask[]>(token, `/tasks?worker_id=${encodeURIComponent(userId)}&include_cancelled=true`);
 export const listMyTasks = (token: string) => request<ApiTask[]>(token, '/tasks');
 export const updateTaskStatus = (token: string, taskId: string, status: TaskStatus) => request<ApiTask>(token, `/tasks/${encodeURIComponent(taskId)}/status`, json('PATCH', {
   status
@@ -293,9 +292,6 @@ export const createLog = (token: string, payload: CreateLog) => request<FarmingL
 export const createNote = (token: string, logId: string, content: string) => request<LogNote>(token, '/log-notes', json('POST', {
   log_id: logId,
   content
-}));
-export const resolveNote = (token: string, noteId: string, resolved: boolean) => request<LogNote>(token, `/log-notes/${encodeURIComponent(noteId)}`, json('PATCH', {
-  resolved
 }));
 // Expo File trong FormData cần expo/fetch trên thiết bị native.
 export const uploadPhotos = (token: string, logId: string, body: FormData) => request<LogPhoto[]>(token, `/farming-logs/${encodeURIComponent(logId)}/photos`, {

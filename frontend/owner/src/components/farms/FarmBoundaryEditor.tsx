@@ -439,7 +439,7 @@ function FarmBoundaryEditor({
                 <path
                   d="M 10 0 L 0 0 0 10"
                   fill="none"
-                  stroke="#cbd8ce"
+                  stroke="var(--agri-border)"
                   strokeWidth="0.35"
                 />
               </pattern>
@@ -454,8 +454,8 @@ function FarmBoundaryEditor({
             {activeBoundary.points.length >= 3 && (
               <polygon
                 points={mapPolygonPoints}
-                fill="rgba(22, 148, 71, 0.2)"
-                stroke="#087333"
+                fill="rgb(var(--agri-primary-rgb) / 0.2)"
+                stroke="var(--agri-title)"
                 strokeWidth="1"
               />
             )}
@@ -474,8 +474,8 @@ function FarmBoundaryEditor({
                   cx={x}
                   cy={y}
                   r="1.7"
-                  fill="#075d2a"
-                  stroke="#ffffff"
+                  fill="var(--agri-title)"
+                  stroke="var(--agri-white)"
                   strokeWidth="0.7"
                 />
               );

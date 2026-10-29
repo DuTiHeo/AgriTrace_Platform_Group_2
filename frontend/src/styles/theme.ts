@@ -27,12 +27,10 @@ export const colors = {
 export const radius = {
   card: 0,
   control: 6,
-  chip: 4,
-  avatar: 18
+  chip: 4
 } as const;
 export const spacing = {
   page: 20,
   section: 18,
-  card: 17,
-  row: 12
+  card: 17
 } as const;

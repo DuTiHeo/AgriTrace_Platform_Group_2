@@ -48,6 +48,8 @@ export function PersonalInfoScreen() {
     return () => {
       active = false;
     };
+  // The retry counter intentionally re-runs the focused request without changing its inputs.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     accessToken,
     retry

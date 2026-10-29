@@ -11,6 +11,7 @@ import { ReportReview } from '@/components/leader/report-review';
 import { Feedback } from '@/components/leader/feedback';
 import { inJournalPeriod, journalPeriods, type JournalPeriod } from '@/sevices/journal-filter';
 import { AreaJournalFilter, JournalFilterOptions } from '@/components/common/season-journal-filter';
+import { useScopedState } from '@/hooks/use-scoped-state';
 
 type ReviewFilter = 'all' | 'pending' | 'passed' | 'rejected';
 const reviewFilters: { value: ReviewFilter; label: string }[] = [
@@ -34,7 +35,7 @@ export default function DiaryScreen() {
   const [query, setQuery] = useState('');
   const [period, setPeriod] = useState<JournalPeriod>('all');
   const [review, setReview] = useState<ReviewFilter>('all');
-  const [limit, setLimit] = useState(10);
+  const [limit, setLimit] = useScopedState(10, JSON.stringify([period, review, query, selectedSeasonId]));
   useFocusEffect(useCallback(() => {
     if (reportId) return;
     const update = () => { void refresh({ skipIfFresh: true }); };
@@ -43,7 +44,6 @@ export default function DiaryScreen() {
     const subscription = AppState.addEventListener('change', state => { if (state === 'active') update(); });
     return () => { clearInterval(timer); subscription.remove(); };
   }, [refresh, reportId]));
-  useEffect(() => { setLimit(10); }, [period, review, query, selectedSeasonId]);
   const filtered = diaries.filter(d => {
     if (reportId) return d.id === reportId;
     const result = getReport(d.id)?.review;

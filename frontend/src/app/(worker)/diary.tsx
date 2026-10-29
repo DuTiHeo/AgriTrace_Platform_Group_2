@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { colors } from '@/styles/theme';
 import { inJournalPeriod, journalPeriods, type JournalPeriod } from '@/sevices/journal-filter';
 import { AreaJournalFilter } from '@/components/common/season-journal-filter';
+import { useScopedState } from '@/hooks/use-scoped-state';
 
 export default function WorkerDiaryScreen() {
   const { reports, refresh, loadReport, ensureReportDetails, loading, error, selectedSeasonId, seasons } = useReports();
@@ -20,7 +21,7 @@ export default function WorkerDiaryScreen() {
   const { user } = useAuth();
   const [query, setQuery] = useState('');
   const [period, setPeriod] = useState<JournalPeriod>('today');
-  const [limit, setLimit] = useState(10);
+  const [limit, setLimit] = useScopedState(10, JSON.stringify([period, query, selectedSeasonId]));
   const [targetError, setTargetError] = useState('');
 
   useFocusEffect(
@@ -57,10 +58,6 @@ export default function WorkerDiaryScreen() {
       };
     }, [refresh, reportId])
   );
-
-  useEffect(() => {
-    setLimit(10);
-  }, [period, query, selectedSeasonId]);
 
   const filtered = reports.filter(
     report => reportId ? report.id === reportId :

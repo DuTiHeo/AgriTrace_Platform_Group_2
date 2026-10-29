@@ -4,20 +4,20 @@
   width: 34px;
   height: 34px;
   place-items: center;
-  color: #475569;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  color: var(--agri-muted-strong);
+  background: var(--agri-input);
+  border: 1px solid var(--agri-border);
+  border-radius: var(--agri-radius-control);
   transition:
   color 150ms ease,
   background 150ms ease,
   border-color 150ms ease;
 }
 
-.table-action-button:hover {
-  color: #08783e;
-  background: #f0fdf4;
-  border-color: #86efac;
+.table-action-button:hover:not(:disabled) {
+  color: var(--agri-title);
+  background: var(--agri-success-soft);
+  border-color: var(--agri-border);
 }
 
 .page-loading,
@@ -27,12 +27,12 @@
 }
 
 .page-loading {
-  color: #64748b;
+  color: var(--agri-muted-strong);
 }
 
 .page-error {
-  color: #b91c1c;
-  background: #fef2f2;
+  color: var(--agri-danger-text);
+  background: var(--agri-danger-soft);
 }
 
 .form-stepper {
@@ -40,9 +40,9 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   margin: 20px 0;
   padding: 16px;
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
+  background: var(--agri-white);
+  border: 1px solid var(--agri-border);
+  border-radius: var(--agri-radius-card);
 }
 
 .form-step {
@@ -51,7 +51,7 @@
   align-items: center;
   justify-content: center;
   gap: 9px;
-  color: #94a3b8;
+  color: var(--agri-muted);
   font-size: 13px;
   font-weight: 700;
 }
@@ -63,7 +63,7 @@
   width: 24%;
   height: 2px;
   content: "";
-  background: #e2e8f0;
+  background: var(--agri-border);
   transform: translateY(-50%);
 }
 
@@ -72,45 +72,45 @@
   width: 30px;
   height: 30px;
   place-items: center;
-  background: #f1f5f9;
+  background: var(--agri-background);
   border-radius: 50%;
 }
 
 .form-step.active {
-  color: #08783e;
+  color: var(--agri-primary-text);
 }
 
 .form-step.active .form-step-number {
-  color: #ffffff;
-  background: #08783e;
-  box-shadow: 0 0 0 4px rgb(8 120 62 / 12%);
+  color: var(--agri-white);
+  background: var(--agri-primary);
+  box-shadow: 0 0 0 4px rgb(var(--agri-primary-rgb) / 12%);
 }
 
 .form-step.completed {
-  color: #15803d;
+  color: var(--agri-title);
 }
 
 .form-step.completed .form-step-number {
-  color: #ffffff;
-  background: #22c55e;
+  color: var(--agri-white);
+  background: var(--agri-primary);
 }
 
 .form-step.completed::after {
-  background: #86efac;
+  background: var(--agri-border);
 }
 
 .form-error {
-  color: #dc2626;
+  color: var(--agri-danger);
   font-size: 12px;
 }
 
 .form-error-block {
   padding: 11px 13px;
-  color: #b91c1c;
+  color: var(--agri-danger-text);
   font-size: 13px;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  border-radius: 9px;
+  background: var(--agri-danger-soft);
+  border: 1px solid var(--agri-danger-border-soft);
+  border-radius: var(--agri-radius-card);
 }
 
 @media (max-width: 640px) {
@@ -136,12 +136,12 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  color: #475569;
+  color: var(--agri-muted-strong);
   font-weight: 700;
 }
 
 .back-link:hover {
-  color: #08783e;
+  color: var(--agri-title);
 }
 
 .not-found-card {
@@ -152,12 +152,12 @@
   flex-direction: column;
   gap: 14px;
   padding: 30px;
-  color: #08783e;
+  color: var(--agri-title);
   text-align: center;
 }
 
 .not-found-card h1 {
-  color: #123524;
+  color: var(--agri-title);
   font-size: 21px;
 }
 
@@ -168,17 +168,17 @@
   display: grid;
   place-items: center;
   padding: 20px;
-  background: rgb(15 23 42 / 48%);
-  backdrop-filter: blur(2px);
+  background: var(--agri-backdrop);
+  backdrop-filter: blur(var(--agri-backdrop-blur));
 }
 
 .app-modal {
   width: min(100%, 580px);
   max-height: calc(100vh - 40px);
   overflow-y: auto;
-  background: #ffffff;
-  border-radius: 14px;
-  box-shadow: 0 24px 70px rgb(15 23 42 / 28%);
+  background: var(--agri-white);
+  border-radius: var(--agri-radius-card);
+  box-shadow: 0 24px 70px rgb(var(--agri-shadow-rgb) / 28%);
 }
 
 .app-modal-large {
@@ -194,13 +194,13 @@
   justify-content: space-between;
   gap: 15px;
   padding: 17px 20px;
-  background: #ffffff;
-  border-bottom: 1px solid #e2e8f0;
+  background: var(--agri-white);
+  border-bottom: 1px solid var(--agri-border);
 }
 
 .app-modal-header h2 {
   margin: 0;
-  color: #123524;
+  color: var(--agri-title);
   font-size: 18px;
 }
 
@@ -210,15 +210,15 @@
   height: 34px;
   padding: 0;
   place-items: center;
-  color: #64748b;
+  color: var(--agri-muted-strong);
   background: transparent;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--agri-radius-control);
 }
 
-.app-modal-header > button:hover {
-  color: #172b20;
-  background: #f1f5f9;
+.app-modal-header > button:hover:not(:disabled) {
+  color: var(--agri-title);
+  background: var(--agri-background);
 }
 
 .app-modal-body {
@@ -233,7 +233,7 @@
 
 .app-modal-body > p {
   margin: 0;
-  color: #475569;
+  color: var(--agri-muted-strong);
   line-height: 1.65;
 }
 
@@ -243,8 +243,8 @@
   justify-content: flex-end;
   gap: 9px;
   padding: 15px 20px;
-  background: #f8fafc;
-  border-top: 1px solid #e2e8f0;
+  background: var(--agri-input);
+  border-top: 1px solid var(--agri-border);
 }
 
 .blocked-delete-message {
@@ -252,10 +252,10 @@
   align-items: flex-start;
   gap: 12px;
   padding: 14px;
-  color: #b91c1c;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  border-radius: 10px;
+  color: var(--agri-danger-text);
+  background: var(--agri-danger-soft);
+  border: 1px solid var(--agri-danger-border-soft);
+  border-radius: var(--agri-radius-card);
 }
 
 .blocked-delete-message > svg {
@@ -269,7 +269,7 @@
 
 .blocked-delete-message p {
   margin: 0;
-  color: #7f1d1d;
+  color: var(--agri-danger-text);
   font-size: 13px;
   line-height: 1.5;
 }
@@ -286,5 +286,5 @@
 }
 
 .account-success {
-  padding: 9px 11px; color: #17623a; background: #effaf2; border: 1px solid #cbead4; border-radius: 7px; font-size: 11px;
+  padding: 9px 11px; color: var(--agri-title); background: var(--agri-success-soft); border: 1px solid var(--agri-border); border-radius: var(--agri-radius-card); font-size: 11px;
 }
