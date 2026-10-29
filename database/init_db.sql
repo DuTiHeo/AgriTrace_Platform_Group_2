@@ -401,3 +401,190 @@ COMMENT ON TABLE token_blacklist IS 'Cac access token da bi vo hieu hoa (do nguo
 
 --Dùng để dọn nhanh các bản ghi đã hết hạn (token đã tự hết hạn, không cần check nữa)
 CREATE INDEX idx_token_blacklist_expires ON token_blacklist(expires_at);
+
+-- ============================================================================
+-- 20. BUSINESS & AUDIT DATABASE TRIGGERS (Tự động hóa thông báo & Kiểm toán)
+-- ============================================================================
+
+-- ----------------------------------------------------------------------------
+-- Trigger 1: Tự động gửi thông báo khi lịch nhắc nhở chuyển sang 'sent'
+-- Đối tượng nhận: Chủ nông trại (owner_id) và Tổ trưởng các tổ phụ trách mùa vụ (team_leader_id)
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION fn_notify_on_reminder_sent()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_plot_code VARCHAR(50);
+    r RECORD;
+BEGIN
+    -- Chỉ kích hoạt khi trạng thái chuyển sang 'sent'
+    IF NEW.status = 'sent' AND (TG_OP = 'INSERT' OR OLD.status IS DISTINCT FROM 'sent') THEN
+        -- Lấy mã lô đất của mùa vụ
+        SELECT p.code INTO v_plot_code
+        FROM seasons s
+        JOIN plots p ON s.plot_id = p.plot_id
+        WHERE s.season_id = NEW.season_id;
+
+        -- Tìm danh sách người nhận duy nhất (Owner + Team Leaders phụ trách)
+        FOR r IN (
+            SELECT DISTINCT recipient_id FROM (
+                -- 1. Chủ sở hữu nông trại
+                SELECT o.owner_id AS recipient_id
+                FROM seasons s
+                JOIN plots p ON s.plot_id = p.plot_id
+                JOIN organizations o ON p.org_id = o.org_id
+                WHERE s.season_id = NEW.season_id AND o.owner_id IS NOT NULL
+
+                UNION
+
+                -- 2. Tổ trưởng của các tổ được phân công phụ trách mùa vụ
+                SELECT t.team_leader_id AS recipient_id
+                FROM season_team_assignments sta
+                JOIN teams t ON sta.team_id = t.team_id
+                WHERE sta.season_id = NEW.season_id AND t.team_leader_id IS NOT NULL
+            ) u
+        ) LOOP
+            INSERT INTO notifications (user_id, content, type)
+            VALUES (
+                r.recipient_id,
+                'Nhắc việc mùa vụ ' || COALESCE(v_plot_code, '') || ': đến hạn ' || NEW.milestone_type,
+                'reminder'
+            );
+        END LOOP;
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_notify_on_reminder_sent ON reminder_schedules;
+CREATE TRIGGER trg_notify_on_reminder_sent
+    AFTER INSERT OR UPDATE ON reminder_schedules
+    FOR EACH ROW
+    EXECUTE FUNCTION fn_notify_on_reminder_sent();
+
+
+-- ----------------------------------------------------------------------------
+-- Trigger 2: Tự động thông báo cho tất cả Admin đang hoạt động khi có báo cáo lỗi mới
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION fn_notify_on_error_report_created()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO notifications (user_id, content, type)
+    SELECT user_id, 'Có báo cáo lỗi mới cần xử lý', 'error_report'
+    FROM users
+    WHERE role = 'admin' AND status = 'active';
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_notify_on_error_report_created ON error_reports;
+CREATE TRIGGER trg_notify_on_error_report_created
+    AFTER INSERT ON error_reports
+    FOR EACH ROW
+    EXECUTE FUNCTION fn_notify_on_error_report_created();
+
+
+-- ----------------------------------------------------------------------------
+-- Trigger 3: Tự động thông báo cho người gửi khi Admin phản hồi hoặc chuyển trạng thái xử lý
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION fn_notify_on_error_report_resolved()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Chỉ kích hoạt khi có phản hồi mới từ Admin hoặc trạng thái chuyển sang processing / resolved / rejected
+    IF (
+        (NEW.admin_response IS DISTINCT FROM OLD.admin_response AND NEW.admin_response IS NOT NULL)
+        OR
+        (NEW.status IS DISTINCT FROM OLD.status AND NEW.status IN ('processing', 'resolved', 'rejected'))
+    ) THEN
+        INSERT INTO notifications (user_id, content, type)
+        VALUES (
+            NEW.user_id,
+            'Báo cáo lỗi của bạn đã được Admin phản hồi: ' || COALESCE(NEW.admin_response, 'Trạng thái: ' || NEW.status),
+            'error_report_response'
+        );
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_notify_on_error_report_resolved ON error_reports;
+CREATE TRIGGER trg_notify_on_error_report_resolved
+    AFTER UPDATE ON error_reports
+    FOR EACH ROW
+    EXECUTE FUNCTION fn_notify_on_error_report_resolved();
+
+
+-- ----------------------------------------------------------------------------
+-- Trigger 4A: Tự động ghi nhật ký hệ thống (Audit Trail) khi tài khoản users bị khóa hoặc đổi vai trò
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION fn_audit_system_logs_on_users()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_actor_id UUID;
+BEGIN
+    BEGIN
+        v_actor_id := NULLIF(current_setting('app.current_user_id', true), '')::uuid;
+    EXCEPTION WHEN OTHERS THEN
+        v_actor_id := NULL;
+    END;
+
+    -- 1. Khi tài khoản bị khóa
+    IF NEW.status = 'locked' AND OLD.status IS DISTINCT FROM 'locked' THEN
+        INSERT INTO system_logs (actor_id, target_type, target_id, action, result)
+        VALUES (v_actor_id, 'users', NEW.user_id, 'lock_user', 'success');
+    END IF;
+
+    -- 2. Khi thay đổi vai trò
+    IF NEW.role IS DISTINCT FROM OLD.role THEN
+        INSERT INTO system_logs (actor_id, target_type, target_id, action, result)
+        VALUES (v_actor_id, 'users', NEW.user_id, 'change_role', 'success');
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_audit_system_logs_on_users ON users;
+CREATE TRIGGER trg_audit_system_logs_on_users
+    AFTER UPDATE ON users
+    FOR EACH ROW
+    EXECUTE FUNCTION fn_audit_system_logs_on_users();
+
+
+-- ----------------------------------------------------------------------------
+-- Trigger 4B: Tự động ghi nhật ký hệ thống (Audit Trail) khi mùa vụ hoàn thành hoặc chuyển trạng thái
+-- ----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION fn_audit_system_logs_on_seasons()
+RETURNS TRIGGER AS $$
+DECLARE
+    v_actor_id UUID;
+    v_action VARCHAR(50);
+BEGIN
+    BEGIN
+        v_actor_id := NULLIF(current_setting('app.current_user_id', true), '')::uuid;
+    EXCEPTION WHEN OTHERS THEN
+        v_actor_id := NULL;
+    END;
+
+    -- Khi chuyển trạng thái mùa vụ
+    IF NEW.status IS DISTINCT FROM OLD.status THEN
+        IF NEW.status = 'completed' THEN
+            v_action := 'season_completed';
+        ELSE
+            v_action := 'season_status_changed';
+        END IF;
+
+        INSERT INTO system_logs (actor_id, target_type, target_id, action, result)
+        VALUES (v_actor_id, 'seasons', NEW.season_id, v_action, 'success');
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_audit_system_logs_on_seasons ON seasons;
+CREATE TRIGGER trg_audit_system_logs_on_seasons
+    AFTER UPDATE ON seasons
+    FOR EACH ROW
+    EXECUTE FUNCTION fn_audit_system_logs_on_seasons();
+
