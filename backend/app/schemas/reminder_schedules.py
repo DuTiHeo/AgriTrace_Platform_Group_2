@@ -48,3 +48,9 @@ class ReminderScheduleOut(ReminderScheduleBase):
     created_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ReminderDispatchOut(BaseModel):
+    dispatched_count: int = Field(..., ge=0, description="Số lượng lịch nhắc nhở đã được chuyển sang trạng thái sent")
+    reminder_ids: list[UUID] = Field(default_factory=list, description="Danh sách ID các lịch nhắc nhở đã phát hành")
+    message: str = Field(..., description="Thông báo kết quả")

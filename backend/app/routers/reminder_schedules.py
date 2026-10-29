@@ -13,6 +13,7 @@ from app.db.session import get_db
 from app.routers.user import ensure_owns_org, require_role
 from app.schemas.reminder_schedules import (
     ReminderChannel,
+    ReminderDispatchOut,
     ReminderScheduleCreate,
     ReminderScheduleOut,
     ReminderScheduleStatusUpdate,
@@ -93,6 +94,53 @@ def list_reminders(
         scope_org_id=scope_org_id,
         scope_owner_id=scope_owner_id,
     )
+
+
+@router.post("/dispatch", response_model=ReminderDispatchOut)
+def dispatch_due_reminders_endpoint(
+    org_id: Optional[UUID] = Query(None, description="Admin/Owner lọc phát hành theo nông trại"),
+    season_id: Optional[UUID] = Query(None, description="Lọc phát hành theo mùa vụ cụ thể"),
+    current_user: dict = Depends(require_role("admin", "owner")),
+    db: Session = Depends(get_db),
+):
+    """
+    Quét và phát hành các lịch nhắc nhở đến hạn (remind_date <= CURRENT_DATE và status = 'scheduled').
+    Tự động chuyển sang status = 'sent', kích hoạt trigger DB tự sinh thông báo cho Owner và Team Leaders.
+    - Admin: có quyền phát hành toàn hệ thống hoặc theo org_id / season_id.
+    - Owner: chỉ phát hành trong các nông trại mình sở hữu.
+    """
+    role = current_user["role"]
+    if role == "owner":
+        if org_id:
+            ensure_owns_org(db, current_user, org_id)
+            scope_org_id = org_id
+            scope_owner_id = None
+        else:
+            scope_org_id = None
+            scope_owner_id = current_user["user_id"]
+    else:  # admin
+        scope_org_id = org_id
+        scope_owner_id = None
+
+    if season_id:
+        season = crud_season.get_season(db, season_id)
+        if not season:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy mùa vụ")
+        if role == "owner":
+            ensure_owns_org(db, current_user, season["org_id"])
+
+    dispatched_ids = crud_reminders.dispatch_due_reminders(
+        db,
+        scope_org_id=scope_org_id,
+        scope_owner_id=scope_owner_id,
+        season_id=season_id,
+    )
+
+    return {
+        "dispatched_count": len(dispatched_ids),
+        "reminder_ids": dispatched_ids,
+        "message": f"Đã phát hành thành công {len(dispatched_ids)} lịch nhắc nhở đến hạn",
+    }
 
 
 @router.get("/{reminder_id}", response_model=ReminderScheduleOut)
