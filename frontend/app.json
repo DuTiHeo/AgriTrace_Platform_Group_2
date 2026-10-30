@@ -24,7 +24,12 @@
       "favicon": "./assets/images/icon.png"
     },
     "plugins": [
-      "expo-router",
+      [
+        "expo-router",
+        {
+          "root": "./src/(mobile)"
+        }
+      ],
       [
         "expo-splash-screen",
         {

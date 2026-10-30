@@ -12,7 +12,25 @@ from slowapi.errors import RateLimitExceeded
 
 from app.db.session import get_db
 from app.core.limiter import limiter
-from app.routers import auth, user, organization, crop, plot, team, season, farming_log, log_note, tasks, havest_batches, batch_seasons, password_recovery, notifications
+from app.routers import (
+    auth,
+    batch_seasons,
+    crop,
+    error_reports,
+    farming_log,
+    havest_batches,
+    log_note,
+    notifications,
+    organization,
+    password_recovery,
+    plot,
+    reminder_schedules,
+    season,
+    system_logs,
+    tasks,
+    team,
+    user,
+)
 
 app = FastAPI(
     title="AgriTrace - Farmer QuickLog API",
@@ -49,6 +67,9 @@ app.include_router(batch_seasons.router, prefix="/batch-seasons", tags=["BatchSe
 app.include_router(farming_log.router, prefix="/farming-logs", tags=["FarmingLog"])
 app.include_router(log_note.router, prefix="/log-notes", tags=["LogNote"])
 app.include_router(notifications.router, prefix="/notifications", tags=["Notifications"])
+app.include_router(reminder_schedules.router, prefix="/reminders", tags=["ReminderSchedules"])
+app.include_router(error_reports.router, prefix="/error-reports", tags=["ErrorReports"])
+app.include_router(system_logs.router, prefix="/system-logs", tags=["SystemLogs"])
 
 
 @app.get("/health")

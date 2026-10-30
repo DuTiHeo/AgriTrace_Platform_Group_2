@@ -690,3 +690,310 @@ Authorization: Bearer <token>
     }
     ```
   - `422 Unprocessable Entity`: Sai định dạng UUID hoặc tham số phân trang vượt giới hạn cho phép (`limit < 1`, `limit > 200`, `offset < 0`).
+
+Đợt 3: Module ReminderSchedules (Lịch nhắc nhở mùa vụ)
+Usecase | Method | Endpoint | Mo ta | Trang thai |
+|---|---|---|---|---|
+|UC-SH04.1 + UC-O03.3| GET | /reminders | Danh sách + lọc lịch nhắc nhở (season_id, status, channel, from_date, to_date, org_id), scope theo role (Admin: toàn bộ/lọc org; Owner: farm sở hữu; Leader/Worker: farm trực thuộc) | Đã xong |
+|UC-O03.3 + BR-12| POST | /reminders/dispatch | Quét và phát hành các lịch nhắc nhở đến hạn (remind_date <= CURRENT_DATE và status='scheduled') chuyển sang status='sent', kích hoạt Trigger DB gửi thông báo cho Owner và Team Leaders. Đặt trước /{reminder_id} | Đã xong |
+|UC-SH04.1| GET | /reminders/{reminder_id} | Xem chi tiết 1 bản ghi lịch nhắc nhở (kiểm tra quyền truy cập Data Isolation) | Đã xong |
+|UC-O03.3| POST | /reminders | Admin / Owner / Leader tạo lịch nhắc nhở thủ công cho mùa vụ (kiểm tra mùa vụ hợp lệ và thuộc phạm vi quản lý) | Đã xong |
+|UC-O03.3| PATCH | /reminders/{reminder_id} | Admin / Owner / Leader sửa mốc nhắc việc, ngày nhắc, kênh gửi hoặc trạng thái | Đã xong |
+|UC-O03.3| PATCH | /reminders/{reminder_id}/status | Cập nhật nhanh trạng thái lịch nhắc nhở (scheduled -> sent -> seen) | Đã xong |
+|UC-O03.3| DELETE | /reminders/{reminder_id} | Xóa lịch nhắc nhở (204 No Content - Chỉ dành cho Admin hoặc Owner sở hữu nông trại) | Đã xong |
+
+Ghi chú nghiệp vụ, Enum, Database Triggers và Request/Response chính cho ReminderSchedules:
+
+1. **Nguyên tắc nghiệp vụ `BR-12` & Tự động sinh lịch nhắc nhở**:
+   - Khi mùa vụ được tạo (`POST /seasons`), hệ thống tự động sinh các bản ghi trong `reminder_schedules` dựa trên mốc sinh trưởng giống cây (`crop_care_milestones`) với `remind_date = start_date + offset_days` và `status = 'scheduled'`.
+   - Admin/Owner có thể gọi endpoint `POST /reminders/dispatch` để quét và kích hoạt các lịch nhắc nhở đến hạn (`remind_date <= CURRENT_DATE`), tự động chuyển sang `status = 'sent'`.
+
+2. **Cơ chế Trigger tự động sinh thông báo (`trg_notify_on_reminder_sent`)**:
+   - Khi lịch nhắc nhở chuyển sang trạng thái `status = 'sent'` (thông qua API `dispatch` hoặc cập nhật thủ công), Trigger PL/pgSQL tự động tìm:
+     - Chủ sở hữu nông trại (`organizations.owner_id`).
+     - Tổ trưởng các tổ được phân công phụ trách mùa vụ (`teams.team_leader_id` từ `season_team_assignments`).
+   - Trigger tự động tạo bản ghi vào `notifications` với `type = 'reminder'`, nội dung: `'Nhắc việc mùa vụ ' || plot_code || ': đến hạn ' || NEW.milestone_type`.
+   - Sử dụng `SELECT DISTINCT recipient_id` để đảm bảo mỗi người dùng chỉ nhận đúng 1 thông báo, tránh trùng lặp.
+
+3. **Phân quyền & Cô lập dữ liệu (Data Isolation)**:
+   - `admin`: Xem toàn bộ hoặc lọc theo `org_id` / `season_id`, có quyền phát hành toàn hệ thống.
+   - `owner`: Chỉ xem, tạo, sửa, xóa và phát hành lịch nhắc nhở thuộc các nông trại mình sở hữu (`ensure_owns_org`).
+   - `leader`: Xem lịch nhắc nhở của nông trại trực thuộc, có quyền tạo/sửa lịch nhắc nhở cho mùa vụ của nông trại.
+   - `worker`: Chỉ xem danh sách lịch nhắc nhở của nông trại trực thuộc, không có quyền tạo/sửa/xóa/phát hành.
+
+4. **Bất biến định tuyến FastAPI (Route Shadowing Invariant)**:
+   - Endpoint `POST /reminders/dispatch` **BẮT BUỘC ĐỨNG TRƯỚC** route động `GET /reminders/{reminder_id}` để tránh xung đột định tuyến (FastAPI hiểu nhầm chuỗi `"dispatch"` là `UUID` và trả về lỗi `422 Unprocessable Entity`).
+
+5. **Enum hỗ trợ**:
+   - `ReminderStatus`: `scheduled` (Đã lên lịch), `sent` (Đã phát hành / gửi), `seen` (Đã xem).
+   - `ReminderChannel`: `push` (Thông báo ứng dụng), `sms` (Tin nhắn SMS), `email` (Thư điện tử).
+
+6. **Ví dụ Request / Response**:
+
+```http
+# 1. POST /reminders/dispatch - Phát hành các lịch nhắc nhở đến hạn
+POST /reminders/dispatch?org_id=20000000-0000-0000-0000-000000000001
+Authorization: Bearer <token_owner_hoac_admin>
+```
+
+- **Response thành công (200 OK - `ReminderDispatchOut`)**:
+```json
+{
+  "dispatched_count": 7,
+  "reminder_ids": [
+    "e0000000-0000-0000-0000-000000000001",
+    "e0000000-0000-0000-0000-000000000002"
+  ],
+  "message": "Đã phát hành thành công 7 lịch nhắc nhở đến hạn"
+}
+```
+
+```http
+# 2. PATCH /reminders/{reminder_id}/status - Cập nhật nhanh trạng thái lịch nhắc nhở
+PATCH /reminders/e0000000-0000-0000-0000-000000000001/status
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "status": "seen"
+}
+```
+
+- **Response thành công (200 OK - `ReminderScheduleOut`)**:
+```json
+{
+  "reminder_id": "e0000000-0000-0000-0000-000000000001",
+  "season_id": "70000000-0000-0000-0000-000000000001",
+  "plot_code": "DL-01",
+  "crop_name": "Xà lách Lollo Rossa",
+  "milestone_type": "fertilize",
+  "remind_date": "2026-10-29",
+  "channel": "push",
+  "status": "seen",
+  "created_at": "2026-10-20T08:00:00+07:00"
+}
+```
+
+- **Các phản hồi lỗi ngoại lệ chuẩn hóa**:
+  - `401 Unauthorized`: Chưa xác thực hoặc Access Token không hợp lệ / nằm trong blacklist (`EX-05`).
+  - `403 Forbidden`: Người dùng không có quyền truy cập lịch nhắc nhở thuộc nông trại khác (`EX-06`, `EX-07`) hoặc vai trò không hợp lệ (ví dụ: Worker cố gọi dispatch).
+  - `404 Not Found`: Không tìm thấy bản ghi lịch nhắc nhở hoặc mùa vụ liên kết (`EX-04`).
+  - `422 Unprocessable Entity`: Sai định dạng tham số UUID, Enum trạng thái hoặc chuỗi ngày tháng.
+
+---
+
+Đợt 3: Module ErrorReports (Báo cáo sự cố phần mềm)
+Usecase | Method | Endpoint | Mo ta | Trang thai |
+|---|---|---|---|---|
+|UC-SH03 + UC-A03.1| GET | /error-reports | Danh sách + lọc báo cáo sự cố (status, error_type, org_id, user_id, phân trang limit 1..100, offset >= 0). Admin xem all; Owner xem farm mình; Worker/Leader xem báo cáo do mình gửi | Đã xong |
+|UC-SH03| POST | /error-reports | Người dùng gửi báo cáo sự cố kỹ thuật/phần mềm (tự động gán user_id và org_id từ token). Tự động kích hoạt Trigger gửi thông báo cho tất cả Admin đang hoạt động | Đã xong |
+|UC-SH03 + UC-A03.1| GET | /error-reports/{report_id} | Xem chi tiết 1 báo cáo sự cố kèm phản hồi từ Quản trị viên (kiểm tra quyền truy cập Data Isolation) | Đã xong |
+|UC-A03.2| PATCH | /error-reports/{report_id} | Admin cập nhật tiến độ (processing, resolved, rejected) và phản hồi hướng dẫn xử lý (admin_response). Tự động kích hoạt Trigger gửi thông báo phản hồi cho người gửi | Đã xong |
+|UC-SH03 + UC-A03.1| DELETE | /error-reports/{report_id} | Xóa báo cáo sự cố (204 No Content). Admin xóa bất kỳ báo cáo nào; Người dùng chỉ được xóa báo cáo của chính mình khi status='new' (chặn xóa khi đã tiếp nhận xử lý) | Đã xong |
+
+Ghi chú nghiệp vụ, Enum, Database Triggers và Request/Response chính cho ErrorReports:
+
+1. **Phân quyền nghiệp vụ (`UC-SH03`, `UC-A03.1`, `UC-A03.2`)**:
+   - `admin`: Xem tất cả báo cáo hệ thống hoặc lọc theo `org_id` / `user_id`, cập nhật trạng thái/phản hồi xử lý (`admin_response`), xóa báo cáo bất kỳ lúc nào.
+   - `owner`: Xem các báo cáo phát sinh tại các nông trại mình sở hữu (`report.owner_id == user_id` hoặc cùng `org_id`), gửi báo cáo sự cố mới.
+   - `leader`, `worker`: Chỉ xem và quản lý các báo cáo do chính tài khoản của mình gửi (`report.user_id == current_user["user_id"]`).
+
+2. **Quy tắc xóa an toàn (Safe Deletion Rule)**:
+   - Người dùng thông thường (`worker`, `leader`, `owner`) chỉ được phép xóa báo cáo của chính mình khi `status == 'new'`.
+   - Nếu báo cáo đã được Admin tiếp nhận hoặc chuyển sang `processing`, `resolved`, `rejected`, yêu cầu xóa sẽ bị chặn với mã lỗi `400 Bad Request`: `"Không thể xóa báo cáo đã được tiếp nhận xử lý"`.
+
+3. **Cơ chế Database Triggers tự động**:
+   - **Trigger 2 (`trg_notify_on_error_report_created`)**: Khi có báo cáo mới được tạo (`INSERT ON error_reports`), trigger tự động tìm tất cả Admin đang hoạt động (`users.role = 'admin' AND users.status = 'active'`) và chèn thông báo vào `notifications` với `type = 'error_report'`, nội dung: `'Có báo cáo lỗi mới cần xử lý'`.
+   - **Trigger 3 (`trg_notify_on_error_report_resolved`)**: Khi Admin cập nhật phản hồi hoặc trạng thái (`UPDATE ON error_reports` có `admin_response IS NOT NULL` hoặc chuyển sang `processing`, `resolved`, `rejected`), trigger tự động gửi thông báo đến người gửi báo cáo (`NEW.user_id`) với `type = 'error_report_response'`, nội dung: `'Báo cáo lỗi của bạn đã được Admin phản hồi: ' || COALESCE(NEW.admin_response, 'Trạng thái: ' || NEW.status)`.
+
+4. **Enum hỗ trợ**:
+   - `ErrorReportStatus`: `new` (Mới tiếp nhận), `processing` (Đang xử lý), `resolved` (Đã giải quyết), `rejected` (Từ chối).
+   - `ErrorReportCategory`: `interface` (Giao diện), `data` (Dữ liệu), `performance` (Hiệu năng), `bug` (Lỗi logic), `other` (Khác).
+
+5. **Ví dụ Request / Response**:
+
+```http
+# 1. POST /error-reports - Gửi báo cáo sự cố kỹ thuật mới
+POST /error-reports
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "error_type": "bug",
+  "description": "Nút bấm Ghi nhật ký nhanh bị đơ không phản hồi khi chụp 3 ảnh liên tiếp trên Android",
+  "screenshot_url": "https://cdn.agritrace.vn/reports/screenshot-android-01.png"
+}
+```
+
+- **Response thành công (201 Created - `ErrorReportOut`)**:
+```json
+{
+  "report_id": "b0000000-0000-0000-0000-000000000001",
+  "user_id": "10000000-0000-0000-0000-000000000003",
+  "user_full_name": "Phạm Thị Dung",
+  "user_phone": "0901000003",
+  "org_id": "20000000-0000-0000-0000-000000000001",
+  "org_name": "Nông trại Xanh Đà Lạt",
+  "error_type": "bug",
+  "description": "Nút bấm Ghi nhật ký nhanh bị đơ không phản hồi khi chụp 3 ảnh liên tiếp trên Android",
+  "screenshot_url": "https://cdn.agritrace.vn/reports/screenshot-android-01.png",
+  "status": "new",
+  "admin_response": null,
+  "submitted_at": "2026-10-29T10:15:00+07:00",
+  "updated_at": "2026-10-29T10:15:00+07:00"
+}
+```
+
+```http
+# 2. PATCH /error-reports/{report_id} - Admin cập nhật phản hồi và trạng thái
+PATCH /error-reports/b0000000-0000-0000-0000-000000000001
+Authorization: Bearer <token_admin>
+Content-Type: application/json
+
+{
+  "status": "resolved",
+  "admin_response": "Đã sửa lỗi tràn bộ nhớ nén ảnh trên phiên bản v1.0.4. Vui lòng cập nhật ứng dụng."
+}
+```
+
+- **Response thành công (200 OK - `ErrorReportOut`)**:
+```json
+{
+  "report_id": "b0000000-0000-0000-0000-000000000001",
+  "user_id": "10000000-0000-0000-0000-000000000003",
+  "user_full_name": "Phạm Thị Dung",
+  "user_phone": "0901000003",
+  "org_id": "20000000-0000-0000-0000-000000000001",
+  "org_name": "Nông trại Xanh Đà Lạt",
+  "error_type": "bug",
+  "description": "Nút bấm Ghi nhật ký nhanh bị đơ không phản hồi khi chụp 3 ảnh liên tiếp trên Android",
+  "screenshot_url": "https://cdn.agritrace.vn/reports/screenshot-android-01.png",
+  "status": "resolved",
+  "admin_response": "Đã sửa lỗi tràn bộ nhớ nén ảnh trên phiên bản v1.0.4. Vui lòng cập nhật ứng dụng.",
+  "submitted_at": "2026-10-29T10:15:00+07:00",
+  "updated_at": "2026-10-29T10:18:00+07:00"
+}
+```
+
+- **Các phản hồi lỗi ngoại lệ chuẩn hóa**:
+  - `400 Bad Request`: Thiếu thông tin nông trại liên kết hoặc xóa báo cáo khi trạng thái không phải `new`.
+  - `401 Unauthorized`: Chưa đăng nhập hoặc token không hợp lệ (`EX-05`).
+  - `403 Forbidden`: Người dùng không có quyền truy cập báo cáo của người khác hoặc không phải Admin khi phản hồi (`EX-06`).
+  - `404 Not Found`: Không tìm thấy báo cáo sự cố (`EX-04`).
+  - `422 Unprocessable Entity`: Sai định dạng UUID, độ dài mô tả < 5 ký tự hoặc enum trạng thái không hợp lệ.
+
+---
+
+Đợt 3: Module SystemLogs (Nhật ký giám sát kiểm toán hệ thống - Audit Trail)
+Usecase | Method | Endpoint | Mo ta | Trang thai |
+|---|---|---|---|---|
+|UC-A02.2 + BR-19| GET | /system-logs | Giám sát danh sách nhật ký kiểm toán hệ thống (Audit Trail), hỗ trợ lọc actor_id, target_type, action, result, from_time, to_time, phân trang limit 1..200, offset >= 0. Chỉ dành riêng cho Admin | Đã xong |
+|UC-A02.2| GET | /system-logs/{log_id} | Xem chi tiết 1 bản ghi nhật ký kiểm toán hệ thống kèm thông tin người thực hiện (Chỉ dành riêng cho Admin) | Đã xong |
+|UC-A02.2| POST | /system-logs | Ghi thủ công sự kiện kiểm toán hệ thống (Admin). Tự động gán actor_id từ token nếu để trống | Đã xong |
+
+Ghi chú nghiệp vụ, Enum, Database Triggers và Request/Response chính cho SystemLogs:
+
+1. **Phân quyền tuyệt đối (Admin-Only Audit Trail - `UC-A02.2`)**:
+   - Toàn bộ các endpoints `/system-logs` được bảo vệ bằng dependency `require_role("admin")`.
+   - Bất kỳ vai trò nào khác (`owner`, `leader`, `worker`) hoặc người dùng vãng lai cố tình gọi API đều bị từ chối với mã lỗi `403 Forbidden` (`"Bạn không có quyền thực hiện thao tác này"`).
+
+2. **Cơ chế Database Triggers tự động ghi vết kiểm toán (Audit Trail Triggers - `BR-19`)**:
+   - **Trigger 4A (`trg_audit_system_logs_on_users`)**:
+     - Khi tài khoản người dùng bị khóa (`NEW.status = 'locked'` và `OLD.status != 'locked'`), trigger tự động ghi nhận bản ghi vào `system_logs` với `target_type = 'users'`, `target_id = NEW.user_id`, `action = 'lock_user'`, `result = 'success'`.
+     - Khi thay đổi vai trò người dùng (`NEW.role != OLD.role`), trigger tự động ghi nhận bản ghi với `target_type = 'users'`, `target_id = NEW.user_id`, `action = 'change_role'`, `result = 'success'`.
+   - **Trigger 4B (`trg_audit_system_logs_on_seasons`)**:
+     - Khi mùa vụ chuyển sang trạng thái hoàn thành (`NEW.status = 'completed'` và `OLD.status != 'completed'`), trigger tự động ghi nhận bản ghi với `target_type = 'seasons'`, `target_id = NEW.season_id`, `action = 'season_completed'`, `result = 'success'`.
+     - Khi mùa vụ chuyển các trạng thái khác, trigger ghi nhận với `action = 'season_status_changed'`, `result = 'success'`.
+   - **Trích xuất Actor ID an toàn**: Trigger trích xuất `actor_id` từ biến session PostgreSQL `current_setting('app.current_user_id', true)` trong khối ngoại lệ an toàn, đảm bảo nếu thao tác ngoài API (như chạy script DB hoặc migrate) thì `actor_id` được gán `NULL` mà không làm văng lỗi câu lệnh.
+
+3. **Enum hỗ trợ**:
+   - `SystemLogResult`: `success` (Thao tác thành công), `failed` (Thao tác thất bại).
+
+4. **Ví dụ Request / Response**:
+
+```http
+# 1. GET /system-logs - Danh sách nhật ký kiểm toán hệ thống (kèm lọc và phân trang)
+GET /system-logs?target_type=users&action=lock_user&limit=10&offset=0
+Authorization: Bearer <token_admin>
+```
+
+- **Response thành công (200 OK - `SystemLogPagination`)**:
+```json
+{
+  "total": 1,
+  "items": [
+    {
+      "log_id": "c0000000-0000-0000-0000-000000000001",
+      "target_type": "users",
+      "target_id": "10000000-0000-0000-0000-000000000003",
+      "action": "lock_user",
+      "result": "success",
+      "actor_id": "10000000-0000-0000-0000-000000000008",
+      "actor_name": "Trần Thị Bình",
+      "actor_phone": "0900000008",
+      "actor_role": "admin",
+      "performed_at": "2026-10-29T10:20:00+07:00"
+    }
+  ],
+  "limit": 10,
+  "offset": 0
+}
+```
+
+```http
+# 2. GET /system-logs/{log_id} - Xem chi tiết 1 bản ghi kiểm toán
+GET /system-logs/c0000000-0000-0000-0000-000000000001
+Authorization: Bearer <token_admin>
+```
+
+- **Response thành công (200 OK - `SystemLogOut`)**:
+```json
+{
+  "log_id": "c0000000-0000-0000-0000-000000000001",
+  "target_type": "users",
+  "target_id": "10000000-0000-0000-0000-000000000003",
+  "action": "lock_user",
+  "result": "success",
+  "actor_id": "10000000-0000-0000-0000-000000000008",
+  "actor_name": "Trần Thị Bình",
+  "actor_phone": "0900000008",
+  "actor_role": "admin",
+  "performed_at": "2026-10-29T10:20:00+07:00"
+}
+```
+
+```http
+# 3. POST /system-logs - Ghi sự kiện kiểm toán thủ công
+POST /system-logs
+Authorization: Bearer <token_admin>
+Content-Type: application/json
+
+{
+  "target_type": "security",
+  "target_id": null,
+  "action": "manual_security_audit",
+  "result": "success"
+}
+```
+
+- **Response thành công (201 Created - `SystemLogOut`)**:
+```json
+{
+  "log_id": "c0000000-0000-0000-0000-000000000099",
+  "target_type": "security",
+  "target_id": null,
+  "action": "manual_security_audit",
+  "result": "success",
+  "actor_id": "10000000-0000-0000-0000-000000000008",
+  "actor_name": "Trần Thị Bình",
+  "actor_phone": "0900000008",
+  "actor_role": "admin",
+  "performed_at": "2026-10-29T10:22:00+07:00"
+}
+```
+
+- **Các phản hồi lỗi ngoại lệ chuẩn hóa**:
+  - `401 Unauthorized`: Chưa xác thực hoặc Access Token không hợp lệ / nằm trong blacklist (`EX-05`).
+  - `403 Forbidden`: Người dùng không có vai trò `admin` (`"Bạn không có quyền thực hiện thao tác này"` - `EX-06`).
+  - `404 Not Found`: Không tìm thấy bản ghi nhật ký kiểm toán theo `log_id` (`EX-04`).
+  - `422 Unprocessable Entity`: Sai định dạng UUID, enum kết quả hoặc phân trang ngoài khoảng cho phép (`limit < 1`, `limit > 200`, `offset < 0`).

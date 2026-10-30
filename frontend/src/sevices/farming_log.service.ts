@@ -1,0 +1,248 @@
+import { API_BASE_URL } from '@/constants/api';
+import { fetch as expoFetch } from 'expo/fetch';
+import { apiRequest as request, apiJson as json, apiQuery } from './api_client';
+export { ApiError } from './api_client';
+
+export type GPSPoint = {
+  latitude: number;
+  longitude: number;
+  accuracy?: number | null
+};
+export type LogNote = {
+  note_id: string;
+  log_id: string;
+  leader_id: string;
+  leader_name: string | null;
+  content: string;
+  resolved: boolean;
+  created_at: string
+};
+export type LogPhoto = {
+  photo_id: string;
+  log_id: string;
+  url: string;
+  created_at: string
+};
+export type FarmingLog = {
+  log_id: string;
+  season_id: string;
+  user_id: string;
+  user_name: string | null;
+  team_id: string | null;
+  org_id: string;
+  activity_type: string;
+  content: string | null;
+  gps: GPSPoint;
+  logged_at: string;
+};
+export type FarmingLogDetail = FarmingLog & {
+  photos: LogPhoto[];
+  notes: LogNote[]
+};
+export type Season = {
+  season_id: string;
+  plot_id: string;
+  plot_code: string;
+  crop_name: string;
+  planting_date: string;
+  status: string;
+  org_id: string;
+  assigned_team_names?: string[]
+};
+export type TeamMember = {
+  user_id: string;
+  full_name: string;
+  phone: string;
+  role: string;
+  status: 'active' | 'locked'
+};
+export type UserDetail = TeamMember & {
+  national_id: string | null;
+  date_of_birth: string | null;
+  address: string | null;
+  org_id: string | null;
+  team_id: string | null;
+  created_at: string;
+};
+export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled' | 'incomplete';
+
+export type MemberTask = {
+  task_id: string;
+  worker_id: string;
+  status: TaskStatus;
+};
+export type ApiTask = MemberTask & {
+  team_id: string;
+  team_name: string | null;
+  team_leader_name?: string | null;
+  worker_name: string | null;
+  worker_phone: string | null;
+  plot_id: string;
+  plot_code: string | null;
+  org_id: string | null;
+  org_name: string | null;
+  content: string;
+  start_at: string | null;
+  due_at: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+};
+export type Plot = {
+  plot_id: string;
+  org_id: string;
+  code: string;
+  area: number | null;
+  status: 'active' | 'inactive';
+  current_season_id: string | null;
+  current_crop_name: string | null
+};
+export type PlotLocateResponse = {
+  plot_id: string;
+  org_id: string;
+  code: string;
+  area: number | null;
+  status: 'active' | 'inactive';
+  current_season_id: string | null;
+  current_crop_name: string | null;
+};
+export type Crop = {
+  crop_id: string;
+  name: string;
+  growth_days: number
+};
+export type CropDetail = Crop & {
+  milestones: {
+    milestone_id: string;
+    task_type: string;
+    description: string | null
+  }[]
+};
+export type CreateLog = {
+  season_id: string;
+  activity_type: string;
+  content?: string;
+  gps: GPSPoint
+};
+export type TaskContent = {
+  title: string;
+  instructions?: string;
+  startTime?: string;
+  endTime?: string;
+  tools?: string;
+  started?: boolean;
+  assignmentId?: string
+};
+
+const TASK_CONTENT_PREFIX = 'AGRITRACE_TASK_V1:';
+
+export function encodeTaskContent(value: TaskContent) {
+  return `${TASK_CONTENT_PREFIX}${JSON.stringify(value)}`;
+}
+
+export function decodeTaskContent(content: string): TaskContent {
+  if (!content.startsWith(TASK_CONTENT_PREFIX))
+    return {
+      title: content,
+      started: true
+    };
+
+  try {
+    const value = JSON.parse(content.slice(TASK_CONTENT_PREFIX.length)) as Partial<TaskContent>;
+
+    return typeof value.title === 'string' ? {
+      ...value,
+      title: value.title
+    } : {
+      title: content,
+      started: true
+    };
+  } catch {
+    return {
+      title: content,
+      started: true
+    };
+  }
+}
+
+export const listLogs = (token: string, seasonId?: string) => request<FarmingLog[]>(token, `/farming-logs${seasonId ? `?season_id=${encodeURIComponent(seasonId)}` : ''}`);
+export const getLog = (token: string, id: string) => request<FarmingLogDetail>(token, `/farming-logs/${encodeURIComponent(id)}`);
+export const listSeasons = (token: string, teamId?: string | null) => request<Season[]>(token, `/seasons${teamId ? `?team_id=${encodeURIComponent(teamId)}` : ''}`);
+export const listTeamMembers = (token: string) => request<TeamMember[]>(token, '/users?role=worker');
+export const getUserDetail = (token: string, id: string) => request<UserDetail>(token, `/users/${encodeURIComponent(id)}`);
+export const listMyTasks = (token: string) => request<ApiTask[]>(token, '/tasks');
+export const listMemberTasks = (token: string, userId: string) =>
+  request<ApiTask[]>(token, `/tasks${apiQuery({ worker_id: userId })}`);
+export const updateTaskStatus = (token: string, taskId: string, status: TaskStatus) => request<ApiTask>(token, `/tasks/${encodeURIComponent(taskId)}/status`, json('PATCH', {
+  status
+}));
+export const deleteTask = (token: string, taskId: string) => request<ApiTask>(token, `/tasks/${encodeURIComponent(taskId)}`, {
+  method: 'DELETE'
+});
+export async function listPlots(token: string): Promise<Plot[]> {
+  const plots = await request<Plot[]>(token, '/plots?status=active');
+  return [...new Map(plots.map(plot => [plot.plot_id, plot])).values()];
+}
+
+export const locatePlot = (token: string, latitude: number, longitude: number, orgId?: string) =>
+  request<PlotLocateResponse>(
+    token,
+    `/plots/locate?latitude=${encodeURIComponent(latitude)}&longitude=${encodeURIComponent(longitude)}${orgId ? `&org_id=${encodeURIComponent(orgId)}` : ''}`
+  );
+
+
+export async function listAssignedPlots(token: string, user: { role: string; team_id?: string | null } | null): Promise<Plot[]> {
+  if (!user || !user.team_id) return [];
+  const plots = await listPlots(token);
+  const assignedIds = user.role === 'worker'
+    ? new Set((await listMyTasks(token)).filter(task => ['pending', 'in_progress', 'incomplete'].includes(task.status)).map(task => task.plot_id))
+    : new Set((await listSeasons(token, user.team_id)).filter(season => ['growing', 'ready_to_harvest'].includes(season.status)).map(season => season.plot_id));
+  return plots.filter(plot => assignedIds.has(plot.plot_id));
+}
+export const listCrops = (token: string) => request<Crop[]>(token, '/crops');
+export const getCrop = (token: string, cropId: string) => request<CropDetail>(token, `/crops/${encodeURIComponent(cropId)}`);
+
+export async function listTaskTypes(token: string) {
+  const crops = await listCrops(token);
+  const details = await Promise.all(crops.map(crop => getCrop(token, crop.crop_id)));
+
+  return [...new Set(details.flatMap(crop => crop.milestones.map(item => item.task_type.trim())).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'vi'));
+}
+
+export type TaskPayload = {
+  team_id?: string;
+  worker_id?: string;
+  plot_id?: string;
+  content?: string;
+  start_at?: string;
+  due_at?: string;
+  status?: TaskStatus;
+};
+export const createTask = (token: string, payload: Required<Pick<TaskPayload, 'team_id' | 'worker_id' | 'plot_id' | 'content' | 'start_at' | 'due_at'>> & TaskPayload) => request<ApiTask>(token, '/tasks', json('POST', payload));
+export const updateTask = (token: string, taskId: string, payload: TaskPayload) => request<ApiTask>(token, `/tasks/${encodeURIComponent(taskId)}`, json('PATCH', payload));
+export const cancelTask = (token: string, taskId: string) => deleteTask(token, taskId);
+
+export async function getMemberActivity(token: string, userId: string) {
+  const [logs, tasks] = await Promise.all([
+    listLogs(token),
+    listMemberTasks(token, userId)
+  ]);
+
+  return {
+    totalLogs: logs.filter(log => log.user_id === userId).length,
+    completedTasks: tasks.filter(task => task.worker_id === userId && task.status === 'completed').length,
+  };
+}
+
+export const getLogAuthor = (token: string, id: string) => getUserDetail(token, id);
+export const createLog = (token: string, payload: CreateLog) => request<FarmingLogDetail>(token, '/farming-logs', json('POST', payload));
+export const createNote = (token: string, logId: string, content: string) => request<LogNote>(token, '/log-notes', json('POST', {
+  log_id: logId,
+  content
+}));
+// Expo File trong FormData cần expo/fetch trên thiết bị native.
+export const uploadPhotos = (token: string, logId: string, body: FormData) => request<LogPhoto[]>(token, `/farming-logs/${encodeURIComponent(logId)}/photos`, {
+  method: 'POST',
+  body
+}, 60000, expoFetch as typeof fetch);
+export const photoUrl = (path: string) => /^https?:\/\//i.test(path) ? path : `${API_BASE_URL}/${path.replace(/^\/+/, '')}`;
+export const seasonLabel = (season: Season) => `${season.plot_code} · ${season.crop_name} · ${season.planting_date}`;

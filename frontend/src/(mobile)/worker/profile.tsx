@@ -1,0 +1,359 @@
+import { Avatar } from '@/components/common/role_ui';
+import { colors } from '@/styles/theme';
+import { sharedStyles as shared } from '@/styles/role_styles';
+import { type Href, router, useFocusEffect } from 'expo-router';
+import { useCallback, useRef, useState } from 'react';
+import { Keyboard, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { WorkerHeader } from '@/components/worker/worker_header';
+import { useAuth } from '@/contexts/auth_context';
+import { getMe, logout } from '@/sevices/auth.sevice';
+import { useWorkSchedule } from '@/contexts/work_schedule_context';
+import { useReports } from '@/contexts/report_context';
+import { listAssignedPlots, listLogs, type Plot } from '@/sevices/farming_log.service';
+import { sessionUserId } from '@/sevices/session_user';
+
+const utilities = [
+  { label: 'Báo cáo sự cố / Lỗi kỹ thuật', route: '/account/issues' },
+  { label: 'Đổi mật khẩu', route: '/account/change-password' },
+  { label: 'Cài đặt thông báo', route: '/account/notification-settings' },
+  { label: 'Ngôn ngữ (Tiếng Việt)', route: '/account/language' },
+];
+
+export default function WorkerProfileScreen() {
+  const { user, accessToken, clearAuth } = useAuth();
+  const { workerTasks } = useWorkSchedule();
+  const { refresh } = useReports();
+  const [assignedPlots, setAssignedPlots] = useState<Plot[]>([]);
+  const [areasError, setAreasError] = useState('');
+  const [areasLoading, setAreasLoading] = useState(true);
+  const [totalLogs, setTotalLogs] = useState<number | null>(null);
+  const [logsError, setLogsError] = useState(false);
+  const [accountStatus, setAccountStatus] = useState<'loading' | 'active' | 'unknown'>('loading');
+
+  useFocusEffect(useCallback(() => {
+    let active = true;
+    setTotalLogs(null);
+    setLogsError(false);
+    setAccountStatus('loading');
+    if (!accessToken) {
+      setLogsError(true);
+      setAccountStatus('unknown');
+      return;
+    }
+
+    // /auth/me succeeds only for active accounts; it does not expose attendance.
+    void getMe(accessToken)
+      .then(() => { if (active) setAccountStatus('active'); })
+      .catch(() => { if (active) setAccountStatus('unknown'); });
+
+    const userId = sessionUserId(accessToken);
+    if (!userId) {
+      setLogsError(true);
+    } else {
+      // The list also includes teammates' logs; count only the signed-in author.
+      void listLogs(accessToken)
+        .then(logs => {
+          if (active) setTotalLogs(new Set(logs.filter(log => log.user_id === userId).map(log => log.log_id)).size);
+        })
+        .catch(() => { if (active) setLogsError(true); });
+    }
+    return () => { active = false; };
+  }, [accessToken]));
+
+  useFocusEffect(useCallback(() => {
+    let active = true;
+    setAssignedPlots([]);
+    setAreasError('');
+    setAreasLoading(true);
+    if (!accessToken) { setAreasLoading(false); return; }
+    void listAssignedPlots(accessToken, user)
+      .then(plots => { if (active) setAssignedPlots(plots); })
+      .catch(() => { if (active) setAreasError('Không tải được khu vực phụ trách'); })
+      .finally(() => { if (active) setAreasLoading(false); });
+    return () => { active = false; };
+  }, [accessToken, user]));
+
+  useFocusEffect(
+    useCallback(() => {
+      void refresh({ skipIfFresh: true });
+    }, [refresh])
+  );
+
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [logoutError, setLogoutError] = useState<string | null>(null);
+  const submitting = useRef(false);
+
+  const assignedAreas = assignedPlots.map(plot => plot.code);
+
+  const completedTasks = workerTasks.filter(task => task.status === 'done').length;
+  const roleName = user?.role === 'worker' ? 'Công nhân' : user?.role ?? 'Chưa có dữ liệu';
+
+  async function signOut() {
+    if (submitting.current) return;
+
+    submitting.current = true;
+    setLoggingOut(true);
+    setLogoutError(null);
+
+    try {
+      if (accessToken) await logout(accessToken);
+
+      clearAuth();
+      router.replace('/login' as Href);
+    } catch (error) {
+      setLogoutError(
+        error instanceof Error
+          ? error.message
+          : 'Đăng xuất thất bại. Vui lòng thử lại.'
+      );
+    } finally {
+      submitting.current = false;
+      setLoggingOut(false);
+    }
+  }
+
+  return (
+    <SafeAreaView style={styles.page} edges={['top']}>
+      <WorkerHeader />
+
+      <ScrollView contentContainerStyle={styles.content}>
+        <Text style={shared.title}>
+          Cá nhân
+        </Text>
+
+        <View style={styles.profileCard}>
+          <Avatar name={user?.full_name ?? 'Công nhân'} />
+
+          <View style={{ flex: 1 }}>
+            <Text style={styles.name}>
+              {user?.full_name ?? 'Công nhân'}
+            </Text>
+
+            <Text style={styles.role}>
+              {roleName}
+            </Text>
+
+            <Text style={[styles.active, accountStatus !== 'active' && { color: colors.muted }]}>
+              {accountStatus === 'loading' ? 'Đang kiểm tra tài khoản…'
+                : accountStatus === 'active' ? 'Tài khoản đang hoạt động'
+                  : 'Chưa xác minh được trạng thái'}
+            </Text>
+          </View>
+        </View>
+
+        <Section title="Thông tin hồ sơ">
+          <Info
+            label="Số điện thoại:"
+            value={user?.phone ?? 'Chưa cập nhật'}
+          />
+
+          <Info
+            label="Khu vực phụ trách:"
+            value={
+              areasLoading ? 'Đang tải…' : areasError
+                ? areasError
+                : assignedAreas.length
+                  ? `${assignedAreas.length} khu vực · ${assignedAreas.join(', ')}`
+                  : 'Chưa có khu vực được giao'
+            }
+          />
+
+          <Info
+            label="Ngày gia nhập:"
+            value="Chưa có dữ liệu"
+          />
+
+          <Info
+            label="Tổng nhật ký đã đăng:"
+            value={logsError ? 'Không tải được tổng nhật ký' : totalLogs === null ? 'Đang tải…' : `${totalLogs} nhật ký`}
+            green
+          />
+
+          <Info
+            label="Nhiệm vụ hoàn thành:"
+            value={`${completedTasks} nhiệm vụ`}
+            green
+          />
+        </Section>
+
+        <Section title="Cài đặt & Tiện ích">
+          {utilities.map((setting) => (
+            <Pressable
+              key={setting.label}
+              style={styles.setting}
+              onPress={() => {
+                Keyboard.dismiss();
+                router.push(setting.route as Href);
+              }}
+            >
+              <Text style={styles.settingText}>
+                {setting.label}
+              </Text>
+
+              <Text style={styles.arrow}>
+                ›
+              </Text>
+            </Pressable>
+          ))}
+        </Section>
+
+        {logoutError ? (
+          <Text
+            accessibilityRole="alert"
+            style={{
+              color: colors.danger,
+              marginTop: 12
+            }}
+          >
+            {logoutError}
+          </Text>
+        ) : null}
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{
+            disabled: loggingOut,
+            busy: loggingOut
+          }}
+          disabled={loggingOut}
+          onPress={signOut}
+          style={[
+            styles.logout,
+            loggingOut && { opacity: 0.6 }
+          ]}
+        >
+          <Text style={styles.logoutText}>
+            {loggingOut ? 'Đang đăng xuất…' : 'Đăng xuất'}
+          </Text>
+        </Pressable>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+function Section({
+  title,
+  children
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>
+        {title}
+      </Text>
+
+      {children}
+    </View>
+  );
+}
+
+function Info({
+  label,
+  value,
+  green
+}: {
+  label: string;
+  value: string;
+  green?: boolean;
+}) {
+  return (
+    <View style={styles.info}>
+      <Text style={styles.infoLabel}>
+        {label}
+      </Text>
+
+      <Text
+        style={[
+          styles.infoValue,
+          green && styles.green
+        ]}
+      >
+        {value}
+      </Text>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  page: {
+    ...shared.page
+  },
+
+  content: {
+    ...shared.content
+  },
+
+  profileCard: {
+    ...shared.card,
+    flexDirection: "row",
+    alignItems: "center"
+  },
+
+  name: {
+    ...shared.section
+  },
+
+  role: {
+    ...shared.muted,
+    marginTop: 5
+  },
+
+  active: {
+    ...shared.chip,
+    ...shared.chipText,
+    marginTop: 8
+  },
+
+  section: {
+    ...shared.card
+  },
+
+  sectionTitle: {
+    ...shared.section
+  },
+
+  info: {
+    ...shared.infoRow,
+    alignItems: "center"
+  },
+
+  infoLabel: {
+    ...shared.muted,
+    flex: 1
+  },
+
+  infoValue: {
+    ...shared.value
+  },
+
+  green: {
+    color: colors.success
+  },
+
+  setting: {
+    ...shared.infoRow,
+    minHeight: 48,
+    alignItems: "center"
+  },
+
+  settingText: {
+    ...shared.label,
+    flex: 1
+  },
+
+  arrow: {
+    ...shared.muted,
+    fontSize: 25
+  },
+
+  logout: {
+    ...shared.dangerButton
+  },
+
+  logoutText: {
+    ...shared.dangerText
+  },
+});

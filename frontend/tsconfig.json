@@ -14,13 +14,15 @@
     }
   },
   "include": [
-    "**/*.ts",
-    "**/*.tsx",
+    "src/**/*.ts",
+    "src/**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
   ],
   "exclude": [
-    "owner",
+    "src/(website)",
+    "src/**/*_wb.ts",
+    "src/**/*_wb.tsx",
     "node_modules"
   ]
 }
