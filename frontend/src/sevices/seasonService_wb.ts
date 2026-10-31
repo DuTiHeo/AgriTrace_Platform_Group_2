@@ -9,13 +9,13 @@ export function calculateExpectedHarvestDate(
     return "";
   }
 
-  const date = new Date(`${sowingDate}T00:00:00`);
+  const date = new Date(`${sowingDate}T00:00:00Z`);
 
   if (Number.isNaN(date.getTime())) {
     return "";
   }
 
-  date.setDate(date.getDate() + growthDays);
+  date.setUTCDate(date.getUTCDate() + growthDays);
 
   return date.toISOString().slice(0, 10);
 }
@@ -72,6 +72,8 @@ type SeasonDto = {
 };
 
 function mapSeasonStatus(status: string): SeasonStatus {
+  if (status === "planned") return "planned";
+  if (status === "cancelled") return "cancelled";
   if (status === "ready_to_harvest") return "ready";
   if (status === "completed") return "completed";
   return "active";
@@ -123,6 +125,16 @@ async function getSeasonDetail(id: string) {
 }
 
 export const seasonService = {
+  async getOverview(farmId?: string): Promise<Season[]> {
+    const params = new URLSearchParams();
+    if (farmId && farmId !== "all") params.set("org_id", farmId);
+    const seasons = await httpClient.get<SeasonDto[]>(`/seasons?${params}`);
+    // Details provide updated_at, required to hide ended seasons after today.
+    return Promise.all(seasons.map(async (season) =>
+      mapSeason(await httpClient.get<SeasonDto>(`/seasons/${season.season_id}`)),
+    ));
+  },
+
   async getCropVarieties(): Promise<CropVariety[]> {
     const crops = await httpClient.get<CropDto[]>("/crops");
     return crops.map((crop) => ({
@@ -163,17 +175,6 @@ export const seasonService = {
 
   async getSupportedTeamIds(seasonId: string): Promise<string[]> {
     return (await this.getTeamAssignments(seasonId)).map((assignment) => assignment.teamId);
-  },
-
-  async addTaskLink(_seasonId: string): Promise<void> {
-    void _seasonId;
-    window.dispatchEvent(new Event("seasons-updated"));
-  },
-
-  async adjustHarvestLinks(_seasonId: string, _change: 1 | -1): Promise<void> {
-    void _seasonId;
-    void _change;
-    window.dispatchEvent(new Event("seasons-updated"));
   },
 
   async assignTeam(seasonId: string, teamId: string): Promise<SeasonTeamAssignment> {

@@ -58,6 +58,8 @@
 }
 
 .season-summary-card strong {
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
   color: var(--agri-title);
   font-size: 21px;
 }

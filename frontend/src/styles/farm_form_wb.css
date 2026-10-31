@@ -134,10 +134,242 @@
   font-size: 13px;
 }
 
+.farm-information-heading {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(0, auto);
+  align-items: center;
+  gap: 24px;
+}
+
+.farm-owner-heading {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  width: auto;
+  max-width: 100%;
+  justify-self: end;
+}
+
+.farm-owner-heading > .farm-field-label {
+  flex-shrink: 0;
+  margin-bottom: 0;
+  line-height: 1.5;
+}
+
+.farm-owner-heading > .owner-summary {
+  flex: 0 1 auto;
+  min-width: 0;
+  width: 260px;
+  grid-template-columns: 36px minmax(0, 1fr);
+  column-gap: 10px;
+  row-gap: 4px;
+  padding: 10px 12px;
+}
+
+.farm-owner-heading .owner-summary-avatar {
+  width: 36px;
+  height: 36px;
+  font-size: 12px;
+}
+
+.farm-owner-heading .owner-summary-info {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 900px) {
+  .farm-information-heading {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .farm-owner-heading {
+    width: auto;
+    justify-self: start;
+  }
+}
+
 .basic-farm-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px;
+}
+
+.farm-address-fields {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.farm-address-fields > label:nth-child(2) {
+  grid-column: 1;
+}
+
+@media (max-width: 700px) {
+  .farm-address-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.farm-create-boundary {
+  margin-top: 24px;
+  border-top: 1px solid var(--gray-200);
+  padding-top: 24px;
+}
+
+.farm-create-boundary-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.farm-create-boundary-heading h2 {
+  color: var(--green-900);
+  font-size: 17px;
+}
+
+.farm-create-boundary-heading p {
+  margin-top: 4px;
+  color: var(--gray-500);
+  font-size: 13px;
+}
+
+.farm-create-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 18px;
+  margin-top: 20px;
+  border: 1px solid var(--gray-200);
+  border-radius: var(--agri-radius-control);
+  background: var(--gray-100);
+  padding: 16px;
+}
+
+.farm-create-summary > div:last-child {
+  justify-self: end;
+  text-align: center;
+}
+
+.farm-create-summary .status-badge {
+  min-height: 34px;
+  padding: 7px 16px;
+  font-size: 12px;
+}
+
+.farm-boundary-summary-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  align-items: stretch;
+  gap: 18px;
+}
+
+.farm-boundary-coordinate-list,
+.farm-boundary-area {
+  box-sizing: border-box;
+  height: 162px;
+  min-width: 0;
+  border: 1px solid var(--agri-border);
+  border-radius: var(--agri-radius-card);
+}
+
+.farm-boundary-coordinate-list {
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
+}
+
+.farm-boundary-coordinate-row {
+  display: grid;
+  grid-template-columns: 65px minmax(0, 1fr) 28px;
+  align-items: center;
+  gap: 10px;
+  box-sizing: border-box;
+  height: 40px;
+  padding: 4px 10px;
+  border-bottom: 1px solid var(--agri-border);
+}
+
+.farm-boundary-coordinate-row:last-child {
+  border-bottom: 0;
+}
+
+.farm-boundary-coordinate-row > span,
+.farm-boundary-coordinate-empty {
+  color: var(--agri-muted-strong);
+  font-size: 12px;
+}
+
+.farm-boundary-coordinate-row code {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--agri-text);
+  font-size: 12px;
+}
+
+.farm-boundary-coordinate-row button {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--agri-radius-control);
+  background: transparent;
+  color: var(--agri-muted-strong);
+}
+
+.farm-boundary-coordinate-row button:hover {
+  background: var(--agri-danger-soft);
+  color: var(--agri-danger-text);
+}
+
+.farm-boundary-coordinate-empty {
+  padding: 18px;
+}
+
+.farm-boundary-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 13px 15px;
+  background: var(--agri-success-soft);
+  text-align: center;
+}
+
+.farm-boundary-area > span {
+  color: var(--agri-muted-strong);
+  font-size: 15px;
+}
+
+.farm-boundary-area > strong {
+  color: var(--agri-title);
+  font-size: 28px;
+  line-height: 1.3;
+}
+
+.farm-boundary-expected-status {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  color: var(--agri-muted-strong);
+  font-size: 11px;
+}
+
+@media (max-width: 760px) {
+  .farm-boundary-summary-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .basic-farm-form label {
@@ -250,6 +482,22 @@
   margin-top: 2px;
   color: var(--gray-500);
   font-size: 11px;
+}
+
+.basic-farm-form .farm-create-status-options .status-option {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+}
+
+.farm-create-status-options .status-option input {
+  margin-top: 0;
+  flex-shrink: 0;
+}
+
+.farm-create-status-options .status-option:has(input:focus-visible) {
+  outline: 2px solid var(--green-600);
+  outline-offset: 2px;
 }
 
 .boundary-editor {

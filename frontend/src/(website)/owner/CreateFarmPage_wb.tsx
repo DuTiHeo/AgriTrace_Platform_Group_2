@@ -1,19 +1,16 @@
+import BackButton from "../../components/owner/BackButton_wb";
+import CreationReview from "../../components/owner/CreationReview_wb";
 import "../../styles/farms_wb.css";
 import "../../styles/farm_form_wb.css";
 import {
-  ArrowLeft,
   Check,
-  ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import FarmBoundaryEditor from "../../components/owner/FarmBoundaryEditor_wb";
 import { accountService } from "../../sevices/accountService_wb";
 import { farmService } from "../../sevices/farmService_wb";
-import {
-  farmStatusLabels,
-} from "../../features/owner/farm_wb";
 import type {
   FarmFormData,
 } from "../../features/owner/farm_wb";
@@ -36,6 +33,12 @@ function CreateFarmPage() {
     useState<FarmFormData>(initialForm);
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState(false);
+  const createdFarmId = useRef<string | null>(null);
+  const expectedStatus = form.status === "incomplete"
+    ? { label: "Lưu nháp", className: "incomplete" }
+    : form.boundary?.isValid
+      ? { label: "Đang hoạt động", className: "active" }
+      : { label: "Cần hoàn thiện", className: "incomplete" };
   const [owner, setOwner] = useState({
     fullName: "Chủ nông trại",
     phone: "",
@@ -66,7 +69,7 @@ function CreateFarmPage() {
     }
 
     if (!form.province.trim() || !form.district.trim()) {
-      setMessage("Vui lòng nhập tỉnh và huyện.");
+      setMessage("Vui lòng nhập xã/phường và tỉnh/thành phố.");
       return false;
     }
 
@@ -75,29 +78,14 @@ function CreateFarmPage() {
   };
 
   const goToBoundaryStep = () => {
-    if (validateBasicInformation()) {
-      setStep(2);
-    }
+    if (validateBasicInformation()) setStep(2);
   };
 
-  const continueWithBoundary = () => {
-    if (!form.boundary?.isValid) {
-      setMessage(
-        "Ranh giới cần ít nhất 3 điểm hợp lệ. Bạn có thể bỏ qua và bổ sung sau.",
-      );
+  const goToReview = () => {
+    if (form.boundary && !form.boundary.isValid) {
+      setMessage("Ranh giới chưa hợp lệ. Vui lòng hoàn thiện hoặc chọn Bổ sung ranh giới sau.");
       return;
     }
-
-    setMessage("");
-    setStep(3);
-  };
-
-  const skipBoundary = () => {
-    setForm({
-      ...form,
-      boundary: null,
-    });
-    setMessage("");
     setStep(3);
   };
 
@@ -110,10 +98,18 @@ function CreateFarmPage() {
     setSaving(true);
 
     try {
-      const newFarm = await farmService.create(form);
-      navigate(`/farms/${newFarm.id}`);
+      if (!createdFarmId.current) {
+        const newFarm = await farmService.create(form);
+        createdFarmId.current = newFarm.id;
+      } else {
+        await farmService.update(createdFarmId.current, form);
+      }
+      if (form.status === "incomplete" && form.boundary?.isValid) {
+        await farmService.changeStatus(createdFarmId.current, "incomplete");
+      }
+      navigate(`/farms/${createdFarmId.current}`);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Không thể tạo nông trại.");
+      setMessage(createdFarmId.current ? `Nông trại đã được tạo nhưng chưa lưu được trạng thái. Bấm tạo lại để thử lưu trạng thái, không tạo thêm nông trại. ${error instanceof Error ? error.message : ""}` : error instanceof Error ? error.message : "Không thể tạo nông trại.");
     } finally {
       setSaving(false);
     }
@@ -122,13 +118,7 @@ function CreateFarmPage() {
   return (
     <div className="page create-farm-page">
       <div className="create-farm-header">
-        <button
-          type="button"
-          aria-label="Quay lại danh sách"
-          onClick={() => navigate("/farms")}
-        >
-          <ArrowLeft size={20} />
-        </button>
+        <BackButton label={step > 1 ? "Quay lại bước trước" : "Quay lại danh sách nông trại"} disabled={saving} onClick={() => { setMessage(""); if (step > 1) setStep(step - 1); else navigate("/farms"); }} />
 
         <div>
           <h1>Thêm nông trại</h1>
@@ -136,195 +126,17 @@ function CreateFarmPage() {
         </div>
       </div>
 
-      <div className="farm-stepper">
-        <button
-          className={
-            step === 1
-              ? "farm-step active"
-              : step > 1
-                ? "farm-step completed"
-                : "farm-step"
-          }
-          type="button"
-          onClick={() => setStep(1)}
-        >
-          <span className="farm-step-number">
-            {step > 1 ? <Check size={16} /> : "1"}
-          </span>
-
-          <span>
-            <strong>Thông tin</strong>
-            <small>Thông tin cơ bản</small>
-          </span>
-        </button>
-
-        <button
-          className={
-            step === 2
-              ? "farm-step active"
-              : step > 2
-                ? "farm-step completed"
-                : "farm-step"
-          }
-          type="button"
-          disabled={step < 2}
-          onClick={() => setStep(2)}
-        >
-          <span className="farm-step-number">
-            {step > 2 ? <Check size={16} /> : "2"}
-          </span>
-
-          <span>
-            <strong>Ranh giới</strong>
-            <small>Tọa độ hoặc bản đồ</small>
-          </span>
-        </button>
-
-        <button
-          className={
-            step === 3
-              ? "farm-step active"
-              : "farm-step"
-          }
-          type="button"
-          disabled={step < 3}
-          onClick={() => setStep(3)}
-        >
-          <span className="farm-step-number">3</span>
-
-          <span>
-            <strong>Kiểm tra</strong>
-            <small>Xác nhận thông tin</small>
-          </span>
-        </button>
-      </div>
-
       <section className="farm-form-card card">
         {step === 1 && (
           <>
-            <div className="form-section-heading">
+            <div className="form-section-heading farm-information-heading">
               <div>
                 <h2>Thông tin nông trại</h2>
                 <p>
                   Nhập thông tin cần thiết để tạo hồ sơ.
                 </p>
               </div>
-            </div>
-
-            <div className="basic-farm-form">
-              <label className="form-field-full">
-                <span>Tên nông trại *</span>
-
-                <input
-                  className="input"
-                  maxLength={100}
-                  placeholder="Ví dụ: Nông trại Hồng Hiền"
-                  value={form.name}
-                  onChange={(event) =>
-                    setForm({
-                      ...form,
-                      name: event.target.value,
-                    })
-                  }
-                />
-              </label>
-
-              <label className="form-field-full">
-                <span>Địa chỉ hành chính *</span>
-
-                <input
-                  className="input"
-                  placeholder="Thôn, xã, huyện, tỉnh"
-                  value={form.address}
-                  onChange={(event) =>
-                    setForm({
-                      ...form,
-                      address: event.target.value,
-                    })
-                  }
-                />
-              </label>
-
-              <label>
-                <span>Tỉnh/Thành phố *</span>
-
-                <input
-                  className="input"
-                  value={form.province}
-                  onChange={(event) =>
-                    setForm({
-                      ...form,
-                      province: event.target.value,
-                    })
-                  }
-                />
-              </label>
-
-              <label>
-                <span>Huyện/Thành phố *</span>
-
-                <input
-                  className="input"
-                  placeholder="Ví dụ: Cư Kuin"
-                  value={form.district}
-                  onChange={(event) =>
-                    setForm({
-                      ...form,
-                      district: event.target.value,
-                    })
-                  }
-                />
-              </label>
-
-              <div>
-                <span className="farm-field-label">
-                  Trạng thái khởi tạo
-                </span>
-
-                <div className="status-options">
-                  <label className="status-option">
-                    <input
-                      type="radio"
-                      name="farm-status"
-                      checked={form.status === "active"}
-                      onChange={() =>
-                        setForm({
-                          ...form,
-                          status: "active",
-                        })
-                      }
-                    />
-
-                    <div>
-                      <strong>Đang hoạt động</strong>
-                      <span>Sẵn sàng sử dụng</span>
-                    </div>
-                  </label>
-
-                  <label className="status-option">
-                    <input
-                      type="radio"
-                      name="farm-status"
-                      checked={
-                        form.status === "incomplete"
-                      }
-                      onChange={() =>
-                        setForm({
-                          ...form,
-                          status: "incomplete",
-                        })
-                      }
-                    />
-
-                    <div>
-                      <strong>Cần hoàn thiện</strong>
-                      <span>Lưu để bổ sung sau</span>
-                    </div>
-                  </label>
-                </div>
-              </div>
-
-              <div className="form-field-full">
+              <div className="farm-owner-heading">
                 <span className="farm-field-label">
                   Chủ sở hữu
                 </span>
@@ -341,9 +153,92 @@ function CreateFarmPage() {
                     </span>
                   </div>
 
-                  <span>Tài khoản hiện tại</span>
                 </div>
               </div>
+            </div>
+
+            <div className="basic-farm-form">
+              <label>
+                <span>Tên nông trại *</span>
+
+                <input
+                  className="input"
+                  maxLength={100}
+                  placeholder="Ví dụ: Nông trại Hồng Hiền"
+                  value={form.name}
+                  onChange={(event) =>
+                    setForm({
+                      ...form,
+                      name: event.target.value,
+                    })
+                  }
+                />
+              </label>
+
+              <div role="group" aria-labelledby="farm-activity-label">
+                <span className="farm-field-label" id="farm-activity-label">Trạng thái hoạt động</span>
+                <div className="status-options farm-create-status-options">
+                  <label className="status-option">
+                    <input
+                      type="radio"
+                      name="farm-status"
+                      value="active"
+                      checked={form.status === "active"}
+                      onChange={() => setForm({ ...form, status: "active" })}
+                    />
+                    <div><strong>Đang hoạt động</strong><span>Đưa vào sử dụng ngay</span></div>
+                  </label>
+                  <label className="status-option">
+                    <input
+                      type="radio"
+                      name="farm-status"
+                      value="incomplete"
+                      checked={form.status === "incomplete"}
+                      onChange={() => setForm({ ...form, status: "incomplete" })}
+                    />
+                    <div><strong>Lưu nháp</strong><span>Lưu lại, chưa hoạt động</span></div>
+                  </label>
+                </div>
+              </div>
+
+              <div className="farm-address-fields">
+              <label>
+                <span>Địa chỉ hành chính *</span>
+
+                <input
+                  className="input"
+                  placeholder="Số nhà, đường, thôn/ấp"
+                  value={form.address}
+                  onChange={(event) =>
+                    setForm({
+                      ...form,
+                      address: event.target.value,
+                    })
+                  }
+                />
+              </label>
+
+              <label>
+                <span>Xã/Phường *</span>
+                <input
+                  className="input"
+                  placeholder="Nhập xã hoặc phường"
+                  value={form.district}
+                  onChange={(event) => setForm({ ...form, district: event.target.value })}
+                />
+              </label>
+
+              <label>
+                <span>Tỉnh/Thành phố *</span>
+                <input
+                  className="input"
+                  placeholder="Nhập tỉnh hoặc thành phố"
+                  value={form.province}
+                  onChange={(event) => setForm({ ...form, province: event.target.value })}
+                />
+              </label>
+              </div>
+
             </div>
 
             {message && (
@@ -377,65 +272,40 @@ function CreateFarmPage() {
 
         {step === 2 && (
           <>
-            <div className="form-section-heading">
-              <div>
-                <h2>Ranh giới nông trại</h2>
-                <p>
-                  Nhập tọa độ hoặc vẽ trực tiếp trên bản đồ.
-                  Có thể bỏ qua và bổ sung sau.
-                </p>
+            <section aria-labelledby="farm-boundary-title">
+              <div className="farm-create-boundary-heading">
+                <div>
+                  <h2 id="farm-boundary-title">Ranh giới nông trại</h2>
+                  <p>Vẽ ranh giới GPS trực tiếp trên bản đồ. Có thể bổ sung sau.</p>
+                </div>
               </div>
-            </div>
+              <FarmBoundaryEditor
+                boundary={form.boundary}
+                onChange={(boundary) => setForm({ ...form, boundary, estimatedArea: boundary.area })}
+                summary={
+                  <div className="farm-boundary-area" aria-live="polite">
+                    <span>Diện tích từ ranh giới</span>
+                    <strong>{form.boundary?.isValid ? `${form.boundary.area.toLocaleString("vi-VN")} ha` : "Chưa xác định"}</strong>
+                    <div className="farm-boundary-expected-status">
+                      <span>Trạng thái dự kiến</span>
+                      <span className={`status-badge status-${expectedStatus.className}`}>{expectedStatus.label}</span>
+                    </div>
+                  </div>
+                }
+              />
+            </section>
 
-            <FarmBoundaryEditor
-              boundary={form.boundary}
-              onChange={(boundary) =>
-                setForm({
-                  ...form,
-                  boundary,
-                  estimatedArea:
-                    boundary.area > 0
-                      ? boundary.area
-                      : form.estimatedArea,
-                })
-              }
-            />
-
-            {message && (
-              <p className="form-message form-message-error">
-                {message}
-              </p>
-            )}
-
+            {message && <p className="form-message form-message-error">{message}</p>}
             <div className="form-footer">
-              <button
-                className="btn btn-secondary"
-                type="button"
-                onClick={() => {
-                  setMessage("");
-                  setStep(1);
-                }}
-              >
-                <ChevronLeft size={17} />
-                Quay lại
-              </button>
-
+              <button className="btn btn-secondary" type="button" disabled={saving} onClick={() => navigate("/farms")}>Hủy</button>
               <div className="form-footer-right">
-                <button
-                  className="btn btn-secondary"
-                  type="button"
-                  onClick={skipBoundary}
-                >
-                  Bổ sung sau
-                </button>
-
-                <button
-                  className="btn btn-primary"
-                  type="button"
-                  onClick={continueWithBoundary}
-                >
-                  Tiếp tục
-                  <ChevronRight size={17} />
+                <button className="btn btn-secondary" type="button" onClick={() => {
+                  setForm({ ...form, boundary: null, estimatedArea: 0 });
+                  setMessage("");
+                  setStep(3);
+                }}>Bổ sung sau</button>
+                <button className="btn btn-primary" type="button" onClick={goToReview}>
+                  Tiếp tục<ChevronRight size={17} />
                 </button>
               </div>
             </div>
@@ -453,102 +323,30 @@ function CreateFarmPage() {
               </div>
             </div>
 
-            <div className="review-grid">
-              <article className="review-card">
-                <h3>Thông tin nông trại</h3>
-
-                <div className="review-list">
-                  <div className="review-item">
-                    <span>Tên nông trại</span>
-                    <strong>{form.name}</strong>
-                  </div>
-
-                  <div className="review-item">
-                    <span>Địa chỉ</span>
-                    <strong>{form.address}</strong>
-                  </div>
-
-                  <div className="review-item">
-                    <span>Khu vực</span>
-                    <strong>
-                      {form.district}, {form.province}
-                    </strong>
-                  </div>
-
-                  <div className="review-item">
-                    <span>Diện tích</span>
-                    <strong>
-                      {form.boundary
-                        ? `${form.boundary.area.toLocaleString("vi-VN")} ha (ước tính từ ranh giới)`
-                        : "Chưa xác định từ ranh giới"}
-                    </strong>
-                  </div>
-
-                  <div className="review-item">
-                    <span>Trạng thái</span>
-                    <strong>
-                      {form.boundary
-                        ? farmStatusLabels[form.status]
-                        : "Cần hoàn thiện"}
-                    </strong>
-                  </div>
-                </div>
-              </article>
-
-              <article className="review-card">
-                <h3>Ranh giới</h3>
-
-                <div className="review-list">
-                  <div className="review-item">
-                    <span>Trạng thái</span>
-                    <strong>
-                      {form.boundary?.isValid
-                        ? "Đã xác định"
-                        : "Chưa thiết lập"}
-                    </strong>
-                  </div>
-
-                  <div className="review-item">
-                    <span>Phương thức</span>
-                    <strong>
-                      {form.boundary?.method === "vn2000"
-                        ? "Tọa độ VN-2000"
-                        : form.boundary?.method === "map"
-                          ? "Vẽ trên bản đồ"
-                          : "Bổ sung sau"}
-                    </strong>
-                  </div>
-
-                  <div className="review-item">
-                    <span>Số điểm</span>
-                    <strong>
-                      {form.boundary?.points.length ?? 0}
-                    </strong>
-                  </div>
-
-                  <div className="review-item">
-                    <span>Chu vi</span>
-                    <strong>
-                      {form.boundary
-                        ? `${form.boundary.perimeter.toLocaleString(
-                            "vi-VN",
-                          )} m`
-                        : "—"}
-                    </strong>
-                  </div>
-                </div>
-              </article>
-            </div>
+            <CreationReview sections={[
+              {
+                title: "Thông tin nông trại",
+                items: [
+                  { label: "Tên nông trại", value: form.name },
+                  { label: "Địa chỉ", value: [form.address, form.district, form.province].filter(Boolean).join(", ") || "Chưa cung cấp" },
+                  { label: "Chủ sở hữu", value: owner.fullName },
+                  { label: "Trạng thái dự kiến", value: <span className={`creation-review-status is-${expectedStatus.className}`}>{expectedStatus.label}</span> },
+                ],
+              },
+              {
+                title: "Ranh giới và diện tích",
+                metric: { label: "Diện tích ước tính từ ranh giới", value: form.boundary?.isValid ? `${form.boundary.area.toLocaleString("vi-VN")} ha` : "Chưa xác định" },
+                items: [
+                  { label: "Ranh giới", value: <span className={`creation-review-status is-${form.boundary?.isValid ? "active" : "incomplete"}`}>{form.boundary?.isValid ? "Đã xác định" : "Chưa thiết lập"}</span> },
+                  { label: "Phương thức", value: form.boundary?.method === "vn2000" ? "Tọa độ VN-2000" : form.boundary?.method === "map" ? "Vẽ trên bản đồ" : "Bổ sung sau" },
+                  { label: "Số điểm tọa độ", value: `${form.boundary?.points.length ?? 0} điểm` },
+                  { label: "Chu vi", value: form.boundary?.isValid ? `${form.boundary.perimeter.toLocaleString("vi-VN")} m` : "—" },
+                ],
+              },
+            ]} />
 
             <div className="form-footer">
-              <button
-                className="btn btn-secondary"
-                type="button"
-                onClick={() => setStep(2)}
-              >
-                <ChevronLeft size={17} />
-                Quay lại
-              </button>
+              <button className="btn btn-secondary" type="button" disabled={saving} onClick={() => navigate("/farms")}>Hủy</button>
 
               <div className="form-footer-right">
                 <button

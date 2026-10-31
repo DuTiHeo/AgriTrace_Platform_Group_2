@@ -1,8 +1,8 @@
+import BackButton from "../../components/owner/BackButton_wb";
 import "../../styles/personnel_form_wb.css";
 import "../../styles/personnel_wb.css";
 import "../../styles/teams_wb.css";
 import {
-  ArrowLeft,
   LoaderCircle,
   Save,
   Users,
@@ -105,13 +105,7 @@ function CreateTeamPage() {
   return (
     <div className="page personnel-form-page">
       <div className="personnel-form-heading">
-        <Link
-          className="personnel-back-link"
-          to="/teams"
-        >
-          <ArrowLeft size={18} />
-          Quay lại danh sách tổ
-        </Link>
+        <BackButton to="/teams" label="Quay lại danh sách tổ" />
 
         <div>
           <h1>Tạo tổ công nhân</h1>

@@ -294,7 +294,7 @@ function AccountPage() {
               <div><h2>Tùy chọn thông báo</h2><p>Chọn những cập nhật quan trọng bạn muốn nhận.</p></div>
             </div>
 
-            <p role="status">Thông báo hiện chưa khả dụng; các tùy chọn chưa có hiệu lực.</p>
+            <p role="status">Hệ thống đã có thông báo. Tùy chọn đăng ký từng loại thông báo chưa được hỗ trợ.</p>
             <div className="account-preference-list">
               {([
                 ["cultivationReminders", "Nhắc lịch mùa vụ", "Các mốc chăm sóc và thời gian thu hoạch dự kiến."],

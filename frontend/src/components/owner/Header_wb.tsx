@@ -39,6 +39,7 @@ function Header({ onMenuClick }: HeaderProps) {
 
   useEffect(() => {
     const timer = window.setTimeout(() => void loadUnreadCount(), 0);
+    const interval = window.setInterval(() => { if (!document.hidden) void loadUnreadCount(); }, 60000);
     const events = [
       "notifications-updated",
       "tasks-updated",
@@ -52,6 +53,7 @@ function Header({ onMenuClick }: HeaderProps) {
 
     return () => {
       window.clearTimeout(timer);
+      window.clearInterval(interval);
       events.forEach((eventName) =>
         window.removeEventListener(eventName, loadUnreadCount),
       );

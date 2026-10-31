@@ -193,13 +193,7 @@ function TeamsPage() {
     [personnel, teams],
   );
 
-  const hasActiveFilters =
-    search.trim() !== "" || leaderFilter !== "all";
 
-  const resetFilters = () => {
-    setSearch("");
-    setLeaderFilter("all");
-  };
 
   return (
     <div className="page teams-page">
@@ -325,17 +319,6 @@ function TeamsPage() {
               Chưa có Tổ trưởng
             </option>
           </select>
-
-          {hasActiveFilters && (
-            <button
-              className="btn btn-secondary"
-              type="button"
-              onClick={resetFilters}
-            >
-              <RefreshCw size={17} />
-              Xóa lọc
-            </button>
-          )}
         </div>
 
         {loading ? (
@@ -503,3 +486,4 @@ function TeamsPage() {
 }
 
 export default TeamsPage;
+

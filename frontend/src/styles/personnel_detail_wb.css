@@ -323,6 +323,66 @@
   max-width: 560px;
 }
 
+.personnel-profile-edit {
+  max-width: 780px;
+  border-radius: 12px;
+}
+
+.personnel-profile-edit .personnel-modal-heading {
+  align-items: center;
+  padding: 24px 28px;
+}
+
+.personnel-profile-edit .personnel-modal-heading h2 {
+  font-size: 22px;
+}
+
+.personnel-profile-edit .personnel-modal-heading p {
+  margin-top: 6px;
+  font-size: 13px;
+}
+
+.personnel-profile-edit .personnel-modal-content {
+  padding: 24px 28px 28px;
+  gap: 22px;
+}
+
+.personnel-edit-section-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--green-800);
+}
+
+.personnel-edit-section-heading h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.personnel-edit-fields {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.personnel-profile-edit textarea.input {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.personnel-profile-edit .personnel-modal-actions {
+  padding: 18px 28px;
+}
+
+@media (max-width: 560px) {
+  .personnel-profile-edit .personnel-modal-heading,
+  .personnel-profile-edit .personnel-modal-content,
+  .personnel-profile-edit .personnel-modal-actions {
+    padding: 18px;
+  }
+}
+
 .personnel-modal-heading {
   display: flex;
   align-items: flex-start;
@@ -478,5 +538,117 @@
 
   .personnel-modal-actions .btn {
     width: 100%;
+  }
+}
+.personnel-detail-page .personnel-detail-topbar,
+.team-detail-page .personnel-detail-topbar {
+  justify-content: flex-end;
+}
+
+.personnel-detail-page .personnel-detail-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.personnel-detail-page .personnel-info-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.personnel-detail-page .personnel-info-card .personnel-card-heading {
+  min-height: 76px;
+  margin: 0;
+  padding: 18px 24px;
+}
+
+.personnel-detail-page .personnel-info-card .personnel-card-heading > div > svg {
+  box-sizing: content-box;
+  padding: 10px;
+  border-radius: 10px;
+  background: var(--green-50);
+}
+
+.personnel-detail-page .personnel-info-card .personnel-card-heading > button {
+  padding: 8px 12px;
+  border: 1px solid var(--gray-200);
+  border-radius: 7px;
+  background: var(--agri-surface);
+  white-space: nowrap;
+}
+
+.personnel-detail-page .personnel-info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+  padding: 4px 24px 12px;
+}
+
+.personnel-detail-page .personnel-info-list > div {
+  display: grid;
+  grid-template-columns: minmax(130px, 42%) minmax(0, 1fr);
+  align-items: start;
+  gap: 16px;
+  min-height: 62px;
+  padding: 19px 0;
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.personnel-detail-page .personnel-info-list > div:last-child {
+  border-bottom: 0;
+}
+
+.personnel-detail-page .personnel-info-list dt {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 22px;
+}
+
+.personnel-detail-page .personnel-info-list dd {
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.personnel-account-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 9px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+}
+
+.personnel-account-badge.is-active {
+  color: var(--green-700);
+  background: var(--green-50);
+}
+
+.personnel-account-badge.is-locked {
+  color: var(--agri-warning-text);
+  background: var(--agri-warning-soft);
+}
+
+@media (max-width: 1000px) {
+  .personnel-detail-page .personnel-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .personnel-detail-page .personnel-info-card .personnel-card-heading {
+    padding: 16px;
+  }
+
+  .personnel-detail-page .personnel-info-list {
+    padding: 0 16px 8px;
+  }
+
+  .personnel-detail-page .personnel-info-list > div {
+    grid-template-columns: 1fr;
+    gap: 4px;
+    padding: 14px 0;
   }
 }

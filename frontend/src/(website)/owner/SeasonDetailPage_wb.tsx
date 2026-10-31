@@ -1,7 +1,8 @@
+import BackButton from "../../components/owner/BackButton_wb";
+import SeasonReminders from "../../components/owner/SeasonReminders_wb";
 import "../../styles/seasons_wb.css";
 import "../../styles/season_detail_wb.css";
 import {
-  ArrowLeft,
   Building2,
   CalendarDays,
   Clock3,
@@ -459,14 +460,9 @@ function SeasonDetailPage() {
       <div className="page">
         <div className="not-found-card card">
           <Sprout size={35} />
-          <h1>Không tìm thấy mùa vụ</h1>
+          <div className="page-title-with-back"><BackButton to="/seasons" label="Quay lại danh sách mùa vụ" /><h1>Không tìm thấy mùa vụ</h1></div>
 
-          <Link
-            className="btn btn-primary"
-            to="/seasons"
-          >
-            Quay lại danh sách
-          </Link>
+
         </div>
       </div>
     );
@@ -475,13 +471,7 @@ function SeasonDetailPage() {
   return (
     <div className="page season-detail-page">
       <div className="season-detail-topbar">
-        <Link
-          className="back-link"
-          to="/seasons"
-        >
-          <ArrowLeft size={18} />
-          Mùa vụ
-        </Link>
+        <BackButton to="/seasons" label="Quay lại danh sách mùa vụ" />
 
         <div className="season-detail-actions">
           {canEdit && (
@@ -518,9 +508,8 @@ function SeasonDetailPage() {
       </div>
 
       <section className="season-detail-hero card">
-        <div className="season-detail-hero-icon">
-          <Sprout size={28} />
-        </div>
+        <div className="season-detail-hero-icon"><Sprout size={27} /></div>
+        
 
         <div className="season-detail-title">
           <div>
@@ -659,15 +648,17 @@ function SeasonDetailPage() {
         </section>
       </div>
 
+      <SeasonReminders key={season.id} seasonId={season.id} />
       <section className="season-detail-card season-team-support card">
         <div className="season-detail-section-heading">
           <div>
             <h2>Tổ hỗ trợ mùa vụ</h2>
-            <p>Một tổ có thể đồng thời hỗ trợ nhiều mùa vụ.</p>
           </div>
           <Users size={20} />
         </div>
 
+        <div className="season-team-layout">
+        <div className="season-team-picker">
         <div className="season-team-assign-form">
           <label>
             <span>Thêm tổ hỗ trợ</span>
@@ -706,7 +697,10 @@ function SeasonDetailPage() {
             {teamError}
           </p>
         )}
+        </div>
 
+        <div className="season-team-assigned">
+        <h3>Tổ đã gán</h3>
         {teamAssignments.length ? (
           <ul className="season-team-list">
             {teamAssignments.map((assignment) => {
@@ -739,9 +733,11 @@ function SeasonDetailPage() {
           </ul>
         ) : (
           <p className="season-team-empty">
-            Chưa có tổ hỗ trợ. Hãy gán tổ trước khi tạo công việc cho mùa vụ này.
+            Chưa có tổ được gán.
           </p>
         )}
+        </div>
+        </div>
       </section>
 
       {dialog && (

@@ -1,7 +1,8 @@
+import BackButton from "../../../components/owner/BackButton_wb";
 import "../../../styles/account_wb.css";
-import { ArrowLeft, CheckCircle2, KeyRound, Mail, ShieldCheck } from "lucide-react";
+import { CheckCircle2, KeyRound, Mail, ShieldCheck } from "lucide-react";
 import { type FormEvent, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { accountService } from "../../../sevices/accountService_wb";
 
 type RecoveryStep = "request" | "verify" | "reset" | "done";
@@ -55,10 +56,9 @@ function ForgotPasswordPage() {
       </section>
       <section className="login-form-panel">
         <form className="login-form-card" onSubmit={submit}>
-          <Link className="recovery-back" to="/login"><ArrowLeft size={16} /> Quay lại đăng nhập</Link>
           <div className="login-heading">
             <span>Khôi phục tài khoản</span>
-            <h2>{step === "request" ? "Quên mật khẩu" : step === "verify" ? "Xác nhận mã" : step === "reset" ? "Đặt mật khẩu mới" : "Đã đổi mật khẩu"}</h2>
+            <div className="page-title-with-back"><BackButton to="/login" label="Quay lại đăng nhập" /><h2>{step === "request" ? "Quên mật khẩu" : step === "verify" ? "Xác nhận mã" : step === "reset" ? "Đặt mật khẩu mới" : "Đã đổi mật khẩu"}</h2></div>
             <p>{step === "request" ? "Nhập số điện thoại của tài khoản Owner." : step === "verify" ? "Nhập mã OTP gồm 4 chữ số." : step === "reset" ? "Mật khẩu cần tối thiểu 8 ký tự, có chữ và số." : "Bạn có thể đăng nhập bằng mật khẩu mới."}</p>
           </div>
 

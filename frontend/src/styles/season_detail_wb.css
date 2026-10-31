@@ -309,7 +309,43 @@
   display: flex;
   align-items: flex-end;
   gap: 10px;
-  max-width: 700px;
+  width: 100%;
+}
+
+.season-team-layout {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 24px;
+}
+
+.season-team-picker,
+.season-team-assigned {
+  min-width: 0;
+}
+
+.season-team-assigned {
+  min-height: 110px;
+  padding: 16px;
+  border: 1px solid var(--agri-border);
+  border-radius: var(--agri-radius-card);
+  background: var(--agri-header);
+}
+
+.season-team-assigned h3 {
+  margin: 0;
+  color: var(--agri-title);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.season-team-assigned .season-team-list {
+  grid-template-columns: minmax(0, 1fr);
+  max-height: 240px;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  margin: 12px 0 0;
+  padding: 0;
 }
 
 .season-team-assign-form label {
@@ -494,6 +530,10 @@
 }
 
 @media (max-width: 700px) {
+  .season-team-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
   .season-detail-topbar {
     align-items: stretch;
     flex-direction: column;
@@ -524,4 +564,7 @@
     grid-template-columns: 1fr;
   }
 
+}
+.season-detail-page .season-detail-topbar {
+  justify-content: flex-end;
 }

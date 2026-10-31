@@ -1,7 +1,6 @@
+import BackButton from "../../components/owner/BackButton_wb";
 import "../../styles/harvests_wb.css";
 import {
-  ArrowLeft,
-  CalendarDays,
   Check,
   PackageCheck,
   Scale,
@@ -17,8 +16,7 @@ import type { Plot } from "../../features/owner/plot_wb";
 import type { Season } from "../../features/owner/season_wb";
 
 function todayKey() {
-  const today = new Date();
-  return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  return new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Ho_Chi_Minh", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 }
 
 function formatQuantity(value: number) {
@@ -89,9 +87,7 @@ function CreateHarvestPage() {
     () => new Map(plots.map((plot) => [plot.id, plot])),
     [plots],
   );
-  const selectedSeasonIds = Object.entries(quantities)
-    .filter(([, quantity]) => quantity > 0)
-    .map(([seasonId]) => seasonId);
+  const selectedSeasonIds = Object.keys(quantities);
   const selectedVarietyId = seasons.find((season) =>
     selectedSeasonIds.includes(season.id),
   )?.varietyId;
@@ -114,6 +110,11 @@ function CreateHarvestPage() {
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
+    if (saving || loading) return;
+    if (!selectedSeasonIds.length || selectedSeasonIds.some(id => !Number.isFinite(quantities[id]) || quantities[id] <= 0)) {
+      setError("Chọn ít nhất một mùa vụ và nhập sản lượng lớn hơn 0.");
+      return;
+    }
     setSaving(true);
     setError("");
 
@@ -141,38 +142,33 @@ function CreateHarvestPage() {
   return (
     <div className="page harvest-form-page">
       <div className="harvest-form-header">
-        <button
-          type="button"
-          aria-label="Quay lại danh sách"
-          onClick={() => navigate("/harvests")}
-        >
-          <ArrowLeft size={20} />
-        </button>
+        <BackButton to="/harvests" label="Quay lại danh sách thu hoạch" />
         <div>
           <h1>Tạo lô thu hoạch</h1>
           <p>Gộp sản lượng từ các mùa vụ đủ điều kiện và sinh mã lô tự động.</p>
         </div>
       </div>
 
-      <form className="harvest-form" onSubmit={submit}>
-        <section className="card harvest-form-card">
+      <form className="harvest-form harvest-create-form card" onSubmit={submit}>
+        <section className="harvest-form-card">
           <div className="harvest-form-heading">
             <div className="harvest-form-icon">
               <PackageCheck size={21} />
             </div>
             <div>
-              <h2>Thông tin lô</h2>
-              <p>Mã định danh được hệ thống sinh sau khi lưu.</p>
+              <h2>Thông tin lô thu hoạch</h2>
+              <p>Chọn nông trại và ngày thu hoạch. Mã lô được tạo tự động.</p>
             </div>
           </div>
 
           <div className="harvest-form-grid">
             <label>
-              <span>Nông trại *</span>
+              <span>Nông trại <b>*</b></span>
               <select
                 required
+                disabled={saving}
                 value={farmId}
-                onChange={(event) => setFarmId(event.target.value)}
+                onChange={(event) => { setFarmId(event.target.value); setSeasons([]); setPlots([]); setQuantities({}); setError(""); setLoading(!!event.target.value); }}
               >
                 <option value="">Chọn nông trại</option>
                 {farms
@@ -186,9 +182,10 @@ function CreateHarvestPage() {
             </label>
 
             <label>
-              <span>Ngày thu hoạch *</span>
+              <span>Ngày thu hoạch <b>*</b></span>
               <input
                 required
+                disabled={saving}
                 type="date"
                 max={todayKey()}
                 value={harvestDate}
@@ -198,7 +195,7 @@ function CreateHarvestPage() {
           </div>
         </section>
 
-        <section className="card harvest-form-card">
+        <section className="harvest-form-card harvest-create-seasons">
           <div className="harvest-form-heading">
             <div className="harvest-form-icon">
               <Sprout size={21} />
@@ -206,17 +203,18 @@ function CreateHarvestPage() {
             <div>
               <h2>Mùa vụ đóng góp sản lượng</h2>
               <p>
-                Chỉ mùa vụ sẵn sàng thu hoạch hoặc đã hoàn thành mới được chọn;
-                các mùa vụ trong cùng lô phải cùng giống cây.
+                Chọn các mùa vụ cùng giống cây và nhập sản lượng đóng góp.
               </p>
             </div>
           </div>
 
+          <div className="harvest-selection-layout">
+          <div className="harvest-selection-list">
           {loading ? (
             <div className="page-loading">Đang tải mùa vụ...</div>
           ) : seasons.length === 0 ? (
             <div className="harvest-form-empty">
-              Chưa có mùa vụ nào đủ điều kiện thu hoạch tại nông trại này.
+              {farmId ? "Chưa có mùa vụ sẵn sàng thu hoạch hoặc đã hoàn thành tại nông trại này." : "Chọn nông trại để xem mùa vụ đủ điều kiện."}
             </div>
           ) : (
             <div className="harvest-season-options">
@@ -239,7 +237,7 @@ function CreateHarvestPage() {
                       <input
                         type="checkbox"
                         checked={selected}
-                        disabled={incompatible}
+                        disabled={incompatible || saving}
                         onChange={(event) =>
                           setSeasonSelected(season.id, event.target.checked)
                         }
@@ -252,17 +250,18 @@ function CreateHarvestPage() {
                         <span>
                           {season.code} · {plot?.name ?? "Không xác định"}
                         </span>
-                        <small>
-                          {season.varietyName} · {season.status === "ready"
+                        <small>{season.varietyName}</small>
+                        <span className={`harvest-create-season-status ${season.status === "ready" ? "is-ready" : "is-completed"}`}>
+                          {season.status === "ready"
                             ? "Sẵn sàng thu hoạch"
                             : "Đã hoàn thành"}
-                        </small>
+                        </span>
                       </div>
                     </label>
 
                     {selected && (
                       <label className="harvest-quantity-field">
-                        <span>Sản lượng đóng góp (kg)</span>
+                        <span>Sản lượng đóng góp <b>*</b></span>
                         <div>
                           <Scale size={16} />
                           <input
@@ -270,6 +269,8 @@ function CreateHarvestPage() {
                             min="0.01"
                             step="0.01"
                             required
+                            disabled={saving}
+                            aria-label={`Sản lượng đóng góp của ${season.name} (kg)`}
                             value={quantities[season.id] || ""}
                             onChange={(event) =>
                               setQuantities((current) => ({
@@ -278,6 +279,7 @@ function CreateHarvestPage() {
                               }))
                             }
                           />
+                          <span className="harvest-create-unit">kg</span>
                         </div>
                       </label>
                     )}
@@ -286,25 +288,24 @@ function CreateHarvestPage() {
               })}
             </div>
           )}
-        </section>
-
-        <section className="card harvest-form-total">
-          <div>
-            <CalendarDays size={20} />
-            <span>{selectedSeasonIds.length} mùa vụ được chọn</span>
           </div>
+        <aside className="harvest-form-total" aria-live="polite">
           <div>
+            <Scale size={28} />
             <span>Tổng sản lượng</span>
             <strong>{formatQuantity(totalQuantity)} kg</strong>
           </div>
+        </aside>
+          </div>
         </section>
 
-        {error && <div className="form-error-block">{error}</div>}
+        {error && <div className="form-error-block harvest-create-error" role="alert">{error}</div>}
 
         <footer className="harvest-form-footer">
           <button
             className="btn btn-secondary"
             type="button"
+            disabled={saving}
             onClick={() => navigate("/harvests")}
           >
             Hủy
@@ -312,7 +313,7 @@ function CreateHarvestPage() {
           <button
             className="btn btn-primary"
             type="submit"
-            disabled={saving || selectedSeasonIds.length === 0}
+            disabled={saving || loading || !farmId || selectedSeasonIds.length === 0}
           >
             <PackageCheck size={17} />
             {saving ? "Đang tạo..." : "Tạo lô thu hoạch"}

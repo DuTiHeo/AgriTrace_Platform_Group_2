@@ -1,4 +1,5 @@
 import "../../styles/harvests_wb.css";
+import { ListActionConfirmation } from "../../components/owner/ListRowActions_wb";
 import {
   CalendarDays,
   Eye,
@@ -7,6 +8,7 @@ import {
   QrCode,
   Scale,
   Search,
+  Trash2,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
@@ -42,6 +44,7 @@ function HarvestsPage() {
     useState<StatusFilter>("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [cancelTarget, setCancelTarget] = useState<HarvestBatch | null>(null);
 
   const loadRequest = useRef(0);
   const loadData = useCallback(async () => {
@@ -54,8 +57,8 @@ function HarvestsPage() {
         harvestService.getAll(selectedFarmId),
         seasonService.getAll(selectedFarmId),
       ]);
-      setBatches(batchData);
       if (request !== loadRequest.current) return;
+      setBatches(batchData);
       setSeasons(seasonData);
     } catch {
       if (request !== loadRequest.current) return;
@@ -225,7 +228,7 @@ function HarvestsPage() {
                         <div>
                           <strong>{batch.code}</strong>
                           <span>
-                            {"Truy xuất công khai chưa khả dụng"}
+                            {batch.traceUrl ? "Đã tạo mã QR" : "Chưa tạo mã QR"}
                           </span>
                         </div>
                       </div>
@@ -255,6 +258,7 @@ function HarvestsPage() {
                       </span>
                     </td>
                     <td>
+                      <div className="list-row-actions">
                       <Link
                         className="table-action-button"
                         to={`/harvests/${batch.id}`}
@@ -262,6 +266,8 @@ function HarvestsPage() {
                       >
                         <Eye size={17} />
                       </Link>
+                      {batch.status !== "cancelled" && <button type="button" className="list-row-delete" title="Hủy lô" aria-label={`Hủy lô ${batch.code}`} onClick={() => setCancelTarget(batch)}><Trash2 size={17} /></button>}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -270,6 +276,7 @@ function HarvestsPage() {
           </div>
         )}
       </section>
+      {cancelTarget && <ListActionConfirmation action="delete" title="Hủy lô thu hoạch?" confirmLabel="Xác nhận hủy lô" name={cancelTarget.code} statusLabel="Hủy lô thu hoạch" description="Bạn có chắc muốn hủy lô thu hoạch này? Dữ liệu vẫn được giữ để truy xuất lịch sử." onClose={() => setCancelTarget(null)} onConfirm={async () => { const updated = await harvestService.cancel(cancelTarget.id); setBatches(current => current.map(item => item.id === updated.id ? updated : item)); }} />}
     </div>
   );
 }

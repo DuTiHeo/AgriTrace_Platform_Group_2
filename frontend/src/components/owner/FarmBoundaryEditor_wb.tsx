@@ -1,3 +1,4 @@
+import GeographicMap from "./GeographicMap_wb";
 import "../../styles/farm_form_wb.css";
 import {
   FileUp,
@@ -6,10 +7,10 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import type {
   ChangeEvent,
-  MouseEvent,
+  ReactNode,
 } from "react";
 import type {
   BoundaryMethod,
@@ -18,6 +19,7 @@ import type {
 } from "../../features/owner/farm_wb";
 
 type FarmBoundaryEditorProps = {
+  summary?: ReactNode;
   boundary: FarmBoundary | null;
   onChange: (boundary: FarmBoundary) => void;
 };
@@ -95,6 +97,7 @@ const calculateGeometry = (
 };
 
 function FarmBoundaryEditor({
+  summary,
   boundary,
   onChange,
 }: FarmBoundaryEditorProps) {
@@ -238,53 +241,14 @@ function FarmBoundaryEditor({
     event.target.value = "";
   };
 
-  const handleMapClick = (
-    event: MouseEvent<HTMLButtonElement>,
-  ) => {
-    if (activeBoundary.method !== "map") {
-      return;
-    }
-
-    const bounds =
-      event.currentTarget.getBoundingClientRect();
-
-    const horizontalRatio =
-      (event.clientX - bounds.left) / bounds.width;
-
-    const verticalRatio =
-      (event.clientY - bounds.top) / bounds.height;
-
-    const latitude =
-      12.62 + (1 - verticalRatio) * 0.12;
-
-    const longitude =
-      107.98 + horizontalRatio * 0.14;
-
-    const nextPoint: BoundaryPoint = {
+  const handleMapPoint = (point: { latitude: number; longitude: number }) => {
+    updatePoints([...activeBoundary.points, {
       id: `M${activeBoundary.points.length + 1}`,
-      x: Number(latitude.toFixed(6)),
-      y: Number(longitude.toFixed(6)),
+      x: point.latitude,
+      y: point.longitude,
       note: `Điểm GPS ${activeBoundary.points.length + 1}`,
-    };
-
-    updatePoints([...activeBoundary.points, nextPoint]);
+    }]);
   };
-
-  const mapPolygonPoints = useMemo(() => {
-    if (activeBoundary.method !== "map") {
-      return "";
-    }
-
-    return activeBoundary.points
-      .map((point) => {
-        const x = ((point.y - 107.98) / 0.14) * 100;
-        const y =
-          100 - ((point.x - 12.62) / 0.12) * 100;
-
-        return `${x},${y}`;
-      })
-      .join(" ");
-  }, [activeBoundary]);
 
   return (
     <div className="boundary-editor">
@@ -415,75 +379,58 @@ function FarmBoundaryEditor({
           </div>
         </>
       ) : (
-        <button
-          className="boundary-map"
-          type="button"
-          onClick={handleMapClick}
-        >
-          <span className="boundary-map-help">
-            Nhấp lên bản đồ để thêm các điểm ranh giới
-          </span>
-
-          <svg
-            viewBox="0 0 100 100"
-            preserveAspectRatio="none"
-            aria-hidden="true"
-          >
-            <defs>
-              <pattern
-                id="map-grid"
-                width="10"
-                height="10"
-                patternUnits="userSpaceOnUse"
-              >
-                <path
-                  d="M 10 0 L 0 0 0 10"
-                  fill="none"
-                  stroke="var(--agri-border)"
-                  strokeWidth="0.35"
-                />
-              </pattern>
-            </defs>
-
-            <rect
-              width="100"
-              height="100"
-              fill="url(#map-grid)"
-            />
-
-            {activeBoundary.points.length >= 3 && (
-              <polygon
-                points={mapPolygonPoints}
-                fill="rgb(var(--agri-primary-rgb) / 0.2)"
-                stroke="var(--agri-title)"
-                strokeWidth="1"
-              />
-            )}
-
-            {activeBoundary.points.map((point) => {
-              const x =
-                ((point.y - 107.98) / 0.14) * 100;
-
-              const y =
-                100 -
-                ((point.x - 12.62) / 0.12) * 100;
-
-              return (
-                <circle
-                  key={point.id}
-                  cx={x}
-                  cy={y}
-                  r="1.7"
-                  fill="var(--agri-title)"
-                  stroke="var(--agri-white)"
-                  strokeWidth="0.7"
-                />
-              );
-            })}
-          </svg>
-        </button>
+        <GeographicMap
+          label="Bản đồ ranh giới nông trại"
+          pointsKind="farm"
+          points={activeBoundary.points.map(point => ({ latitude: point.x, longitude: point.y, label: point.id }))}
+          onMovePoint={(index, point) => {
+            updatePoints(activeBoundary.points.map((current, i) => i === index ? { ...current, x: point.latitude, y: point.longitude } : current));
+            return true;
+          }}
+          onAddPoint={handleMapPoint}
+        />
       )}
 
+
+      <div
+        className={
+          activeBoundary.isValid
+            ? "boundary-result valid"
+            : "boundary-result"
+        }
+      >
+        <strong>
+          {activeBoundary.isValid
+            ? "Ranh giới hợp lệ"
+            : "Cần ít nhất 3 điểm để tạo ranh giới"}
+        </strong>
+
+        <span>
+          {activeBoundary.isValid
+            ? `${activeBoundary.area.toLocaleString(
+                "vi-VN",
+              )} ha · Chu vi ${activeBoundary.perimeter.toLocaleString(
+                "vi-VN",
+              )} m`
+            : `${activeBoundary.points.length} điểm đã nhập`}
+        </span>
+      </div>
+      {summary ? (
+        <div className="farm-boundary-summary-grid">
+          <div className="farm-boundary-coordinate-list" role="region" aria-label="Danh sách tọa độ ranh giới nông trại" tabIndex={0}>
+            {activeBoundary.points.length === 0 && <p className="farm-boundary-coordinate-empty">Chưa có điểm tọa độ.</p>}
+            {activeBoundary.points.map((point, index) => (
+              <div className="farm-boundary-coordinate-row" key={point.id}>
+                <span>{activeBoundary.method === "map" ? `GPS ${index + 1}` : point.id}</span>
+                <code>{activeBoundary.method === "map" ? `${point.x.toFixed(6)}, ${point.y.toFixed(6)}` : `${point.x}, ${point.y}`}</code>
+                <button type="button" aria-label={`Xóa ${point.id}`} onClick={() => removePoint(point.id)}><Trash2 size={15} /></button>
+              </div>
+            ))}
+          </div>
+          {summary}
+        </div>
+      ) : (
+        <>
       {activeBoundary.points.length > 0 && (
         <div className="boundary-points">
           <div className="table-wrapper">
@@ -530,29 +477,9 @@ function FarmBoundaryEditor({
         </div>
       )}
 
-      <div
-        className={
-          activeBoundary.isValid
-            ? "boundary-result valid"
-            : "boundary-result"
-        }
-      >
-        <strong>
-          {activeBoundary.isValid
-            ? "Ranh giới hợp lệ"
-            : "Cần ít nhất 3 điểm để tạo ranh giới"}
-        </strong>
+        </>
+      )}
 
-        <span>
-          {activeBoundary.isValid
-            ? `${activeBoundary.area.toLocaleString(
-                "vi-VN",
-              )} ha · Chu vi ${activeBoundary.perimeter.toLocaleString(
-                "vi-VN",
-              )} m`
-            : `${activeBoundary.points.length} điểm đã nhập`}
-        </span>
-      </div>
     </div>
   );
 }

@@ -1,3 +1,4 @@
+import { DetailViewLink } from "../../components/owner/ListRowActions_wb";
 import "../../styles/farms_wb.css";
 import {
   AlertTriangle,
@@ -223,9 +224,6 @@ function FarmsPage() {
               <option value="suspended">Tạm ngưng</option>
             </select>
 
-            <span className="farm-result-count">
-              {filteredFarms.length} nông trại
-            </span>
           </div>
         </div>
 
@@ -301,13 +299,9 @@ function FarmsPage() {
 
                     <td>
                       <div className="table-actions">
-                        <Link
-                          to={`/farms/${farm.id}`}
-                          aria-label={`Xem ${farm.name}`}
-                          title="Xem chi tiết"
-                        >
+                        <DetailViewLink to={`/farms/${farm.id}`} name={farm.name}>
                           <Eye size={16} />
-                        </Link>
+                        </DetailViewLink>
 
                         {farm.status === "active" && (
                           <button

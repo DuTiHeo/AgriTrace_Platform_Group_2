@@ -1,4 +1,63 @@
-# API services cho app Worker / Leader
+# API services cho web và app
+
+## Web Owner / Admin
+
+`webApi_wb.ts` khai báo đầy đủ **97 thao tác thuộc 17 nhóm** trong OpenAPI backend
+hiện tại. Đây là lớp gọi HTTP có kiểu dữ liệu, không phải dữ liệu giả. Import
+không tự gửi request; chỉ gọi hàm khi màn hình cần dữ liệu hoặc người dùng thao tác.
+
+- `webApi_wb.ts`: hàm gọi API theo nhóm, dùng chung `httpClient_wb.ts` cho base URL,
+  Bearer token, cache, hủy request và lỗi HTTP.
+- `backend_api_types_wb.ts`: kiểu request/response của backend. Giữ nguyên tên trường
+  API, ngày `YYYY-MM-DD`, timestamp và UUID ở dạng chuỗi.
+- [WEB_API_CATALOG.md](WEB_API_CATALOG.md): danh mục đầy đủ tên hàm, HTTP method,
+  endpoint và yêu cầu đăng nhập.
+- Các service nghiệp vụ hiện có như `farmService_wb.ts`, `seasonService_wb.ts`,
+  `taskService_wb.ts` vẫn giữ nguyên giao diện public và phần chuyển đổi dữ liệu cho
+  các trang hiện có. `notificationService_wb.ts` đã nối danh sách, số chưa đọc,
+  đánh dấu đọc và xóa thông báo thật; `supportService_wb.ts` nối báo lỗi hệ thống,
+  `reminderService_wb.ts` nối lịch nhắc mùa vụ. Chi tiết màn hình, giới hạn backend
+  và kết quả kiểm tra nằm trong [OWNER_API_INTEGRATION.md](../../OWNER_API_INTEGRATION.md).
+
+Ví dụ dùng trong một service hoặc màn hình web:
+
+```ts
+import { webApi } from "./webApi_wb";
+
+const reports = await webApi.errorReports.listErrorReports({
+  query: { org_id: farmId, status: "new", limit: 50, offset: 0 },
+});
+const unread = await webApi.notifications.getUnreadNotificationCount();
+const tasks = await webApi.tasks.listTasks({
+  query: { org_id: farmId, include_cancelled: true },
+});
+```
+
+Các tham số được tách thành `path`, `query`, `body`. Các hàm còn nhận `signal` và
+`cacheTtl`; giá trị query `false` và `0` được giữ nguyên, `null`/`undefined` được bỏ
+qua, ID trên đường dẫn được URL-encode. Upload ảnh nhật ký nhận `body.files: Blob[]`
+và tự tạo `FormData`. Lỗi được truyền lên màn hình để xử lý, không đổi thành dữ liệu
+rỗng. API trả 204 có kiểu `void`.
+
+Quyền luôn do backend kiểm tra. `/system-logs`, tạo Owner, sửa vai trò và các thao
+tác quản trị không tự trở thành quyền của Owner chỉ vì đã có hàm web. Đăng nhập qua
+`webApi.auth.login` trả token; luồng đăng nhập hiện có trong `accountService_wb.ts`
+vẫn chịu trách nhiệm lưu/xóa token. Danh sách phân trang chỉ trả trang được yêu cầu.
+
+Khi backend thêm hoặc sửa API, chạy từ `frontend/`:
+
+```powershell
+python scripts/generate_web_api.py --schema http://127.0.0.1:8000/openapi.json
+node --test test/web_api_services.test.cjs
+npm run owner:lint
+npm run owner:build
+```
+
+Generator cũng nhận đường dẫn đến file OpenAPI JSON đã xuất, chỉ đọc schema và ghi
+ba file sinh tự động. Không chỉnh tay các file sinh tự động; không gọi API ghi dữ
+liệu hoặc import backend để sinh mã. Các kiểm tra HTTP giả lập không truy cập DB.
+
+## App Worker / Leader
 
 Các module dưới đây chỉ khai báo kiểu dữ liệu và hàm gọi API. Import module không
 tự gửi request. Các API mới chưa tích hợp vào màn hình hoặc context.

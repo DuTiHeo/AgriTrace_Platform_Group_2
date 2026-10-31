@@ -1,7 +1,7 @@
+import GeographicMap from "./GeographicMap_wb";
 import "../../styles/plot_form_wb.css";
 import {
   MapPinned,
-  MousePointer2,
   Plus,
   Trash2,
   Undo2,
@@ -14,22 +14,18 @@ import {
 } from "react";
 import type {
   ChangeEvent,
-  MouseEvent,
+  ReactNode,
 } from "react";
 import type { BoundaryPoint } from "../../features/owner/plot_wb";
-import { calculatePlotArea } from "../../utils/geometry_wb";
+import type { Farm } from "../../features/owner/farm_wb";
+import { calculatePlotArea, getFarmPolygon, plotBoundaryError } from "../../utils/geometry_wb";
 
 type PlotBoundaryEditorProps = {
   points: BoundaryPoint[];
+  summary?: ReactNode;
+  farm?: Farm | null;
   disabled?: boolean;
   onChange: (points: BoundaryPoint[]) => void;
-};
-
-const MAP_BOUNDS = {
-  minLatitude: 12.68,
-  maxLatitude: 12.74,
-  minLongitude: 108.06,
-  maxLongitude: 108.12,
 };
 
 function parseBoundaryFile(content: string) {
@@ -91,7 +87,9 @@ function parseBoundaryFile(content: string) {
 }
 
 function PlotBoundaryEditor({
+  summary,
   points,
+  farm,
   disabled = false,
   onChange,
 }: PlotBoundaryEditorProps) {
@@ -100,83 +98,73 @@ function PlotBoundaryEditor({
   const [longitude, setLongitude] = useState("");
   const [error, setError] = useState("");
 
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [addPointRequest, setAddPointRequest] = useState(0);
+  const farmPolygon = getFarmPolygon(farm);
+  const boundaryIssue = plotBoundaryError(points, farm);
+  const commitPoints = (next: BoundaryPoint[], validate = true) => {
+    if (disabled) return false;
+    const issue = validate ? plotBoundaryError(next, farm) : "";
+    setError(issue);
+    if (issue) return false;
+    onChange(next);
+    return true;
+  };
+  const movePoint = (index: number, point: BoundaryPoint) =>
+    commitPoints(points.map((current, i) => i === index ? point : current));
   const calculatedArea = useMemo(
     () => calculatePlotArea(points),
     [points],
   );
 
-  const polygonPoints = useMemo(
-    () =>
-      points
-        .map((point) => {
-          const x =
-            ((point.longitude -
-              MAP_BOUNDS.minLongitude) /
-              (MAP_BOUNDS.maxLongitude -
-                MAP_BOUNDS.minLongitude)) *
-            100;
+  const handleMapPoint = (point: BoundaryPoint) => {
+    if (disabled) return;
+    commitPoints([...points, point]);
+  };
 
-          const y =
-            ((MAP_BOUNDS.maxLatitude -
-              point.latitude) /
-              (MAP_BOUNDS.maxLatitude -
-                MAP_BOUNDS.minLatitude)) *
-            100;
-
-          return `${x},${y}`;
-        })
-        .join(" "),
-    [points],
-  );
-
-  const handleMapClick = (
-    event: MouseEvent<HTMLDivElement>,
-  ) => {
-    if (disabled) {
-      return;
+  const handleAutoAddPoint = (center: BoundaryPoint) => {
+    if (disabled) return;
+    const candidates = [center];
+    if (farmPolygon.length) {
+      const latitudes = farmPolygon.map(p => p.latitude);
+      const longitudes = farmPolygon.map(p => p.longitude);
+      const minLat = Math.min(...latitudes), maxLat = Math.max(...latitudes);
+      const minLng = Math.min(...longitudes), maxLng = Math.max(...longitudes);
+      const anchor = points.at(-1) ?? center;
+      // Prefer a nearby vacant spot; test the whole resulting boundary, not just the point.
+      for (const step of [0.02, 0.05, 0.1, 0.2]) {
+        for (let direction = 0; direction < 8; direction++) {
+          const angle = direction * Math.PI / 4;
+          candidates.push({ latitude: anchor.latitude + Math.sin(angle) * (maxLat - minLat) * step,
+            longitude: anchor.longitude + Math.cos(angle) * (maxLng - minLng) * step });
+        }
+      }
+      for (let y = 1; y < 16; y++) for (let x = 1; x < 16; x++) {
+        candidates.push({ latitude: minLat + (maxLat - minLat) * y / 16, longitude: minLng + (maxLng - minLng) * x / 16 });
+      }
     }
-
-    const rectangle =
-      event.currentTarget.getBoundingClientRect();
-
-    const horizontalRate =
-      (event.clientX - rectangle.left) / rectangle.width;
-
-    const verticalRate =
-      (event.clientY - rectangle.top) / rectangle.height;
-
-    const newPoint: BoundaryPoint = {
-      latitude: Number(
-        (
-          MAP_BOUNDS.maxLatitude -
-          verticalRate *
-            (MAP_BOUNDS.maxLatitude -
-              MAP_BOUNDS.minLatitude)
-        ).toFixed(6),
-      ),
-      longitude: Number(
-        (
-          MAP_BOUNDS.minLongitude +
-          horizontalRate *
-            (MAP_BOUNDS.maxLongitude -
-              MAP_BOUNDS.minLongitude)
-        ).toFixed(6),
-      ),
-    };
-
-    setError("");
-    onChange([...points, newPoint]);
+    const point = candidates.map(p => ({ latitude: Number(p.latitude.toFixed(6)), longitude: Number(p.longitude.toFixed(6)) }))
+      .find(p => !plotBoundaryError([...points, p], farm));
+    if (point) commitPoints([...points, point]);
+    else setError(plotBoundaryError(points, farm) || "Chưa tìm được chỗ đặt mốc mới hợp lệ. Hãy kéo chỉnh các mốc hiện có hoặc nhấp trực tiếp trong ranh giới nông trại.");
   };
 
   const handleAddCoordinate = () => {
+    if (disabled) return;
+    if (editingIndex === null && !latitude.trim() && !longitude.trim()) {
+      setError("");
+      setAddPointRequest(request => request + 1);
+      return;
+    }
     const parsedLatitude = Number(latitude);
     const parsedLongitude = Number(longitude);
 
     if (
+      !latitude.trim() || !longitude.trim() ||
       !Number.isFinite(parsedLatitude) ||
       !Number.isFinite(parsedLongitude)
     ) {
-      setError("Vui lòng nhập tọa độ hợp lệ.");
+      setError("Vui lòng nhập đủ vĩ độ và kinh độ; hoặc để trống cả hai ô để thêm mốc tại tâm bản đồ.");
       return;
     }
 
@@ -190,14 +178,12 @@ function PlotBoundaryEditor({
       return;
     }
 
-    setError("");
-    onChange([
-      ...points,
-      {
-        latitude: parsedLatitude,
-        longitude: parsedLongitude,
-      },
-    ]);
+    const point = { latitude: parsedLatitude, longitude: parsedLongitude };
+    const accepted = editingIndex === null
+      ? commitPoints([...points, point])
+      : movePoint(editingIndex, point);
+    if (!accepted) return;
+    setEditingIndex(null);
 
     setLatitude("");
     setLongitude("");
@@ -216,8 +202,7 @@ function PlotBoundaryEditor({
       const content = await file.text();
       const importedPoints = parseBoundaryFile(content);
 
-      setError("");
-      onChange(importedPoints);
+      if (commitPoints(importedPoints)) setEditingIndex(null);
     } catch (fileError) {
       setError(
         fileError instanceof Error
@@ -240,7 +225,7 @@ function PlotBoundaryEditor({
               step="0.000001"
               value={latitude}
               disabled={disabled}
-              placeholder="12.710800"
+              placeholder="20.999900"
               onChange={(event) =>
                 setLatitude(event.target.value)
               }
@@ -254,7 +239,7 @@ function PlotBoundaryEditor({
               step="0.000001"
               value={longitude}
               disabled={disabled}
-              placeholder="108.091800"
+              placeholder="105.842800"
               onChange={(event) =>
                 setLongitude(event.target.value)
               }
@@ -268,8 +253,9 @@ function PlotBoundaryEditor({
             onClick={handleAddCoordinate}
           >
             <Plus size={17} />
-            Thêm điểm
+            {editingIndex === null ? "Thêm điểm" : `Cập nhật GPS ${editingIndex + 1}`}
           </button>
+          {editingIndex !== null && <button type="button" className="btn btn-secondary" onClick={() => { setEditingIndex(null); setLatitude(""); setLongitude(""); }}>Hủy sửa mốc</button>}
         </div>
 
         <div className="boundary-actions">
@@ -296,7 +282,7 @@ function PlotBoundaryEditor({
             type="button"
             disabled={disabled || points.length === 0}
             aria-label="Hoàn tác điểm cuối"
-            onClick={() => onChange(points.slice(0, -1))}
+            onClick={() => { commitPoints(points.slice(0, -1), false); setEditingIndex(null); }}
           >
             <Undo2 size={17} />
           </button>
@@ -306,66 +292,26 @@ function PlotBoundaryEditor({
             type="button"
             disabled={disabled || points.length === 0}
             aria-label="Xóa toàn bộ ranh giới"
-            onClick={() => onChange([])}
+            onClick={() => { commitPoints([], false); setEditingIndex(null); }}
           >
             <Trash2 size={17} />
           </button>
         </div>
       </div>
 
-      {error && (
-        <div className="boundary-error">{error}</div>
+      {(error || boundaryIssue) && (
+        <div className="boundary-error" role="alert">{error || boundaryIssue}</div>
       )}
 
-      <div
-        className={`boundary-map ${
-          disabled ? "disabled" : ""
-        }`}
-        role="button"
-        tabIndex={disabled ? -1 : 0}
-        aria-label="Bản đồ thiết lập ranh giới vùng trồng"
-        onClick={handleMapClick}
-      >
-        <div className="boundary-map-grid" />
-
-        {points.length === 0 && (
-          <div className="boundary-map-empty">
-            <MousePointer2 size={25} />
-            <strong>Nhấp trên bản đồ để tạo ranh giới</strong>
-            <span>
-              Tạo tối thiểu 3 điểm để hình thành vùng trồng.
-            </span>
-          </div>
-        )}
-
-        <svg
-          className="boundary-polygon"
-          viewBox="0 0 100 100"
-          preserveAspectRatio="none"
-          aria-hidden="true"
-        >
-          {points.length >= 3 && (
-            <polygon points={polygonPoints} />
-          )}
-
-          {points.length >= 2 && points.length < 3 && (
-            <polyline points={polygonPoints} />
-          )}
-
-          {points.map((point, index) => {
-            const [x, y] = polygonPoints.split(" ")[index].split(",");
-
-            return (
-              <circle
-                key={`${point.latitude}-${point.longitude}-${index}`}
-                cx={x}
-                cy={y}
-                r="1.25"
-              />
-            );
-          })}
-        </svg>
-      </div>
+      <GeographicMap
+        label="Bản đồ thiết lập ranh giới vùng trồng"
+        points={points}
+        regions={farmPolygon.length ? [{ id: farm!.id, kind: "farm", label: `Ranh giới ${farm!.name}`, points: farmPolygon.map((point, i) => ({ ...point, label: `NT ${i + 1}` })) }] : []}
+        onAddPoint={disabled ? undefined : handleMapPoint}
+        onAutoAddPoint={disabled ? undefined : handleAutoAddPoint}
+        onMovePoint={disabled ? undefined : movePoint}
+        addPointRequest={addPointRequest}
+      />
 
       <div className="boundary-footer">
         <div>
@@ -381,14 +327,15 @@ function PlotBoundaryEditor({
         </strong>
       </div>
 
-      {points.length > 0 && (
+      <div className={summary ? "boundary-summary-grid" : undefined}>
         <div className="boundary-point-list">
+          {points.length === 0 && <p className="boundary-points-empty">Chưa có điểm tọa độ.</p>}
           {points.map((point, index) => (
             <div
               className="boundary-point-row"
               key={`${point.latitude}-${point.longitude}-${index}`}
             >
-              <span>Điểm {index + 1}</span>
+              <span>GPS {index + 1}</span>
 
               <code>
                 {point.latitude.toFixed(6)},{" "}
@@ -400,12 +347,12 @@ function PlotBoundaryEditor({
                   type="button"
                   aria-label={`Xóa điểm ${index + 1}`}
                   onClick={() =>
-                    onChange(
+                    { setEditingIndex(null); commitPoints(
                       points.filter(
                         (_, pointIndex) =>
                           pointIndex !== index,
-                      ),
-                    )
+                      ), false,
+                    ); }
                   }
                 >
                   <Trash2 size={15} />
@@ -414,7 +361,8 @@ function PlotBoundaryEditor({
             </div>
           ))}
         </div>
-      )}
+        {summary}
+      </div>
     </div>
   );
 }

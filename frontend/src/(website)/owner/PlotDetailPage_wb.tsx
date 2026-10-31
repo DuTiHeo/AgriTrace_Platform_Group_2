@@ -1,7 +1,9 @@
+import BackButton from "../../components/owner/BackButton_wb";
+import "../../styles/boundary_detail_wb.css";
+import GeographicMap from "../../components/owner/GeographicMap_wb";
 import "../../styles/plots_wb.css";
 import "../../styles/plot_detail_wb.css";
 import {
-  ArrowLeft,
   Building2,
   CalendarDays,
   CheckCircle2,
@@ -25,7 +27,6 @@ import {
 } from "react";
 import type { FormEvent } from "react";
 import {
-  Link,
   useNavigate,
   useParams,
 } from "react-router-dom";
@@ -36,7 +37,7 @@ import type {
   BoundaryPoint,
   Plot,
 } from "../../features/owner/plot_wb";
-import { calculatePlotArea } from "../../utils/geometry_wb";
+import { calculatePlotArea, getFarmPolygon, plotBoundaryError } from "../../utils/geometry_wb";
 
 type DialogType =
   | "edit"
@@ -49,88 +50,23 @@ type DialogType =
 type EditForm = {
   code: string;
   area: string;
+  status: Plot["status"];
 };
+
+import type { Farm } from "../../features/owner/farm_wb";
 
 function PlotBoundaryPreview({
   points,
+  farm,
 }: {
   points: BoundaryPoint[];
+  farm?: Farm;
 }) {
-  const polygonPoints = useMemo(() => {
-    if (points.length === 0) {
-      return "";
-    }
-
-    const latitudes = points.map(
-      (point) => point.latitude,
-    );
-    const longitudes = points.map(
-      (point) => point.longitude,
-    );
-
-    const minLatitude = Math.min(...latitudes);
-    const maxLatitude = Math.max(...latitudes);
-    const minLongitude = Math.min(...longitudes);
-    const maxLongitude = Math.max(...longitudes);
-
-    const latitudeRange =
-      maxLatitude - minLatitude || 0.001;
-    const longitudeRange =
-      maxLongitude - minLongitude || 0.001;
-
-    return points
-      .map((point) => {
-        const x =
-          10 +
-          ((point.longitude - minLongitude) /
-            longitudeRange) *
-            80;
-
-        const y =
-          10 +
-          ((maxLatitude - point.latitude) /
-            latitudeRange) *
-            80;
-
-        return `${x},${y}`;
-      })
-      .join(" ");
-  }, [points]);
-
-  return (
-    <div className="plot-boundary-preview">
-      <div className="plot-boundary-grid" />
-
-      <svg
-        viewBox="0 0 100 100"
-        preserveAspectRatio="none"
-        aria-label="Ranh giới vùng trồng"
-      >
-        <polygon points={polygonPoints} />
-
-        {polygonPoints
-          .split(" ")
-          .filter(Boolean)
-          .map((coordinate, index) => {
-            const [x, y] = coordinate.split(",");
-
-            return (
-              <circle
-                key={`${coordinate}-${index}`}
-                cx={x}
-                cy={y}
-                r="1.4"
-              />
-            );
-          })}
-      </svg>
-
-      <div className="plot-boundary-label">
-        <MapPinned size={17} />
-        {points.length} điểm tọa độ
-      </div>
-    </div>
-  );
+  const polygon = getFarmPolygon(farm);
+  return <>
+    <GeographicMap label="Vùng trồng và ranh giới nông trại" points={points}
+      regions={farm && polygon.length ? [{ id: farm.id, kind: "farm", label: farm.name, points: polygon.map((p, i) => ({ ...p, label: `NT ${i + 1}` })) }] : []} />
+  </>;
 }
 
 function PlotDetailPage() {
@@ -150,6 +86,7 @@ function PlotDetailPage() {
     useState<EditForm>({
       code: "",
       area: "",
+      status: "active",
     });
 
   const [editingBoundary, setEditingBoundary] =
@@ -195,9 +132,6 @@ function PlotDetailPage() {
       plot.linkedData.tasks > 0 ||
       plot.linkedData.cultivationLogs > 0);
 
-  const boundaryLocked =
-    plot?.currentSeasonStatus === "active";
-
   const openEditDialog = () => {
     if (!plot) {
       return;
@@ -206,6 +140,7 @@ function PlotDetailPage() {
     setEditForm({
       code: plot.code,
       area: String(plot.area),
+      status: plot.status,
     });
 
     setActionError("");
@@ -213,7 +148,7 @@ function PlotDetailPage() {
   };
 
   const openBoundaryDialog = () => {
-    if (!plot || boundaryLocked) {
+    if (!plot) {
       return;
     }
 
@@ -236,7 +171,7 @@ function PlotDetailPage() {
   ) => {
     event.preventDefault();
 
-    if (!plot) {
+    if (!plot || saving) {
       return;
     }
 
@@ -263,6 +198,7 @@ function PlotDetailPage() {
         {
           code: editForm.code,
           area,
+          status: editForm.status,
         },
       );
 
@@ -280,43 +216,27 @@ function PlotDetailPage() {
   };
 
   const handleSaveBoundary = async () => {
-    if (!plot) {
+    if (!plot || saving) {
       return;
     }
 
-    if (editingBoundary.length < 3) {
-      setActionError(
-        "Ranh giới phải có ít nhất 3 điểm tọa độ.",
-      );
+    const boundaryError = plotBoundaryError(editingBoundary, farms.find(farm => farm.id === plot.farmId), true);
+    if (boundaryError) {
+      setActionError(boundaryError);
       return;
     }
 
     const calculatedArea =
       calculatePlotArea(editingBoundary);
 
-    setSaving(true);
     setActionError("");
-
+    setSaving(true);
     try {
-      const updatedPlot = await plotService.update(
-        plot.id,
-        {
-          boundary: editingBoundary,
-          area:
-            calculatedArea > 0
-              ? calculatedArea
-              : plot.area,
-        },
-      );
-
-      setPlot(updatedPlot);
+      const updated = await plotService.update(plot.id, { boundary: editingBoundary, area: calculatedArea });
+      setPlot(updated);
       setDialog(null);
     } catch (error) {
-      setActionError(
-        error instanceof Error
-          ? error.message
-          : "Không thể cập nhật ranh giới.",
-      );
+      setActionError(error instanceof Error ? error.message : "Không thể lưu ranh giới.");
     } finally {
       setSaving(false);
     }
@@ -399,10 +319,8 @@ function PlotDetailPage() {
       <div className="page">
         <div className="not-found-card card">
           <MapPinned size={34} />
-          <h1>Không tìm thấy vùng trồng</h1>
-          <Link className="btn btn-primary" to="/plots">
-            Quay lại danh sách
-          </Link>
+          <div className="page-title-with-back"><BackButton to="/plots" label="Quay lại danh sách vùng trồng" /><h1>Không tìm thấy vùng trồng</h1></div>
+
         </div>
       </div>
     );
@@ -411,13 +329,7 @@ function PlotDetailPage() {
   return (
     <div className="page plot-detail-page">
       <div className="plot-detail-topbar">
-        <Link
-          className="back-link"
-          to="/plots"
-        >
-          <ArrowLeft size={18} />
-          Vùng trồng
-        </Link>
+        <BackButton to="/plots" label="Quay lại danh sách vùng trồng" />
 
         <div className="plot-detail-actions">
           <button
@@ -460,9 +372,8 @@ function PlotDetailPage() {
       </div>
 
       <section className="plot-detail-hero card">
-        <div className="plot-detail-hero-icon">
-          <MapPinned size={27} />
-        </div>
+        <div className="plot-detail-hero-icon"><MapPinned size={27} /></div>
+        
 
         <div className="plot-detail-title">
           <div>
@@ -548,16 +459,7 @@ function PlotDetailPage() {
             </div>
           )}
 
-          {boundaryLocked && (
-            <div className="boundary-lock-notice">
-              <Lock size={17} />
 
-              <span>
-                Ranh giới đang được khóa vì vùng trồng có
-                mùa vụ hoạt động.
-              </span>
-            </div>
-          )}
         </section>
       </div>
 
@@ -574,31 +476,28 @@ function PlotDetailPage() {
           <button
             className="btn btn-secondary"
             type="button"
-            disabled={boundaryLocked}
             onClick={openBoundaryDialog}
           >
-            {boundaryLocked ? (
-              <Lock size={17} />
-            ) : (
-              <Edit3 size={17} />
-            )}
+            <Edit3 size={17} />
             Sửa ranh giới
           </button>
         </div>
 
-        <PlotBoundaryPreview points={plot.boundary} />
-
-        <div className="plot-coordinate-list">
-          {plot.boundary.map((point, index) => (
-            <div
-              className="plot-coordinate-row"
-              key={`${point.latitude}-${point.longitude}-${index}`}
-            >
-              <span>Điểm {index + 1}</span>
-              <code>{point.latitude.toFixed(6)}</code>
-              <code>{point.longitude.toFixed(6)}</code>
-            </div>
-          ))}
+        <div className="boundary-detail-summary">
+          <div><span>Phương thức</span><strong>Bản đồ GPS</strong></div>
+          <div><span>Diện tích</span><strong>{plot.area.toLocaleString("vi-VN")} ha</strong></div>
+          <div><span>Số điểm tọa độ</span><strong>{plot.boundary.length} điểm</strong></div>
+        </div>
+        <div className="boundary-detail-layout">
+          <PlotBoundaryPreview points={plot.boundary} farm={farms.find(farm => farm.id === plot.farmId)} />
+          <div className="boundary-detail-points" role="region" aria-label="Tọa độ ranh giới vùng trồng" tabIndex={0}>
+            <table>
+              <thead><tr><th>STT</th><th>Vĩ độ</th><th>Kinh độ</th></tr></thead>
+              <tbody>{plot.boundary.map((point, index) => (
+                <tr key={`${point.latitude}-${point.longitude}-${index}`}><td>GPS {index + 1}</td><td>{point.latitude.toFixed(6)}</td><td>{point.longitude.toFixed(6)}</td></tr>
+              ))}</tbody>
+            </table>
+          </div>
         </div>
       </section>
 
@@ -615,7 +514,7 @@ function PlotDetailPage() {
           <div
             className={`app-modal ${
               dialog === "boundary"
-                ? "app-modal-large"
+                ? "app-modal-large plot-editor-modal"
                 : ""
             }`}
             role="dialog"
@@ -642,6 +541,7 @@ function PlotDetailPage() {
               <button
                 type="button"
                 aria-label="Đóng"
+                disabled={saving}
                 onClick={closeDialog}
               >
                 <X size={20} />
@@ -657,6 +557,7 @@ function PlotDetailPage() {
                   <label className="form-field">
                     <span>Mã vùng trồng</span>
                     <input
+                      maxLength={50}
                       value={editForm.code}
                       onChange={(event) =>
                         setEditForm((current) => ({
@@ -665,6 +566,19 @@ function PlotDetailPage() {
                         }))
                       }
                     />
+                  </label>
+
+                  <label className="form-field">
+                    <span>Trạng thái hoạt động</span>
+                    <select value={editForm.status} onChange={(event) => setEditForm(current => ({ ...current, status: event.target.value as Plot["status"] }))}>
+                      <option value="active">Đang hoạt động</option>
+                      <option value="inactive">Ngừng hoạt động</option>
+                    </select>
+                  </label>
+
+                  <label className="form-field">
+                    <span>Nông trại</span>
+                    <input readOnly value={farmName} />
                   </label>
 
                   <label className="form-field">
@@ -685,6 +599,8 @@ function PlotDetailPage() {
 
                 </div>
 
+
+
                 {actionError && (
                   <div className="form-error-block">
                     {actionError}
@@ -695,6 +611,7 @@ function PlotDetailPage() {
                   <button
                     className="btn btn-secondary"
                     type="button"
+                    disabled={saving}
                     onClick={closeDialog}
                   >
                     Hủy
@@ -717,10 +634,16 @@ function PlotDetailPage() {
             {dialog === "boundary" && (
               <>
                 <div className="app-modal-body">
+                  {plot.currentSeasonId && <p className="form-error-block" role="status">Không thể sửa ranh giới khi vùng trồng đang có mùa vụ hoạt động.</p>}
+                  <div inert={saving}>
                   <PlotBoundaryEditor
+                    farm={farms.find(farm => farm.id === plot.farmId)}
                     points={editingBoundary}
+                    disabled={Boolean(plot.currentSeasonId)}
                     onChange={setEditingBoundary}
+                    summary={<div className="calculated-area"><span>Diện tích từ ranh giới</span><strong>{calculatePlotArea(editingBoundary).toLocaleString("vi-VN")} ha</strong></div>}
                   />
+                  </div>
 
                   {actionError && (
                     <div className="form-error-block">
@@ -741,7 +664,7 @@ function PlotDetailPage() {
                   <button
                     className="btn btn-primary"
                     type="button"
-                    disabled={saving}
+                    disabled={saving || Boolean(plot.currentSeasonId) || calculatePlotArea(editingBoundary) <= 0}
                     onClick={handleSaveBoundary}
                   >
                     <Save size={17} />

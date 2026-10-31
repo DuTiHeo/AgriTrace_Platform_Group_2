@@ -1,5 +1,6 @@
 import "../../styles/tasks_wb.css";
-import { CalendarClock, CheckCheck, ClipboardList, Plus, Search, Send, UserRound, X } from "lucide-react";
+import { ListActionConfirmation } from "../../components/owner/ListRowActions_wb";
+import { CalendarClock, CheckCheck, ClipboardList, Plus, Search, Undo2, UserRound, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useFarmContext } from "../../contexts/FarmContext_wb";
 import { getPersonnelList } from "../../sevices/personnelService_wb";
@@ -13,10 +14,12 @@ import type { TeamSummary } from "../../features/owner/team_wb";
 
 type Draft = { farmId: string; plotId: string; teamId: string; assigneeId: string; content: string; startAt: string; dueAt: string };
 type PageData = { tasks: Task[]; plots: Plot[]; teams: TeamSummary[]; personnel: Personnel[] };
-const labels: Record<TaskStatus, string> = { pending: "Chờ thực hiện", in_progress: "Đang thực hiện", completed: "Đã hoàn thành", cancelled: "Đã hủy", incomplete: "Chưa hoàn thành" };
-function localTime(date: Date) { return new Date(date.getTime() - date.getTimezoneOffset()*60000).toISOString().slice(0,16); }
+const labels: Record<TaskStatus, string> = { pending: "Chờ thực hiện", in_progress: "Đang thực hiện", completed: "Đã hoàn thành", cancelled: "Đã thu hồi", incomplete: "Chưa hoàn thành" };
+function localDate(date: Date) {
+  return new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Ho_Chi_Minh", year: "numeric", month: "2-digit", day: "2-digit" }).format(date);
+}
 function emptyDraft(farmId: string): Draft {
-  return { farmId, plotId: "", teamId: "", assigneeId: "", content: "", startAt: localTime(new Date()), dueAt: localTime(new Date(Date.now()+86400000)) };
+  return { farmId, plotId: "", teamId: "", assigneeId: "", content: "", startAt: localDate(new Date()), dueAt: localDate(new Date(Date.now()+86400000)) };
 }
 function formatTime(value: string) {
   const date = new Date(value);
@@ -29,6 +32,7 @@ export default function TasksPage() {
   const [loading,setLoading] = useState(true), [error,setError] = useState("");
   const [search,setSearch] = useState(""), [status,setStatus] = useState<TaskStatus|"all">("all");
   const [createOpen,setCreateOpen] = useState(false), [draft,setDraft] = useState(() => emptyDraft(""));
+  const [recallTarget, setRecallTarget] = useState<Task | null>(null);
   const [saving,setSaving] = useState(false), [formError,setFormError] = useState(""), [notice,setNotice] = useState("");
   const requestId=useRef(0);
   const farmIds=useMemo(() => selectedFarmId === "all" ? farms.map(f=>f.id) : [selectedFarmId], [farms,selectedFarmId]);
@@ -66,19 +70,19 @@ export default function TasksPage() {
   }).sort((a,b)=>Date.parse(b.createdAt)-Date.parse(a.createdAt));
   const openCreate=()=>{ setDraft(emptyDraft(selectedFarmId==="all" ? farms[0]?.id??"" : selectedFarmId)); setFormError(""); setCreateOpen(true); };
   async function create(e:FormEvent) {
-    e.preventDefault(); setSaving(true); setFormError("");
-    try { await taskService.create(draft); setCreateOpen(false); setNotice("Đã giao công việc."); await load(); }
+    e.preventDefault();
+    if (draft.dueAt < draft.startAt) { setFormError("Hạn hoàn thành không được trước ngày bắt đầu."); return; }
+    setSaving(true); setFormError("");
+    try { await taskService.create({ ...draft, startAt: `${draft.startAt}T08:00:00+07:00`, dueAt: `${draft.dueAt}T17:00:00+07:00` }); setCreateOpen(false); setNotice("Đã giao công việc."); await load(); }
     catch(e) { setFormError(e instanceof Error ? e.message : "Không thể giao công việc."); }
     finally { setSaving(false); }
   }
-  async function action(task:Task, cancel=false) {
-    if(cancel && !window.confirm("Hủy công việc này?")) return;
+  async function recallTask(task:Task) {
     setSaving(true); setNotice("");
     try {
-      if(cancel) await taskService.cancel(task.id,""); else await taskService.submitCompletion(task.id,task.assigneeId);
-      setNotice(cancel ? "Đã hủy công việc." : "Đã hoàn thành công việc."); await load();
-    } catch(e) { setNotice(e instanceof Error ? e.message : "Không thể cập nhật công việc."); }
-    finally { setSaving(false); }
+      await taskService.cancel(task.id, "");
+      setNotice("Đã thu hồi công việc."); await load();
+    } finally { setSaving(false); }
   }
   return <div className="page tasks-page">
     <div className="page-heading tasks-heading"><div><h1>Công việc</h1><p>Giao việc theo vùng trồng, tổ và người nhận.</p></div>
@@ -102,9 +106,10 @@ export default function TasksPage() {
           <div className="task-row-title"><h2>{task.content}</h2><span className={`task-status task-status-${task.status}`}>{labels[task.status]}</span></div>
           <div className="task-context-line"><span>{data.plots.find(p=>p.id===task.plotId)?.name??"Vùng trồng"}</span><span>{data.teams.find(t=>t.id===task.teamId)?.name??"Tổ không còn tồn tại"}</span></div>
           <div className="task-assignment-line"><span><UserRound size={15}/>{task.assigneeName} {person ? `· ${person.role==="leader" ? "Tổ trưởng" : "Công nhân"}` : ""}</span><span><CalendarClock size={15}/>Hạn {formatTime(task.dueAt)}</span></div>
-        </div>{["pending", "in_progress", "incomplete"].includes(task.status) && <div className="task-row-actions"><button className="btn btn-secondary" disabled={saving} onClick={()=>void action(task)}><Send size={16}/>Hoàn thành công việc</button><button className="task-cancel-button" aria-label="Hủy công việc" disabled={saving} onClick={()=>void action(task,true)}><X size={17}/></button></div>}</article>;
+        </div>{["pending", "in_progress", "incomplete"].includes(task.status) && <div className="task-row-actions"><button className="btn btn-secondary" disabled={saving} onClick={()=>setRecallTarget(task)}><Undo2 size={16}/>Thu hồi</button></div>}</article>;
       })}</div> : <div className="task-empty-state"><ClipboardList size={34}/><strong>Chưa có công việc phù hợp</strong></div>}
     </section>
+    {recallTarget && <ListActionConfirmation action="status" name={recallTarget.content} statusLabel="Thu hồi công việc" description="Bạn có chắc muốn thu hồi công việc đã giao? Công việc sẽ chuyển sang trạng thái đã thu hồi." onClose={()=>setRecallTarget(null)} onConfirm={()=>recallTask(recallTarget)} />}
     {createOpen && <div className="modal-backdrop"><section className="app-modal task-create-modal" role="dialog" aria-modal="true" aria-labelledby="task-create-title">
       <header className="app-modal-header"><h2 id="task-create-title">Giao công việc</h2><button aria-label="Đóng" disabled={saving} onClick={()=>setCreateOpen(false)}><X size={20}/></button></header>
       <form className="task-create-form" onSubmit={create}>
@@ -113,10 +118,11 @@ export default function TasksPage() {
         <label><span>Tổ phụ trách</span><select required value={draft.teamId} disabled={!draft.farmId} onChange={e=>setDraft({...draft,teamId:e.target.value,assigneeId:""})}><option value="">Chọn tổ</option>{teams.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
         <label><span>Người nhận</span><select required value={draft.assigneeId} disabled={!draft.teamId} onChange={e=>setDraft({...draft,assigneeId:e.target.value})}><option value="">Chọn người nhận</option>{members.map(p=><option key={p.id} value={p.id}>{p.fullName} · {p.role==="leader"?"Tổ trưởng":"Công nhân"}</option>)}</select></label>
         <label className="task-field-full"><span>Nội dung công việc</span><textarea required rows={3} maxLength={500} value={draft.content} onChange={e=>setDraft({...draft,content:e.target.value})}/></label>
-        <div className="task-date-grid"><label><span>Bắt đầu</span><input required type="datetime-local" value={draft.startAt} onChange={e=>setDraft({...draft,startAt:e.target.value})}/></label><label><span>Hạn hoàn thành</span><input required type="datetime-local" value={draft.dueAt} onChange={e=>setDraft({...draft,dueAt:e.target.value})}/></label></div>
+        <div className="task-date-grid"><label><span>Ngày bắt đầu</span><input required type="date" value={draft.startAt} onChange={e=>setDraft({...draft,startAt:e.target.value})}/></label><label><span>Ngày hoàn thành</span><input required type="date" min={draft.startAt} value={draft.dueAt} onChange={e=>setDraft({...draft,dueAt:e.target.value})}/></label></div>
         {formError && <div className="form-error task-field-full" role="alert">{formError}</div>}
         <footer className="app-modal-footer task-field-full"><button className="btn btn-secondary" type="button" disabled={saving} onClick={()=>setCreateOpen(false)}>Hủy</button><button className="btn btn-primary" type="submit" disabled={saving || members.length===0}>{saving?"Đang lưu...":"Giao công việc"}</button></footer>
       </form>
     </section></div>}
   </div>;
 }
+

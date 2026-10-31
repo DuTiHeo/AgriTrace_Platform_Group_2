@@ -4,7 +4,6 @@ import {
   Camera,
   ChevronRight,
   ClipboardList,
-  FilterX,
   MapPinned,
   MessageSquareText,
   NotebookPen,
@@ -204,20 +203,7 @@ function FarmingLogsPage() {
     (total, log) => total + log.photos.length,
     0,
   );
-  const hasActiveFilters =
-    searchText ||
-    seasonFilter !== "all" ||
-    activityFilter !== "all" ||
-    periodFilter !== "all" ||
-    noteFilter !== "all";
 
-  const resetFilters = () => {
-    setSearchText("");
-    setSeasonFilter("all");
-    setActivityFilter("all");
-    setPeriodFilter("all");
-    setNoteFilter("all");
-  };
 
   const scopeName =
     selectedFarmId === "all"
@@ -322,17 +308,6 @@ function FarmingLogsPage() {
             <option value="resolved">Đã xử lý</option>
             <option value="none">Chưa có ghi chú</option>
           </select>
-
-          {hasActiveFilters && (
-            <button
-              className="farming-log-reset"
-              type="button"
-              onClick={resetFilters}
-            >
-              <FilterX size={16} />
-              Xóa lọc
-            </button>
-          )}
         </div>
 
         <div className="farming-log-result-bar">
@@ -433,4 +408,5 @@ function FarmingLogsPage() {
 }
 
 export default FarmingLogsPage;
+
 

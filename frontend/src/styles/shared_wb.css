@@ -1,4 +1,129 @@
 /* Shared loading states, form feedback, steps, and dialogs. */
+.page-back-button,
+.app-content .page-back-button {
+  display: inline-flex;
+  box-sizing: border-box;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--agri-border);
+  border-radius: var(--agri-radius-control);
+  background: var(--agri-white);
+  color: var(--agri-primary);
+  text-decoration: none;
+  cursor: pointer;
+}
+.app-content .page-back-button:hover:not(:disabled) { border-color: var(--agri-primary); color: var(--agri-primary-text); background: var(--agri-white); text-decoration: none; }
+.app-content .page-back-button:disabled { opacity: 0.5; cursor: default; }
+.page-title-with-back { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.personnel-profile-name:has(> .page-back-button) { flex-direction: row; align-items: center; }
+
+.app-content :is(.team-detail-page, .personnel-detail-page, .plot-detail-page, .season-detail-page) > :is(.personnel-detail-topbar, .plot-detail-topbar, .season-detail-topbar) {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.list-action-dialog {
+  width: min(440px, calc(100vw - 32px));
+  max-height: calc(100dvh - 48px);
+  margin: auto;
+  padding: 26px;
+  overflow-y: auto;
+  border: 1px solid var(--agri-border);
+  border-radius: var(--agri-radius-card);
+  background: var(--agri-surface);
+  color: var(--agri-text);
+  text-align: center;
+  box-shadow: var(--shadow-md);
+}
+.list-action-dialog::backdrop { background: var(--agri-backdrop); backdrop-filter: blur(var(--agri-backdrop-blur)); }
+.list-action-dialog h2 { margin: 14px 0 8px; font-size: 20px; color: var(--agri-title); }
+.list-action-dialog p { margin: 8px 0; font-size: 13px; color: var(--agri-muted-strong); line-height: 1.6; overflow-wrap: anywhere; }
+.list-action-dialog .list-action-name { font-weight: 700; color: var(--agri-text); }
+.list-action-symbol { display: grid; place-items: center; width: 48px; height: 48px; margin: auto; border-radius: 50%; color: var(--agri-warning-text); background: var(--agri-warning-soft); }
+.list-action-symbol.is-danger { color: var(--agri-danger-text); background: var(--agri-danger-soft); }
+.list-action-footer { display: flex; justify-content: center; gap: 12px; margin-top: 22px; }
+.list-action-fields { display: grid; gap: 14px; margin: 16px 0; text-align: left; }
+.list-action-fields label { display: grid; gap: 6px; font-size: 13px; font-weight: 600; }
+.list-action-fields :is(select, input) { width: 100%; padding: 10px; border: 1px solid var(--agri-input-border); border-radius: var(--agri-radius-control); color: var(--agri-text); background: var(--agri-input); }
+.list-row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  width: max-content;
+  margin-left: auto;
+}
+
+.list-row-actions > :is(a, button) {
+  display: inline-flex;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--agri-border);
+  border-radius: var(--agri-radius-control);
+  background: var(--agri-surface);
+  color: var(--agri-muted-strong);
+  cursor: pointer;
+}
+
+.list-row-actions > :is(a, button):hover {
+  border-color: var(--agri-primary);
+  background: var(--agri-primary-soft);
+  color: var(--agri-primary-text);
+}
+
+.list-row-actions > .list-row-delete:hover {
+  border-color: var(--agri-danger-border-soft);
+  background: var(--agri-danger-soft);
+  color: var(--agri-danger-text);
+}
+
+/* Status labels share the boundary column's shape; each domain owns its colors. */
+.app-shell .app-content :is(
+  .boundary-status,
+  .creation-review-status,
+  .status-badge,
+  .season-status,
+  .task-status,
+  .harvest-status,
+  .support-status,
+  .farming-log-recorded-badge,
+  .farming-log-attention-badge
+) {
+  display: inline-flex;
+  box-sizing: border-box;
+  width: max-content;
+  min-height: 26px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 0;
+  border-radius: var(--agri-radius-chip);
+  padding: 4px 9px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  vertical-align: middle;
+  white-space: nowrap;
+  -webkit-text-fill-color: color-mix(in srgb, currentColor 78%, var(--agri-surface));
+}
+
+.app-content td:has(> :is(.boundary-status, .status-badge, .season-status, .task-status, .harvest-status)) {
+  text-align: center;
+}
+
 .table-action-button {
   display: grid;
   width: 34px;

@@ -66,6 +66,13 @@ async function getPlotDetail(id: string) {
 }
 
 export const plotService = {
+  async getOverview(farmId?: string): Promise<Array<Pick<Plot, "id" | "name" | "status" | "area">>> {
+    const params = new URLSearchParams();
+    if (farmId && farmId !== "all") params.set("org_id", farmId);
+    const plots = await httpClient.get<PlotDto[]>(`/plots?${params}`);
+    return plots.map((plot) => ({ id: plot.plot_id, name: plot.code, status: plot.status, area: plot.area ?? 0 }));
+  },
+
   async getAll(farmId?: string): Promise<Plot[]> {
     const query = farmId && farmId !== "all"
       ? `?org_id=${encodeURIComponent(farmId)}`

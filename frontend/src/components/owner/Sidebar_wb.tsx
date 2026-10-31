@@ -1,4 +1,5 @@
 import {
+  Bell,
   CalendarRange,
   ClipboardCheck,
   LayoutDashboard,
@@ -63,6 +64,11 @@ const menuItems = [
     label: "Thu hoạch",
     path: "/harvests",
     icon: PackageCheck,
+  },
+  {
+    label: "Thông báo",
+    path: "/notifications",
+    icon: Bell,
   },
   {
     label: "Hỗ trợ & báo lỗi",

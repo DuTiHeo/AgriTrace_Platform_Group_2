@@ -92,12 +92,6 @@
   box-shadow: 0 0 0 3px rgb(var(--agri-primary-rgb) / 0.12);
 }
 
-.farm-result-count {
-  color: var(--gray-500);
-  font-size: 13px;
-  white-space: nowrap;
-}
-
 .farm-loading {
   display: flex;
   min-height: 280px;
@@ -132,6 +126,16 @@
   border-bottom: 1px solid var(--gray-200);
   padding: 15px 18px;
   vertical-align: middle;
+}
+
+.farm-table :is(th, td):nth-child(4),
+.farm-table :is(th, td):nth-child(5) {
+  text-align: center;
+}
+
+.app-content :is(.farms-page, .farm-detail-page, .create-farm-page) .status-incomplete {
+  background: var(--agri-warning-soft);
+  color: var(--agri-warning-text);
 }
 
 .farm-table tbody tr:last-child td {

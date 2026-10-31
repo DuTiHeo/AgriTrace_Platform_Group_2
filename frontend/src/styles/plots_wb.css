@@ -48,6 +48,7 @@
 }
 
 .plot-summary-card strong {
+  font-variant-numeric: tabular-nums;
   color: var(--agri-title);
   font-size: 21px;
   line-height: 1.2;
@@ -286,9 +287,39 @@
 }
 
 .plots-map-layout {
+  --plots-map-height: 520px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 290px;
-  min-height: 500px;
+  grid-template-rows: auto var(--plots-map-height) auto;
+  gap: 12px 16px;
+  padding: 16px;
+}
+
+.plots-map-layout > .geographic-map {
+  display: contents;
+}
+
+.plots-map-layout .geographic-map-legend {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  margin: 0;
+}
+
+.plots-map-layout .geographic-map-toolbar {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  margin-bottom: 0;
+}
+
+.plots-map-layout .geographic-map-canvas {
+  grid-column: 1;
+  grid-row: 2;
+  height: var(--plots-map-height);
+}
+
+.plots-map-layout .geographic-map-status {
+  grid-column: 1;
+  grid-row: 3;
 }
 
 .plots-map {
@@ -380,7 +411,15 @@
 }
 
 .plots-map-list {
+  grid-column: 2;
+  grid-row: 2;
+  min-height: 0;
+  height: var(--plots-map-height);
   overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
+  border: 1px solid var(--agri-border);
+  border-radius: 8px;
   background: var(--agri-white);
 }
 
@@ -425,7 +464,9 @@
   }
 
   .plots-map-layout {
+    --plots-map-height: 400px;
     grid-template-columns: 1fr;
+    grid-template-rows: auto var(--plots-map-height) 280px auto;
   }
 
   .plots-map {
@@ -434,7 +475,13 @@
   }
 
   .plots-map-list {
-    max-height: 280px;
+    grid-column: 1;
+    grid-row: 3;
+    height: 280px;
+  }
+
+  .plots-map-layout .geographic-map-status {
+    grid-row: 4;
   }
 
 

@@ -41,7 +41,7 @@
 .summary-card {
   display: flex;
   min-width: 0;
-  align-items: flex-start;
+  align-items: center;
   gap: 14px;
   padding: 20px;
 }
@@ -165,28 +165,28 @@
   font-size: 11px;
 }
 
-.progress-track {
-  height: 7px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: var(--gray-200);
-}
-
-.progress-track span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--green-600);
-}
-
 .task-list,
 .activity-list {
   margin-top: 12px;
 }
 
+.dashboard-scroll-list {
+  height: 360px;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
+  padding: 0 8px 8px 4px;
+}
+
+.dashboard-scroll-list:focus-visible {
+  outline: 2px solid var(--green-600);
+  outline-offset: 2px;
+  border-radius: var(--agri-radius-control);
+}
+
 .task-row {
   display: grid;
-  grid-template-columns: 70px minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
   border-bottom: 1px solid var(--gray-200);
@@ -197,15 +197,6 @@
 .activity-row:last-child {
   border-bottom: 0;
   padding-bottom: 0;
-}
-
-.task-time {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--gray-500);
-  font-size: 12px;
-  font-weight: 600;
 }
 
 .task-detail,
@@ -331,11 +322,11 @@
   }
 
   .task-row {
-    grid-template-columns: 60px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .task-row .status-badge {
-    grid-column: 2;
+    grid-column: 1;
     justify-self: start;
   }
 
@@ -345,5 +336,36 @@
 
   .activity-row time {
     grid-column: 2;
+  }
+}
+
+.dashboard-seasons-all {
+  flex-shrink: 0;
+  color: var(--green-700);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.dashboard-season-row .activity-content strong {
+  overflow-wrap: anywhere;
+}
+
+.dashboard-season-row.status-cancelled,
+.dashboard-season-row .status-cancelled {
+  background: var(--gray-200);
+  color: var(--gray-700);
+}
+
+.dashboard-activity-link:focus-visible,
+.dashboard-seasons-all:focus-visible {
+  outline: 2px solid var(--green-600);
+  outline-offset: 4px;
+  border-radius: var(--agri-radius-control);
+}
+
+@media (max-width: 640px) {
+  .dashboard-season-row .status-badge {
+    grid-column: 2;
+    justify-self: start;
   }
 }

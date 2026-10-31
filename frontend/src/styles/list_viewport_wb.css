@@ -1,0 +1,17 @@
+.owner-list-viewport {
+  overflow: auto;
+  min-height: 0;
+  align-self: start;
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
+}
+.owner-list-viewport:focus-visible {
+  outline: 2px solid var(--agri-primary);
+  outline-offset: 2px;
+}
+.owner-list-viewport > table > thead > tr > th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--agri-header);
+}

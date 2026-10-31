@@ -10,6 +10,42 @@
   gap: 16px;
 }
 
+.plot-form-page .plot-create-heading {
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 14px;
+}
+
+.plot-create-back {
+  display: inline-flex;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--agri-border);
+  border-radius: var(--agri-radius-control);
+  background: var(--agri-surface);
+  color: var(--agri-text);
+}
+
+.plot-create-back:hover {
+  border-color: var(--agri-primary);
+  color: var(--agri-primary-text);
+}
+
+.plot-create-form {
+  gap: 0;
+}
+
+.plot-create-form > .plot-form-footer {
+  border: 0;
+  border-top: 1px solid var(--agri-border);
+  border-radius: 0 0 var(--agri-radius-card) var(--agri-radius-card);
+  padding: 16px 22px;
+}
+
 .plot-form-card {
   padding: 22px;
 }
@@ -57,6 +93,74 @@
   min-width: 0;
   flex-direction: column;
   gap: 7px;
+}
+
+.plot-activity-field {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.plot-activity-field legend {
+  margin-bottom: 7px;
+  padding: 0;
+  color: var(--agri-text);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.plot-activity-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.plot-activity-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--agri-input-border);
+  border-radius: var(--agri-radius-control);
+  padding: 13px;
+  cursor: pointer;
+}
+
+.plot-activity-option:has(input:checked) {
+  border-color: var(--agri-primary);
+  background: var(--agri-primary-soft);
+}
+
+.plot-activity-option:has(input:focus-visible) {
+  outline: 2px solid var(--agri-primary);
+  outline-offset: 2px;
+}
+
+.plot-activity-option input {
+  flex-shrink: 0;
+  accent-color: var(--agri-primary);
+}
+
+.plot-activity-option > span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.plot-activity-option strong {
+  color: var(--agri-text);
+  font-size: 13px;
+}
+
+.plot-activity-option small {
+  color: var(--agri-muted-strong);
+  font-size: 11px;
+}
+
+@media (max-width: 560px) {
+  .plot-activity-options {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .plot-form-page .form-field-full {
@@ -353,7 +457,7 @@
 
 .boundary-point-row {
   display: grid;
-  grid-template-columns: 85px minmax(0, 1fr) 32px;
+  grid-template-columns: 65px minmax(0, 1fr) 44px;
   align-items: center;
   gap: 10px;
   min-height: 44px;
@@ -363,6 +467,65 @@
 
 .boundary-point-row:last-child {
   border-bottom: 0;
+}
+
+.boundary-summary-grid {
+  --coordinate-row-height: 40px;
+  --coordinate-list-height: 162px;
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  align-items: stretch;
+  gap: 18px;
+}
+
+.boundary-summary-grid > .calculated-area {
+  box-sizing: border-box;
+  height: var(--coordinate-list-height);
+  min-height: 0;
+  align-items: center;
+  text-align: center;
+}
+
+.boundary-summary-grid > .calculated-area span {
+  font-size: 15px;
+}
+
+.boundary-summary-grid > .calculated-area strong {
+  font-size: 28px;
+}
+
+.boundary-summary-grid > .boundary-point-list {
+  box-sizing: border-box;
+  height: var(--coordinate-list-height);
+  max-height: var(--coordinate-list-height);
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
+}
+
+.boundary-summary-grid .boundary-point-row {
+  box-sizing: border-box;
+  height: var(--coordinate-row-height);
+  min-height: var(--coordinate-row-height);
+  grid-template-columns: 65px minmax(0, 1fr) 28px;
+  padding: 4px 10px;
+}
+
+.boundary-summary-grid .boundary-point-row button {
+  width: 28px;
+  height: 28px;
+}
+
+.boundary-points-empty {
+  padding: 18px;
+  color: var(--agri-muted-strong);
+  font-size: 13px;
+}
+
+@media (max-width: 760px) {
+  .boundary-summary-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .boundary-point-row span {
@@ -379,8 +542,8 @@
 
 .boundary-point-row button {
   display: grid;
-  width: 28px;
-  height: 28px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   place-items: center;
   color: var(--agri-muted);

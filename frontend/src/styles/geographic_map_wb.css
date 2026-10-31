@@ -1,0 +1,20 @@
+.geographic-map { width: 100%; min-width: 0; }
+.geographic-map-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 12px; }
+.geographic-map-toolbar span { color: var(--agri-muted-strong); font-size: 14px; }
+.geographic-map-canvas { height: 440px; width: 100%; border: 1px solid var(--agri-border); border-radius: 8px; isolation: isolate; z-index: 0; }
+.geographic-map-status { color: var(--agri-warning-text); font-size: 14px; margin: 8px 0; }
+.geographic-map-status:empty { display: none; }
+.gps-marker { display: grid; place-items: center; background: transparent; border: 0; }
+.gps-marker-dot { display: grid; place-items: center; min-width: 26px; height: 26px; padding: 0 3px; background: var(--agri-primary); color: var(--agri-white); font-size: 12px; font-weight: 700; line-height: 1; border: 2px solid var(--agri-white); border-radius: 50%; box-shadow: 0 0 0 1px var(--agri-primary); }
+.gps-marker-editable { cursor: grab; }
+.gps-marker-editable:active { cursor: grabbing; }
+.gps-marker-editable:hover .gps-marker-dot { box-shadow: 0 0 0 5px var(--agri-focus-ring), 0 0 0 2px var(--agri-primary); }
+.gps-marker-farm { background: var(--agri-info-text); box-shadow: 0 0 0 2px var(--agri-info-text); }
+.geographic-map-legend { display: flex; flex-wrap: wrap; gap: 12px 24px; margin-bottom: 12px; font-size: 13px; color: var(--agri-text); }
+.geographic-map-legend span { display: inline-flex; align-items: center; gap: 8px; }
+.geographic-map-legend i { display: inline-block; width: 28px; }
+.map-key-farm { border-top: 3px dashed var(--agri-info-text); }
+.map-key-plot { height: 12px; background: var(--agri-primary-soft); border: 2px solid var(--agri-primary); }
+.gps-editor-help { margin: 12px 0; font-size: 14px; color: var(--agri-muted-strong); line-height: 1.6; }
+.geographic-map .leaflet-container { font-family: inherit; }
+@media (max-width: 640px) { .geographic-map-canvas { height: 330px; } }

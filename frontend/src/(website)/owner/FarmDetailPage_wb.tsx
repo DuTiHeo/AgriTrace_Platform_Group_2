@@ -1,8 +1,12 @@
+import BackButton from "../../components/owner/BackButton_wb";
+import "../../styles/boundary_detail_wb.css";
+import CreationReview from "../../components/owner/CreationReview_wb";
+import GeographicMap from "../../components/owner/GeographicMap_wb";
+import FarmBoundaryEditModal from "../../components/owner/FarmBoundaryEditModal_wb";
 import "../../styles/farms_wb.css";
 import "../../styles/farm_detail_wb.css";
 import {
   AlertTriangle,
-  ArrowLeft,
   CheckCircle2,
   MapPinned,
   PauseCircle,
@@ -13,7 +17,6 @@ import {
 } from "lucide-react";
 import {
   useEffect,
-  useMemo,
   useState,
 } from "react";
 import type {
@@ -23,14 +26,12 @@ import {
   useNavigate,
   useParams,
 } from "react-router-dom";
-import FarmBoundaryEditor from "../../components/owner/FarmBoundaryEditor_wb";
 import { farmService } from "../../sevices/farmService_wb";
 import {
   farmStatusLabels,
 } from "../../features/owner/farm_wb";
 import type {
   Farm,
-  FarmBoundary,
   FarmFormData,
 } from "../../features/owner/farm_wb";
 
@@ -53,12 +54,11 @@ function FarmDetailPage() {
   const [pageLoadError, setPageLoadError] = useState("");
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState("");
+  const [editError, setEditError] = useState("");
+  const [savingInformation, setSavingInformation] = useState(false);
+  const [editingBoundary, setEditingBoundary] = useState(false);
   const [editForm, setEditForm] =
-    useState<FarmFormData | null>(null);
-  const [boundaryDraft, setBoundaryDraft] =
-    useState<FarmBoundary | null>(null);
-  const [editingBoundary, setEditingBoundary] =
-    useState(false);
+    useState<Omit<FarmFormData, "boundary" | "estimatedArea"> | null>(null);
   const [pendingAction, setPendingAction] =
     useState<DetailAction>(null);
 
@@ -91,47 +91,18 @@ function FarmDetailPage() {
     };
   }, [farmId]);
 
-  const polygonPoints = useMemo(() => {
-    if (!farm?.boundary?.points.length) {
-      return "";
-    }
-
-    const points = farm.boundary.points;
-    const xValues = points.map((point) => point.y);
-    const yValues = points.map((point) => point.x);
-
-    const minX = Math.min(...xValues);
-    const maxX = Math.max(...xValues);
-    const minY = Math.min(...yValues);
-    const maxY = Math.max(...yValues);
-
-    const rangeX = maxX - minX || 1;
-    const rangeY = maxY - minY || 1;
-
-    return points
-      .map((point) => {
-        const x = 10 + ((point.y - minX) / rangeX) * 80;
-        const y =
-          90 - ((point.x - minY) / rangeY) * 80;
-
-        return `${x},${y}`;
-      })
-      .join(" ");
-  }, [farm]);
-
   const openInformationEditor = () => {
     if (!farm) {
       return;
     }
 
+    setEditError("");
     setEditForm({
       name: farm.name,
       address: farm.address,
       province: farm.province,
       district: farm.district,
-      estimatedArea: farm.estimatedArea,
       status: farm.status,
-      boundary: farm.boundary,
     });
   };
 
@@ -150,55 +121,23 @@ function FarmDetailPage() {
       !editForm.province.trim() ||
       !editForm.district.trim()
     ) {
-      setNotice("Vui lòng nhập đầy đủ thông tin.");
+      setEditError("Vui lòng nhập đầy đủ thông tin.");
       return;
     }
 
-    const updatedFarm = await farmService.update(
-      farm.id,
-      editForm,
-    );
-
-    if (updatedFarm) {
+    if (savingInformation) return;
+    setSavingInformation(true);
+    setEditError("");
+    try {
+      const updatedFarm = await farmService.update(farm.id, editForm);
+      if (!updatedFarm) throw new Error("Không tìm thấy nông trại.");
       setFarm(updatedFarm);
       setEditForm(null);
       setNotice("Đã cập nhật thông tin nông trại.");
-    }
-  };
-
-  const openBoundaryEditor = () => {
-    if (!farm) {
-      return;
-    }
-
-    setBoundaryDraft(farm.boundary);
-    setEditingBoundary(true);
-  };
-
-  const saveBoundary = async () => {
-    if (!farm || !boundaryDraft?.isValid) {
-      setNotice(
-        "Ranh giới cần ít nhất 3 điểm hợp lệ.",
-      );
-      return;
-    }
-
-    const updatedFarm = await farmService.update(
-      farm.id,
-      {
-        boundary: boundaryDraft,
-        estimatedArea: boundaryDraft.area,
-        status:
-          farm.status === "incomplete"
-            ? "active"
-            : farm.status,
-      },
-    );
-
-    if (updatedFarm) {
-      setFarm(updatedFarm);
-      setEditingBoundary(false);
-      setNotice("Đã cập nhật ranh giới nông trại.");
+    } catch (error) {
+      setEditError(error instanceof Error ? error.message : "Không thể lưu thay đổi.");
+    } finally {
+      setSavingInformation(false);
     }
   };
 
@@ -258,15 +197,9 @@ function FarmDetailPage() {
       <div className="page farm-detail-state">
         <MapPinned size={36} />
 
-        <h1>Không tìm thấy nông trại</h1>
+        <div className="page-title-with-back"><BackButton to="/farms" label="Quay lại danh sách nông trại" /><h1>Không tìm thấy nông trại</h1></div>
 
-        <button
-          className="btn btn-primary"
-          type="button"
-          onClick={() => navigate("/farms")}
-        >
-          Quay lại danh sách
-        </button>
+
       </div>
     );
   }
@@ -295,16 +228,10 @@ function FarmDetailPage() {
 
   return (
     <div className="page farm-detail-page">
-      <button
-        className="detail-back-button"
-        type="button"
-        onClick={() => navigate("/farms")}
-      >
-        <ArrowLeft size={18} />
-        Danh sách nông trại
-      </button>
 
       <div className="farm-detail-heading">
+        <div className="farm-heading-identity">
+          <BackButton to="/farms" label="Quay lại danh sách nông trại" />
         <div>
           <div className="farm-detail-title">
             <h1>{farm.name}</h1>
@@ -319,6 +246,8 @@ function FarmDetailPage() {
           <p>
             {farm.code} · {farm.address}
           </p>
+        </div>
+
         </div>
 
         <div className="farm-detail-actions">
@@ -394,61 +323,28 @@ function FarmDetailPage() {
             <CheckCircle2 size={20} />
           </div>
 
-          <dl className="farm-information-list">
-            <div>
-              <dt>Mã nông trại</dt>
-              <dd>{farm.code}</dd>
-            </div>
-
-            <div>
-              <dt>Diện tích</dt>
-              <dd>
-                {farm.estimatedArea > 0
-                  ? `${farm.estimatedArea.toLocaleString("vi-VN")} ha (ước tính từ ranh giới)`
-                  : "Chưa xác định từ ranh giới"}
-              </dd>
-            </div>
-
-            <div className="information-full">
-              <dt>Địa chỉ</dt>
-              <dd>{farm.address}</dd>
-            </div>
-
-            <div>
-              <dt>Tỉnh/Thành phố</dt>
-              <dd>{farm.province}</dd>
-            </div>
-
-            <div>
-              <dt>Huyện/Thành phố</dt>
-              <dd>{farm.district}</dd>
-            </div>
-
-            <div>
-              <dt>Chủ sở hữu</dt>
-              <dd>{farm.owner.name}</dd>
-            </div>
-
-            <div>
-              <dt>Số điện thoại</dt>
-              <dd>{farm.owner.phone}</dd>
-            </div>
-
-            <div className="information-full">
-              <dt>Email</dt>
-              <dd>{farm.owner.email}</dd>
-            </div>
-
-            <div>
-              <dt>Ngày thành lập</dt>
-              <dd>{formatDate(farm.establishedAt)}</dd>
-            </div>
-
-            <div>
-              <dt>Cập nhật gần nhất</dt>
-              <dd>{formatDate(farm.updatedAt)}</dd>
-            </div>
-          </dl>
+          <CreationReview sections={[
+            {
+              title: "Thông tin chung",
+              items: [
+                { label: "Mã nông trại", value: farm.code },
+                { label: "Diện tích ước tính", value: farm.estimatedArea > 0 ? `${farm.estimatedArea.toLocaleString("vi-VN")} ha` : "Chưa xác định" },
+                { label: "Địa chỉ", value: farm.address || "Chưa cung cấp" },
+              ],
+            },
+            {
+              title: "Chủ sở hữu",
+              items: [
+                { label: "Họ và tên", value: farm.owner.name || "Chưa cung cấp" },
+                { label: "Số điện thoại", value: farm.owner.phone || "Chưa cung cấp" },
+                { label: "Email", value: farm.owner.email || "Chưa cung cấp" },
+              ],
+            },
+          ]} />
+          <div className="farm-detail-metadata">
+            <span>Ngày thành lập <strong>{formatDate(farm.establishedAt)}</strong></span>
+            <span>Cập nhật gần nhất <strong>{formatDate(farm.updatedAt)}</strong></span>
+          </div>
         </section>
 
         <section className="detail-card card">
@@ -459,22 +355,14 @@ function FarmDetailPage() {
                 Tọa độ và diện tích ranh giới đã xác định.
               </p>
             </div>
-
-            <button
-              className="btn btn-secondary"
-              type="button"
-              onClick={openBoundaryEditor}
-            >
-              <Pencil size={16} />
-              {farm.boundary
-                ? "Chỉnh sửa"
-                : "Bổ sung"}
+            <button className="btn btn-secondary" type="button" onClick={() => setEditingBoundary(true)}>
+              <Pencil size={16} />Chỉnh sửa
             </button>
           </div>
 
           {farm.boundary?.isValid ? (
             <>
-              <div className="boundary-summary">
+              <div className="boundary-detail-summary">
                 <div>
                   <span>Phương thức</span>
                   <strong>
@@ -505,57 +393,21 @@ function FarmDetailPage() {
                 </div>
               </div>
 
-              <div className="boundary-preview">
-                {polygonPoints ? (
-                  <svg
-                    viewBox="0 0 100 100"
-                    preserveAspectRatio="none"
-                    aria-label="Ranh giới nông trại"
-                  >
-                    <defs>
-                      <pattern
-                        id="detail-grid"
-                        width="10"
-                        height="10"
-                        patternUnits="userSpaceOnUse"
-                      >
-                        <path
-                          d="M 10 0 L 0 0 0 10"
-                          fill="none"
-                          stroke="var(--agri-border)"
-                          strokeWidth="0.35"
-                        />
-                      </pattern>
-                    </defs>
-
-                    <rect
-                      width="100"
-                      height="100"
-                      fill="url(#detail-grid)"
-                    />
-
-                    <polygon
-                      points={polygonPoints}
-                      fill="rgb(var(--agri-primary-rgb) / 0.22)"
-                      stroke="var(--agri-title)"
-                      strokeWidth="1.2"
-                    />
-                  </svg>
-                ) : (
-                  <span>
-                    Ranh giới đã được đồng bộ từ bản đồ GPS.
-                  </span>
-                )}
-              </div>
+              <div className="boundary-detail-layout">
+              {farm.boundary.method === "map" ? (
+                <GeographicMap label="Ranh giới nông trại" pointsKind="farm" points={farm.boundary.points.map(point => ({ latitude: point.x, longitude: point.y }))} />
+              ) : (
+                <p>Tọa độ VN-2000 cần được chuyển sang WGS84 để hiển thị đúng vị trí trên bản đồ.</p>
+              )}
 
               {farm.boundary.points.length > 0 && (
-                <div className="table-wrapper">
-                  <table className="coordinate-table">
+                <div className="boundary-detail-points" role="region" aria-label="Tọa độ ranh giới nông trại" tabIndex={0}>
+                  <table className="boundary-coordinate-table">
                     <thead>
                       <tr>
                         <th>STT</th>
-                        <th>Tọa độ X</th>
-                        <th>Tọa độ Y</th>
+                        <th>{farm.boundary.method === "map" ? "Vĩ độ" : "Tọa độ X"}</th>
+                        <th>{farm.boundary.method === "map" ? "Kinh độ" : "Tọa độ Y"}</th>
                         <th>Ghi chú</th>
                       </tr>
                     </thead>
@@ -575,6 +427,7 @@ function FarmDetailPage() {
                   </table>
                 </div>
               )}
+              </div>
             </>
           ) : (
             <div className="boundary-empty">
@@ -584,41 +437,42 @@ function FarmDetailPage() {
                 Bổ sung ranh giới để hoàn thiện hồ sơ.
               </span>
 
-              <button
-                className="btn btn-primary"
-                type="button"
-                onClick={openBoundaryEditor}
-              >
-                Bổ sung ranh giới
-              </button>
+
             </div>
           )}
         </section>
       </div>
 
+      {editingBoundary && <FarmBoundaryEditModal farm={farm} onClose={() => setEditingBoundary(false)} onSaved={(updated) => {
+        setFarm(updated);
+        setNotice("Đã cập nhật ranh giới nông trại.");
+      }} />}
+
       {editForm && (
         <div
           className="modal-backdrop"
           role="presentation"
-          onMouseDown={() => setEditForm(null)}
+          onMouseDown={() => { if (!savingInformation) setEditForm(null); }}
         >
           <div
-            className="farm-detail-modal"
+            className="farm-detail-modal farm-information-editor"
             role="dialog"
             aria-modal="true"
+            aria-labelledby="farm-edit-title"
             onMouseDown={(event) =>
               event.stopPropagation()
             }
           >
             <div className="detail-modal-heading">
               <div>
-                <h2>Chỉnh sửa nông trại</h2>
-                <p>Cập nhật thông tin hành chính.</p>
+                <h2 id="farm-edit-title">Chỉnh sửa nông trại</h2>
+                <p>Cập nhật thông tin và trạng thái nông trại.</p>
               </div>
 
               <button
                 type="button"
                 aria-label="Đóng"
+                disabled={savingInformation}
                 onClick={() => setEditForm(null)}
               >
                 <X size={20} />
@@ -631,11 +485,12 @@ function FarmDetailPage() {
                 void saveInformation(event)
               }
             >
-              <label className="form-field-full">
+              <label>
                 <span>Tên nông trại *</span>
                 <input
                   className="input"
                   value={editForm.name}
+                  maxLength={200}
                   onChange={(event) =>
                     setEditForm({
                       ...editForm,
@@ -643,6 +498,15 @@ function FarmDetailPage() {
                     })
                   }
                 />
+              </label>
+
+              <label>
+                <span>Trạng thái hoạt động</span>
+                <select className="input" value={editForm.status} onChange={(event) => setEditForm({ ...editForm, status: event.target.value as Farm["status"] })}>
+                  <option value="active">Đang hoạt động</option>
+                  <option value="incomplete">Cần hoàn thiện</option>
+                  <option value="suspended">Tạm ngưng</option>
+                </select>
               </label>
 
               <label className="form-field-full">
@@ -674,7 +538,7 @@ function FarmDetailPage() {
               </label>
 
               <label>
-                <span>Huyện/Thành phố *</span>
+                <span>Xã/Phường *</span>
                 <input
                   className="input"
                   value={editForm.district}
@@ -688,15 +552,25 @@ function FarmDetailPage() {
               </label>
 
               <div className="read-only-field">
+                <span>Mã nông trại</span>
+                <strong>{farm.code}</strong>
+              </div>
+
+              <div className="read-only-field">
                 <span>Chủ sở hữu</span>
                 <strong>{farm.owner.name}</strong>
                 <small>Không thể thay đổi</small>
               </div>
 
+
+
+              {editError && <div className="form-error-block form-field-full" role="alert">{editError}</div>}
+
               <div className="detail-modal-actions form-field-full">
                 <button
                   className="btn btn-secondary"
                   type="button"
+                  disabled={savingInformation}
                   onClick={() => setEditForm(null)}
                 >
                   Hủy
@@ -705,70 +579,12 @@ function FarmDetailPage() {
                 <button
                   className="btn btn-primary"
                   type="submit"
+                  disabled={savingInformation}
                 >
-                  Lưu thay đổi
+                  {savingInformation ? "Đang lưu..." : "Lưu thay đổi"}
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {editingBoundary && (
-        <div
-          className="modal-backdrop boundary-modal-backdrop"
-          role="presentation"
-        >
-          <div
-            className="boundary-edit-modal"
-            role="dialog"
-            aria-modal="true"
-          >
-            <div className="detail-modal-heading">
-              <div>
-                <h2>Chỉnh sửa ranh giới</h2>
-                <p>
-                  Nhập tọa độ hoặc chỉnh sửa trên bản đồ.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                aria-label="Đóng"
-                onClick={() =>
-                  setEditingBoundary(false)
-                }
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="boundary-edit-content">
-              <FarmBoundaryEditor
-                boundary={boundaryDraft}
-                onChange={setBoundaryDraft}
-              />
-            </div>
-
-            <div className="detail-modal-actions">
-              <button
-                className="btn btn-secondary"
-                type="button"
-                onClick={() =>
-                  setEditingBoundary(false)
-                }
-              >
-                Hủy
-              </button>
-
-              <button
-                className="btn btn-primary"
-                type="button"
-                onClick={() => void saveBoundary()}
-              >
-                Lưu ranh giới
-              </button>
-            </div>
           </div>
         </div>
       )}

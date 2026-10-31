@@ -1,10 +1,10 @@
+import BackButton from "../../components/owner/BackButton_wb";
 import "../../styles/personnel_detail_wb.css";
 import "../../styles/personnel_form_wb.css";
 import "../../styles/personnel_wb.css";
 import "../../styles/teams_wb.css";
 import "../../styles/team_detail_wb.css";
 import {
-  ArrowLeft,
   Check,
   CircleAlert,
   Crown,
@@ -426,17 +426,10 @@ function TeamDetailPage() {
       <div className="page team-detail-page">
         <div className="personnel-detail-state card">
           <CircleAlert size={34} />
-          <h1>Không thể mở tổ</h1>
+          <div className="page-title-with-back"><BackButton to="/teams" label="Quay lại danh sách tổ" /><h1>Không thể mở tổ</h1></div>
           <p>{error || "Không tìm thấy tổ."}</p>
 
-          <Link
-            className="btn btn-secondary"
-            to="/teams"
-          >
-            <ArrowLeft size={17} />
-            Về danh sách tổ
-          </Link>
-        </div>
+          </div>
       </div>
     );
   }
@@ -444,13 +437,7 @@ function TeamDetailPage() {
   return (
     <div className="page team-detail-page">
       <div className="personnel-detail-topbar">
-        <Link
-          className="personnel-back-link"
-          to="/teams"
-        >
-          <ArrowLeft size={18} />
-          Danh sách tổ
-        </Link>
+        <BackButton to="/teams" label="Quay lại danh sách tổ" />
 
         <div className="personnel-detail-actions">
           <button
@@ -503,6 +490,7 @@ function TeamDetailPage() {
         </div>
       )}
 
+      <div className="team-overview-layout">
       <section className="team-profile-card card">
         <div className="team-profile-icon">
           <Users size={30} />
@@ -630,6 +618,8 @@ function TeamDetailPage() {
           </div>
         )}
       </section>
+
+      </div>
 
       <section className="team-members-section card">
         <div className="team-members-heading">

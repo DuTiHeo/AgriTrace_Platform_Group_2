@@ -1,9 +1,10 @@
+import BackButton from "../../components/owner/BackButton_wb";
+import CreationReview from "../../components/owner/CreationReview_wb";
 import "../../styles/seasons_wb.css";
 import "../../styles/season_form_wb.css";
 import {
   CalendarDays,
   Check,
-  ChevronLeft,
   ChevronRight,
   MapPinned,
   Save,
@@ -43,21 +44,6 @@ type FormErrors = Partial<
   >
 >;
 
-const steps = [
-  {
-    number: 1,
-    title: "Vùng trồng và giống",
-  },
-  {
-    number: 2,
-    title: "Thời gian canh tác",
-  },
-  {
-    number: 3,
-    title: "Xác nhận",
-  },
-];
-
 function formatDate(date: string) {
   if (!date) {
     return "Chưa xác định";
@@ -86,6 +72,7 @@ function CreateSeasonPage() {
   const [submitting, setSubmitting] = useState(false);
   const [manualHarvestDate, setManualHarvestDate] =
     useState(false);
+  const [notes, setNotes] = useState("");
 
   const [formData, setFormData] =
     useState<SeasonFormData>({
@@ -285,7 +272,7 @@ function CreateSeasonPage() {
     }));
   };
 
-  const validateStepOne = () => {
+  const validateForm = () => {
     const nextErrors: FormErrors = {};
 
     if (!formData.farmId) {
@@ -302,14 +289,6 @@ function CreateSeasonPage() {
       nextErrors.varietyId =
         "Vui lòng chọn giống cây.";
     }
-
-    setErrors(nextErrors);
-
-    return Object.keys(nextErrors).length === 0;
-  };
-
-  const validateStepTwo = () => {
-    const nextErrors: FormErrors = {};
 
     if (!formData.sowingDate) {
       nextErrors.sowingDate =
@@ -334,18 +313,7 @@ function CreateSeasonPage() {
   };
 
   const goToNextStep = () => {
-    const isValid =
-      currentStep === 1
-        ? validateStepOne()
-        : validateStepTwo();
-
-    if (!isValid) {
-      return;
-    }
-
-    setCurrentStep((step) =>
-      Math.min(step + 1, 3),
-    );
+    if (validateForm()) setCurrentStep(3);
   };
 
   const handleSubmit = async (
@@ -359,8 +327,7 @@ function CreateSeasonPage() {
     }
 
     if (
-      !validateStepOne() ||
-      !validateStepTwo() ||
+      !validateForm() ||
       !selectedPlot ||
       !selectedVariety
     ) {
@@ -400,7 +367,8 @@ function CreateSeasonPage() {
 
   return (
     <div className="page season-form-page">
-      <div className="page-heading">
+      <div className="page-heading season-create-heading">
+        <BackButton label={currentStep > 1 ? "Quay lại bước trước" : "Quay lại danh sách"} onClick={() => { if (currentStep > 1) setCurrentStep(1); else navigate("/seasons"); }} />
         <div>
           <h1>Tạo mùa vụ</h1>
           <p>
@@ -410,36 +378,9 @@ function CreateSeasonPage() {
         </div>
       </div>
 
-      <div className="form-stepper">
-        {steps.map((step) => (
-          <div
-            key={step.number}
-            className={`form-step ${
-              currentStep === step.number
-                ? "active"
-                : ""
-            } ${
-              currentStep > step.number
-                ? "completed"
-                : ""
-            }`}
-          >
-            <div className="form-step-number">
-              {currentStep > step.number ? (
-                <Check size={16} />
-              ) : (
-                step.number
-              )}
-            </div>
-
-            <span>{step.title}</span>
-          </div>
-        ))}
-      </div>
-
-      <form className="season-form" onSubmit={handleSubmit}>
+      <form className="season-form season-create-form card" onSubmit={handleSubmit}>
         {currentStep === 1 && (
-          <section className="season-form-card card">
+          <section className="season-form-card">
             <div className="season-form-heading">
               <div className="season-form-icon">
                 <MapPinned size={20} />
@@ -538,24 +479,7 @@ function CreateSeasonPage() {
                 <div className="form-error-block season-form-full">{cropLoadError}</div>
               )}
 
-              {selectedPlot && (
-                <div className="selected-plot-card">
-                  <div className="selected-plot-icon">
-                    <MapPinned size={21} />
-                  </div>
-
-                  <div>
-                    <strong>{selectedPlot.name}</strong>
-                    <span>
-                      {selectedPlot.cropType} ·{" "}
-                      {selectedPlot.area} ha
-                    </span>
-                    <small>{selectedPlot.address}</small>
-                  </div>
-                </div>
-              )}
-
-              <label className="season-form-field season-form-full">
+              <label className="season-form-field">
                 <span>
                   Giống cây <b>*</b>
                 </span>
@@ -598,12 +522,19 @@ function CreateSeasonPage() {
                 )}
               </label>
             </div>
-          </section>
-        )}
+            <label className="season-form-field season-create-notes">
+              <span>Ghi chú</span>
+              <textarea
+                disabled
+                value={notes}
+                onChange={(event) => setNotes(event.target.value)}
+                placeholder="Nhập ghi chú cho mùa vụ..."
+                rows={5}
+              />
+              <small className="season-form-note">Chức năng lưu ghi chú mùa vụ chưa được hỗ trợ.</small>
+            </label>
 
-        {currentStep === 2 && (
-          <section className="season-form-card card">
-            <div className="season-form-heading">
+            <div className="season-form-heading season-form-time-heading">
               <div className="season-form-icon">
                 <CalendarDays size={20} />
               </div>
@@ -642,7 +573,7 @@ function CreateSeasonPage() {
 
               <label className="season-form-field">
                 <span>
-                  Thu hoạch dự kiến <b>*</b>
+                  Thu hoạch dự kiến {manualHarvestDate && <b>*</b>}
                 </span>
 
                 <input
@@ -693,37 +624,13 @@ function CreateSeasonPage() {
                 </span>
               </label>
 
-              {selectedVariety &&
-                formData.sowingDate && (
-                  <div className="harvest-calculation season-form-full">
-                    <div>
-                      <span>Ngày gieo trồng</span>
-                      <strong>
-                        {formatDate(formData.sowingDate)}
-                      </strong>
-                    </div>
-
-                    <div className="calculation-arrow">
-                      + {selectedVariety.growthDays} ngày
-                    </div>
-
-                    <div>
-                      <span>Thu hoạch dự kiến</span>
-                      <strong>
-                        {formatDate(
-                          formData.expectedHarvestDate,
-                        )}
-                      </strong>
-                    </div>
-                  </div>
-                )}
 
             </div>
           </section>
         )}
 
         {currentStep === 3 && (
-          <section className="season-form-card card">
+          <section className="season-form-card">
             <div className="season-form-heading">
               <div className="season-form-icon">
                 <Check size={20} />
@@ -737,55 +644,26 @@ function CreateSeasonPage() {
               </div>
             </div>
 
-            <div className="season-review-grid">
-              <div className="season-review-item">
-                <span>Nông trại</span>
-                <strong>
-                  {selectedFormFarm?.name ??
-                    "Chưa xác định"}
-                </strong>
-              </div>
-
-              <div className="season-review-item">
-                <span>Vùng trồng</span>
-                <strong>
-                  {selectedPlot?.name ??
-                    "Chưa xác định"}
-                </strong>
-              </div>
-
-              <div className="season-review-item">
-                <span>Giống cây</span>
-                <strong>
-                  {selectedVariety?.name ??
-                    "Chưa xác định"}
-                </strong>
-              </div>
-
-              <div className="season-review-item">
-                <span>Thời gian sinh trưởng</span>
-                <strong>
-                  {selectedVariety?.growthDays ?? 0} ngày
-                </strong>
-              </div>
-
-              <div className="season-review-item">
-                <span>Ngày gieo trồng</span>
-                <strong>
-                  {formatDate(formData.sowingDate)}
-                </strong>
-              </div>
-
-              <div className="season-review-item">
-                <span>Thu hoạch dự kiến</span>
-                <strong>
-                  {formatDate(
-                    formData.expectedHarvestDate,
-                  )}
-                </strong>
-              </div>
-
-            </div>
+            <CreationReview sections={[
+              {
+                title: "Thông tin mùa vụ",
+                items: [
+                  { label: "Nông trại", value: selectedFormFarm?.name ?? "Chưa xác định" },
+                  { label: "Vùng trồng", value: selectedPlot?.name ?? "Chưa xác định" },
+                  { label: "Giống cây", value: selectedVariety?.name ?? "Chưa xác định" },
+                  { label: "Ghi chú", value: notes.trim() ? <span className="season-review-notes">{notes}</span> : "Không có ghi chú" },
+                ],
+              },
+              {
+                title: "Thời gian canh tác",
+                metric: { label: "Thu hoạch dự kiến", value: formatDate(formData.expectedHarvestDate) },
+                items: [
+                  { label: "Ngày gieo trồng", value: formatDate(formData.sowingDate) },
+                  { label: "Thời gian sinh trưởng", value: `${selectedVariety?.growthDays ?? 0} ngày` },
+                  { label: "Cách xác định ngày thu hoạch", value: manualHarvestDate ? "Điều chỉnh thủ công" : "Tự động theo giống cây" },
+                ],
+              },
+            ]} />
 
             {submitError && (
               <div className="form-error-block">
@@ -796,25 +674,12 @@ function CreateSeasonPage() {
         )}
 
         <div className="season-form-footer">
-          {currentStep === 1 ? (
-            <Link
+          <Link
               className="btn btn-secondary"
               to="/seasons"
             >
               Hủy
             </Link>
-          ) : (
-            <button
-              className="btn btn-secondary"
-              type="button"
-              onClick={() =>
-                setCurrentStep((step) => step - 1)
-              }
-            >
-              <ChevronLeft size={18} />
-              Quay lại
-            </button>
-          )}
 
           {currentStep < 3 ? (
             <button

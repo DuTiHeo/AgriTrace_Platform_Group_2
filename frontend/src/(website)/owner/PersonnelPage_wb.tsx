@@ -1,6 +1,6 @@
+import ListRowActions from "../../components/owner/ListRowActions_wb";
 import "../../styles/personnel_wb.css";
 import {
-  ChevronRight,
   LoaderCircle,
   RefreshCw,
   Search,
@@ -19,7 +19,7 @@ import {
 } from "react";
 import { Link } from "react-router-dom";
 import { useFarmContext } from "../../contexts/FarmContext_wb";
-import { getPersonnelList } from "../../sevices/personnelService_wb";
+import { lockPersonnel, unlockPersonnel, getPersonnelList } from "../../sevices/personnelService_wb";
 import { getTeamList } from "../../sevices/teamService_wb";
 import type {
   Personnel,
@@ -223,18 +223,7 @@ function PersonnelPage() {
     [personnel],
   );
 
-  const resetFilters = () => {
-    setSearch("");
-    setRoleFilter("all");
-    setTeamFilter("all");
-    setStatusFilter("all");
-  };
 
-  const hasActiveFilters =
-    search.trim() !== "" ||
-    roleFilter !== "all" ||
-    teamFilter !== "all" ||
-    statusFilter !== "all";
 
   return (
     <div className="page personnel-page">
@@ -402,17 +391,6 @@ function PersonnelPage() {
             </option>
             <option value="locked">Bị khóa</option>
           </select>
-
-          {hasActiveFilters && (
-            <button
-              className="btn btn-secondary"
-              type="button"
-              onClick={resetFilters}
-            >
-              <RefreshCw size={17} />
-              Xóa lọc
-            </button>
-          )}
         </div>
 
         {loading ? (
@@ -529,13 +507,10 @@ function PersonnelPage() {
                         </td>
 
                         <td>
-                          <Link
-                            className="personnel-detail-link"
-                            to={`/personnel/${person.id}`}
-                          >
-                            Chi tiết
-                            <ChevronRight size={17} />
-                          </Link>
+                          <ListRowActions to={`/personnel/${person.id}`} name={person.fullName} statusLabel={person.status === "active" ? "Khóa tài khoản" : "Mở khóa tài khoản"} resume={person.status !== "active"}
+                            statusDescription={person.status === "active" ? "Nhân sự sẽ không thể đăng nhập sau khi tài khoản bị khóa." : "Nhân sự có thể đăng nhập trở lại sau khi mở khóa."}
+                            onStatus={async () => { if (person.status === "active") await lockPersonnel(person.id); else await unlockPersonnel(person.id); }}
+                            hideDelete />
                         </td>
                       </tr>
                     );
@@ -556,3 +531,4 @@ function PersonnelPage() {
 }
 
 export default PersonnelPage;
+

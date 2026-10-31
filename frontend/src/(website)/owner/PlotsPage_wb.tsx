@@ -1,3 +1,5 @@
+import ListRowActions from "../../components/owner/ListRowActions_wb";
+import GeographicMap from "../../components/owner/GeographicMap_wb";
 import "../../styles/plots_wb.css";
 import {
   Eye,
@@ -347,13 +349,13 @@ function PlotsPage() {
                     </td>
 
                     <td>
-                      <Link
-                        className="table-action-button"
-                        to={`/plots/${plot.id}`}
-                        aria-label={`Xem ${plot.name}`}
-                      >
-                        <Eye size={17} />
-                      </Link>
+                      <ListRowActions to={`/plots/${plot.id}`} name={plot.name} statusLabel={plot.status === "active" ? "Ngừng sử dụng" : "Hoạt động lại"} resume={plot.status !== "active"}
+                        statusDescription={plot.status === "active" ? "Vùng trồng sẽ chuyển sang ngừng sử dụng." : "Vùng trồng sẽ được đưa vào sử dụng trở lại."}
+                        onStatus={async () => { await plotService.setStatus(plot.id, plot.status === "active" ? "inactive" : "active"); }}
+                        onDelete={async () => {
+                          if (!await plotService.canDelete(plot.id)) throw new Error("Không thể xóa vùng trồng đang có mùa vụ hoạt động.");
+                          await plotService.delete(plot.id);
+                        }} />
                     </td>
                   </tr>
                 ))}
@@ -362,23 +364,12 @@ function PlotsPage() {
           </div>
         ) : (
           <div className="plots-map-layout">
-            <div className="plots-map">
-              <div className="map-grid" />
+            <GeographicMap
+              label="Bản đồ các vùng trồng"
+              regions={filteredPlots.map(plot => ({ id: plot.id, label: `${plot.code} · ${plot.name}`, points: plot.boundary, href: `/plots/${plot.id}` }))}
+            />
 
-              {filteredPlots.map((plot, index) => (
-                <Link
-                  key={plot.id}
-                  className={`map-plot map-plot-${index % 6}`}
-                  to={`/plots/${plot.id}`}
-                >
-                  <MapPinned size={18} />
-                  <strong>{plot.code}</strong>
-                  <span>{plot.area} ha</span>
-                </Link>
-              ))}
-            </div>
-
-            <div className="plots-map-list">
+            <div className="plots-map-list" role="region" aria-label="Danh sách vùng trồng trên bản đồ" tabIndex={0}>
               {filteredPlots.map((plot) => (
                 <Link
                   className="plots-map-item"

@@ -318,3 +318,57 @@
     width: 100%;
   }
 }
+.season-form-time-heading {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--agri-border);
+}
+
+.season-create-form {
+  gap: 0;
+}
+
+.season-create-form > .season-form-footer {
+  border: 0;
+  border-top: 1px solid var(--agri-border);
+  border-radius: 0 0 var(--agri-radius-card) var(--agri-radius-card);
+  padding: 16px 22px;
+}
+
+.season-create-notes {
+  margin-top: 18px;
+}
+
+.season-create-notes textarea {
+  min-height: 150px;
+  resize: vertical;
+}
+
+.season-review-notes {
+  white-space: pre-wrap;
+}
+
+.season-form-page .season-create-heading {
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 14px;
+}
+
+.season-create-back {
+  display: inline-flex;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--agri-border);
+  border-radius: var(--agri-radius-control);
+  background: var(--agri-surface);
+  color: var(--agri-text);
+}
+
+.season-create-back:hover {
+  border-color: var(--agri-primary);
+  color: var(--agri-primary-text);
+}

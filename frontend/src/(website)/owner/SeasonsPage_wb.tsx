@@ -1,10 +1,10 @@
+import ListRowActions from "../../components/owner/ListRowActions_wb";
 import "../../styles/seasons_wb.css";
 import {
   CalendarCheck2,
   CalendarDays,
   CheckCircle2,
   Clock3,
-  Eye,
   MapPinned,
   Plus,
   Search,
@@ -457,13 +457,18 @@ function SeasonsPage() {
                       </td>
 
                       <td>
-                        <Link
-                          className="table-action-button"
-                          to={`/seasons/${season.id}`}
-                          aria-label={`Xem ${season.name}`}
-                        >
-                          <Eye size={17} />
-                        </Link>
+                        <ListRowActions to={`/seasons/${season.id}`} name={season.name} statusLabel="Cập nhật trạng thái mùa vụ"
+                          statusIcon="change"
+                          currentStatus={season.status === "ready" || season.status === "completed" ? season.status : "active"}
+                          statusOptions={[{ value: "active", label: "Đang canh tác" }, { value: "ready", label: "Sẵn sàng thu hoạch" }, { value: "completed", label: "Đã hoàn thành" }]}
+                          onStatus={async (status, date) => {
+                            if (status !== "active" && status !== "ready" && status !== "completed") return;
+                            await seasonService.changeStatus(season.id, status, status === "completed" ? date : undefined);
+                          }}
+                          onDelete={async () => {
+                            if (!await seasonService.canDelete(season.id)) throw new Error("Chỉ có thể xóa mùa vụ đã hoàn thành và chưa có nhật ký hoặc lô thu hoạch liên kết.");
+                            await seasonService.delete(season.id);
+                          }} />
                       </td>
                     </tr>
                   );

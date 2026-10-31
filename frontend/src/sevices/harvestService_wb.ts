@@ -55,6 +55,16 @@ async function getHarvestDetail(id: string) {
 }
 
 export const harvestService = {
+  async getOverview(farmId: string, day: string): Promise<Array<Pick<HarvestBatch, "id" | "status" | "harvestDate" | "quantityKg">>> {
+    const params = new URLSearchParams({ date_from: day, date_to: day });
+    if (farmId !== "all") params.set("org_id", farmId);
+    const batches = await httpClient.get<HarvestBatchDto[]>(`/harvest-batches?${params}`);
+    return batches.map((batch) => ({
+      id: batch.batch_id, status: batch.status,
+      harvestDate: batch.harvest_date ?? "", quantityKg: batch.quantity ?? 0,
+    }));
+  },
+
   async getAll(farmId?: string): Promise<HarvestBatch[]> {
     const params = new URLSearchParams({ include_cancelled: "true" });
     if (farmId && farmId !== "all") params.set("org_id", farmId);
@@ -94,6 +104,9 @@ export const harvestService = {
 
   async update(id: string, input: UpdateHarvestBatchInput): Promise<HarvestBatch> {
     const payload: Record<string, unknown> = {};
+    if (input.code !== undefined) payload.batch_code = input.code.trim();
+    if (input.quantityKg !== undefined) payload.quantity = input.quantityKg;
+    if (input.traceUrl !== undefined) payload.qr_url = input.traceUrl?.trim() || null;
     if (input.harvestDate !== undefined) payload.harvest_date = input.harvestDate;
     if (input.status !== undefined) payload.status = input.status;
     const updated = await httpClient.patch<HarvestBatchDto>(`/harvest-batches/${id}`, payload);

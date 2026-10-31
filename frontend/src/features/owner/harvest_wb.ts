@@ -26,6 +26,9 @@ export type CreateHarvestBatchInput = {
 };
 
 export type UpdateHarvestBatchInput = {
+  code?: string;
+  quantityKg?: number;
+  traceUrl?: string | null;
   harvestDate?: string;
   status?: Exclude<HarvestBatchStatus, "cancelled">;
 };

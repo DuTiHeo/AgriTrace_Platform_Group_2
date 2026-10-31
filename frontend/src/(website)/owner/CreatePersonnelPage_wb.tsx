@@ -1,17 +1,13 @@
+import BackButton from "../../components/owner/BackButton_wb";
 import "../../styles/personnel_wb.css";
 import "../../styles/personnel_form_wb.css";
 import {
-  ArrowLeft,
   CheckCircle2,
   Copy,
-  Eye,
-  EyeOff,
   KeyRound,
   LoaderCircle,
   Save,
-  ShieldCheck,
   UserRound,
-  Users,
 } from "lucide-react";
 import {
   type FormEvent,
@@ -25,16 +21,9 @@ import {
 } from "react-router-dom";
 import { useFarmContext } from "../../contexts/FarmContext_wb";
 import { createPersonnel } from "../../sevices/personnelService_wb";
-import {
-  getTeamList,
-} from "../../sevices/teamService_wb";
 import type {
   CreatePersonnelResult,
-  PersonnelRole,
 } from "../../features/owner/personnel_wb";
-import type { TeamSummary } from "../../features/owner/team_wb";
-
-const assignmentOnCreation = false;
 
 function CreatePersonnelPage() {
   const navigate = useNavigate();
@@ -53,24 +42,6 @@ function CreatePersonnelPage() {
     useState("");
   const [address, setAddress] = useState("");
 
-  const [role, setRole] =
-    useState<PersonnelRole>("worker");
-  const [teamId, setTeamId] = useState("");
-
-  const [
-    autoGeneratePassword,
-    setAutoGeneratePassword,
-  ] = useState(true);
-  const [initialPassword, setInitialPassword] =
-    useState("");
-  const [showPassword, setShowPassword] =
-    useState(false);
-
-  const [teams, setTeams] = useState<TeamSummary[]>(
-    [],
-  );
-  const [loadingTeams, setLoadingTeams] =
-    useState(false);
   const [submitting, setSubmitting] =
     useState(false);
   const [error, setError] = useState("");
@@ -108,74 +79,10 @@ function CreatePersonnelPage() {
     selectedFarmId,
   ]);
 
-  useEffect(() => {
-    if (!farmId) {
-      const timer = window.setTimeout(() => setTeams([]), 0);
-      return () => window.clearTimeout(timer);
-    }
-
-    let active = true;
-
-    const loadTeams = async () => {
-      setLoadingTeams(true);
-
-      try {
-        const result = await getTeamList({
-          farmId,
-          leaderStatus: "all",
-        });
-
-        if (active) {
-          setTeams(result);
-        }
-      } catch (loadError) {
-        if (active) {
-          setError(
-            loadError instanceof Error
-              ? loadError.message
-              : "Không thể tải danh sách tổ.",
-          );
-        }
-      } finally {
-        if (active) {
-          setLoadingTeams(false);
-        }
-      }
-    };
-
-    const timer = window.setTimeout(() => {
-      setTeamId("");
-      void loadTeams();
-    }, 0);
-
-    return () => {
-      active = false;
-      window.clearTimeout(timer);
-    };
-  }, [farmId]);
-
   const selectedFarm = useMemo(
     () => farms.find((farm) => farm.id === farmId),
     [farmId, farms],
   );
-
-  const selectedTeam = useMemo(
-    () => teams.find((team) => team.id === teamId),
-    [teamId, teams],
-  );
-
-  const handleRoleChange = (
-    nextRole: PersonnelRole,
-  ) => {
-    setRole(nextRole);
-
-    if (
-      nextRole === "leader" &&
-      selectedTeam?.leaderId
-    ) {
-      setTeamId("");
-    }
-  };
 
   const handleSubmit = async (
     event: FormEvent<HTMLFormElement>,
@@ -185,13 +92,6 @@ function CreatePersonnelPage() {
 
     if (!farmId) {
       setError("Vui lòng chọn nông trại.");
-      return;
-    }
-
-    if (role === "leader" && !teamId) {
-      setError(
-        "Tổ trưởng bắt buộc phải được gán vào một tổ chưa có Tổ trưởng.",
-      );
       return;
     }
 
@@ -205,10 +105,9 @@ function CreatePersonnelPage() {
         citizenId,
         dateOfBirth,
         address,
-        autoGeneratePassword,
-        initialPassword,
-        role,
-        teamId: teamId || null,
+        autoGeneratePassword: true,
+        role: "worker",
+        teamId: null,
       });
 
       setCreatedResult(result);
@@ -229,7 +128,7 @@ function CreatePersonnelPage() {
     }
 
     const loginInformation = [
-      "Farmer QuickLog",
+      "AgriFarm",
       `Tài khoản: ${createdResult.personnel.phone}`,
       `Mật khẩu khởi tạo: ${createdResult.initialPassword}`,
     ].join("\n");
@@ -327,25 +226,18 @@ function CreatePersonnelPage() {
   return (
     <div className="page personnel-form-page">
       <div className="personnel-form-heading">
-        <Link
-          className="personnel-back-link"
-          to="/personnel"
-        >
-          <ArrowLeft size={18} />
-          Quay lại danh sách
-        </Link>
+        <BackButton to="/personnel" label="Quay lại danh sách nhân sự" />
 
         <div>
           <h1>Thêm nhân sự</h1>
           <p>
-            Tạo tài khoản làm việc trong Farmer
-            QuickLog.
+            Khai báo hồ sơ và tài khoản làm việc cho nhân sự.
           </p>
         </div>
       </div>
 
       <form
-        className="personnel-form"
+        className="personnel-form personnel-create-form card"
         onSubmit={handleSubmit}
       >
         {error && (
@@ -357,7 +249,7 @@ function CreatePersonnelPage() {
           </div>
         )}
 
-        <section className="personnel-form-section card">
+        <section className="personnel-form-section">
           <div className="personnel-section-heading">
             <span>
               <UserRound size={20} />
@@ -373,6 +265,51 @@ function CreatePersonnelPage() {
           </div>
 
           <div className="personnel-form-grid">
+            <label className="personnel-field">
+              <span>
+                Nông trại <b>*</b>
+              </span>
+
+              <select
+                className="input"
+                value={farmId}
+                required
+                disabled={
+                  loadingFarms ||
+                  selectedFarmId !== "all"
+                }
+                onChange={(event) =>
+                  setFarmId(event.target.value)
+                }
+              >
+                <option value="">
+                  Chọn nông trại
+                </option>
+
+                {farms.map((farm) => (
+                  <option
+                    key={farm.id}
+                    value={farm.id}
+                    disabled={
+                      farm.status === "suspended"
+                    }
+                  >
+                    {farm.name}
+                    {farm.status === "suspended"
+                      ? " (Tạm ngưng)"
+                      : ""}
+                  </option>
+                ))}
+              </select>
+
+              {selectedFarm && (
+                <small>
+                  Nhân sự sẽ thuộc{" "}
+                  {selectedFarm.name}.
+                </small>
+              )}
+            </label>
+
             <label className="personnel-field">
               <span>
                 Họ và tên <b>*</b>
@@ -458,254 +395,6 @@ function CreatePersonnelPage() {
             </label>
 
           </div>
-        </section>
-
-        <section className="personnel-form-section card">
-          <div className="personnel-section-heading">
-            <span>
-              <ShieldCheck size={20} />
-            </span>
-
-            <div>
-              <h2>Phân công công việc</h2>
-              <p>
-                Tài khoản mới có vai trò công nhân. Sau khi tạo, gán tổ hoặc phong tổ trưởng trong trang chi tiết nhân sự.
-              </p>
-            </div>
-          </div>
-
-          <div className="personnel-form-grid">
-            <label className="personnel-field">
-              <span>
-                Nông trại trực thuộc <b>*</b>
-              </span>
-
-              <select
-                className="input"
-                value={farmId}
-                required
-                disabled={
-                  loadingFarms ||
-                  selectedFarmId !== "all"
-                }
-                onChange={(event) =>
-                  setFarmId(event.target.value)
-                }
-              >
-                <option value="">
-                  Chọn nông trại
-                </option>
-
-                {farms.map((farm) => (
-                  <option
-                    key={farm.id}
-                    value={farm.id}
-                    disabled={
-                      farm.status === "suspended"
-                    }
-                  >
-                    {farm.name}
-                    {farm.status === "suspended"
-                      ? " (Tạm ngưng)"
-                      : ""}
-                  </option>
-                ))}
-              </select>
-
-              {selectedFarm && (
-                <small>
-                  Nhân sự sẽ thuộc{" "}
-                  {selectedFarm.name}.
-                </small>
-              )}
-            </label>
-
-            <label className="personnel-field">
-              <span>Tổ công tác</span>
-
-              <select
-                className="input"
-                value={teamId}
-                disabled={loadingTeams || !assignmentOnCreation}
-                required={role === "leader"}
-                onChange={(event) =>
-                  setTeamId(event.target.value)
-                }
-              >
-                <option value="">
-                  {role === "leader"
-                    ? "Chọn tổ chưa có Tổ trưởng"
-                    : "Chưa phân tổ"}
-                </option>
-
-                {teams.map((team) => (
-                  <option
-                    key={team.id}
-                    value={team.id}
-                    disabled={
-                      role === "leader" &&
-                      team.leaderId !== null
-                    }
-                  >
-                    {team.name}
-                    {team.leaderId
-                      ? " (Đã có Tổ trưởng)"
-                      : ""}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <fieldset disabled className="personnel-role-field field-full">
-              <legend>
-                Vai trò ban đầu <b>*</b>
-              </legend>
-
-              <div className="personnel-role-options">
-                <label
-                  className={
-                    role === "worker"
-                      ? "selected"
-                      : ""
-                  }
-                >
-                  <input
-                    type="radio"
-                    name="personnel-role"
-                    checked={role === "worker"}
-                    onChange={() =>
-                      handleRoleChange("worker")
-                    }
-                  />
-
-                  <span>
-                    <UserRound size={19} />
-                  </span>
-
-                  <div>
-                    <strong>Công nhân</strong>
-                    <small>
-                      Nhận việc và ghi nhật ký canh tác.
-                    </small>
-                  </div>
-                </label>
-
-                <label
-                  className={
-                    role === "leader"
-                      ? "selected"
-                      : ""
-                  }
-                >
-                  <input
-                    type="radio"
-                    name="personnel-role"
-                    checked={role === "leader"}
-                    onChange={() =>
-                      handleRoleChange("leader")
-                    }
-                  />
-
-                  <span>
-                    <Users size={19} />
-                  </span>
-
-                  <div>
-                    <strong>Tổ trưởng</strong>
-                    <small>
-                      Quản lý thành viên và điều phối
-                      công việc.
-                    </small>
-                  </div>
-                </label>
-              </div>
-            </fieldset>
-          </div>
-        </section>
-
-        <section className="personnel-form-section card">
-          <div className="personnel-section-heading">
-            <span>
-              <KeyRound size={20} />
-            </span>
-
-            <div>
-              <h2>Tài khoản đăng nhập</h2>
-              <p>
-                Thiết lập mật khẩu sử dụng cho ứng dụng
-                công nhân.
-              </p>
-            </div>
-          </div>
-
-          <label className="personnel-password-choice">
-            <input
-              type="checkbox"
-              checked={autoGeneratePassword}
-              onChange={(event) =>
-                setAutoGeneratePassword(
-                  event.target.checked,
-                )
-              }
-            />
-
-            <span>
-              <strong>
-                Tự động tạo mật khẩu an toàn
-              </strong>
-              <small>
-                Mật khẩu sẽ được hiển thị một lần sau
-                khi tạo tài khoản.
-              </small>
-            </span>
-          </label>
-
-          {!autoGeneratePassword && (
-            <label className="personnel-field personnel-password-field">
-              <span>
-                Mật khẩu khởi tạo <b>*</b>
-              </span>
-
-              <div className="personnel-password-input">
-                <input
-                  className="input"
-                  type={
-                    showPassword ? "text" : "password"
-                  }
-                  value={initialPassword}
-                  minLength={6}
-                  required
-                  placeholder="Tối thiểu 6 ký tự"
-                  onChange={(event) =>
-                    setInitialPassword(
-                      event.target.value,
-                    )
-                  }
-                />
-
-                <button
-                  type="button"
-                  aria-label={
-                    showPassword
-                      ? "Ẩn mật khẩu"
-                      : "Hiện mật khẩu"
-                  }
-                  onClick={() =>
-                    setShowPassword(
-                      (currentValue) =>
-                        !currentValue,
-                    )
-                  }
-                >
-                  {showPassword ? (
-                    <EyeOff size={18} />
-                  ) : (
-                    <Eye size={18} />
-                  )}
-                </button>
-              </div>
-            </label>
-          )}
         </section>
 
         <div className="personnel-form-actions">

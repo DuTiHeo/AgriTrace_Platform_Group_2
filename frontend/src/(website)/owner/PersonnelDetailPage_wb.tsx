@@ -1,10 +1,9 @@
+import BackButton from "../../components/owner/BackButton_wb";
 import "../../styles/personnel_form_wb.css";
 import "../../styles/personnel_wb.css";
 import "../../styles/personnel_detail_wb.css";
 import {
-  ArrowLeft,
   BadgeCheck,
-  BriefcaseBusiness,
   CalendarDays,
   Check,
   CircleAlert,
@@ -30,7 +29,6 @@ import {
   useState,
 } from "react";
 import {
-  Link,
   useParams,
 } from "react-router-dom";
 import { useFarmContext } from "../../contexts/FarmContext_wb";
@@ -230,23 +228,12 @@ function PersonnelDetailPage() {
       fullName: personnel.fullName,
       phone: personnel.phone,
       citizenId: personnel.citizenId ?? "",
-      dateOfBirth: personnel.dateOfBirth ?? "",
+      dateOfBirth: personnel.dateOfBirth?.slice(0, 10) ?? "",
       address: personnel.address ?? "",
     });
 
     setOperationError("");
     setOpenModal("edit");
-  };
-
-  const openAssignmentModal = () => {
-    if (!personnel) {
-      return;
-    }
-
-    setAssignmentRole(personnel.role);
-    setAssignmentTeamId(personnel.teamId ?? "");
-    setOperationError("");
-    setOpenModal("assignment");
   };
 
   const openLockModal = () => {
@@ -260,6 +247,11 @@ function PersonnelDetailPage() {
     event.preventDefault();
 
     if (!personnel) {
+      return;
+    }
+
+    if (!editForm.fullName.trim() || !editForm.phone.trim()) {
+      setOperationError("Vui lòng nhập họ tên và số điện thoại.");
       return;
     }
 
@@ -469,17 +461,10 @@ function PersonnelDetailPage() {
       <div className="page personnel-detail-page">
         <div className="personnel-detail-state card">
           <CircleAlert size={34} />
-          <h1>Không thể mở hồ sơ</h1>
+          <div className="page-title-with-back"><BackButton to="/personnel" label="Quay lại danh sách nhân sự" /><h1>Không thể mở hồ sơ</h1></div>
           <p>{error || "Không tìm thấy nhân sự."}</p>
 
-          <Link
-            className="btn btn-secondary"
-            to="/personnel"
-          >
-            <ArrowLeft size={17} />
-            Về danh sách nhân sự
-          </Link>
-        </div>
+          </div>
       </div>
     );
   }
@@ -487,13 +472,7 @@ function PersonnelDetailPage() {
   return (
     <div className="page personnel-detail-page">
       <div className="personnel-detail-topbar">
-        <Link
-          className="personnel-back-link"
-          to="/personnel"
-        >
-          <ArrowLeft size={18} />
-          Danh sách nhân sự
-        </Link>
+        <BackButton to="/personnel" label="Quay lại danh sách nhân sự" />
 
         <div className="personnel-detail-actions">
           <button
@@ -503,16 +482,6 @@ function PersonnelDetailPage() {
           >
             <Edit3 size={17} />
             Chỉnh sửa
-          </button>
-
-          <button
-            className="btn btn-secondary"
-            type="button"
-            disabled={personnel.status === "locked"}
-            onClick={openAssignmentModal}
-          >
-            <BriefcaseBusiness size={17} />
-            Phân công
           </button>
 
           {personnel.status === "active" ? (
@@ -566,6 +535,7 @@ function PersonnelDetailPage() {
           <div className="personnel-profile-title">
             <div>
               <div className="personnel-profile-name">
+                
                 <h1>{personnel.fullName}</h1>
 
                 <span
@@ -618,12 +588,6 @@ function PersonnelDetailPage() {
               <h2>Thông tin cá nhân</h2>
             </div>
 
-            <button
-              type="button"
-              onClick={openEditModal}
-            >
-              Chỉnh sửa
-            </button>
           </div>
 
           <dl className="personnel-info-list">
@@ -668,13 +632,6 @@ function PersonnelDetailPage() {
               <h2>Công việc và tài khoản</h2>
             </div>
 
-            <button
-              type="button"
-              disabled={personnel.status === "locked"}
-              onClick={openAssignmentModal}
-            >
-              Thay đổi
-            </button>
           </div>
 
           <dl className="personnel-info-list single-column">
@@ -698,9 +655,11 @@ function PersonnelDetailPage() {
             <div>
               <dt>Trạng thái tài khoản</dt>
               <dd>
+                <span className={`personnel-account-badge ${personnel.status === "active" ? "is-active" : "is-locked"}`}>
                 {personnel.status === "active"
                   ? "Đang hoạt động"
                   : "Bị khóa"}
+                </span>
               </dd>
             </div>
 
@@ -778,7 +737,7 @@ function PersonnelDetailPage() {
           role="presentation"
         >
           <form
-            className="personnel-modal card"
+            className="personnel-modal personnel-profile-edit card"
             role="dialog"
             aria-modal="true"
             aria-labelledby="edit-personnel-title"
@@ -787,14 +746,15 @@ function PersonnelDetailPage() {
             <div className="personnel-modal-heading">
               <div>
                 <h2 id="edit-personnel-title">
-                  Chỉnh sửa thông tin
+                  Chỉnh sửa nhân sự
                 </h2>
-                <p>{personnel.employeeCode}</p>
+                <p>{personnel.employeeCode} · {personnel.fullName}</p>
               </div>
 
               <button
                 type="button"
                 aria-label="Đóng"
+                disabled={saving}
                 onClick={closeModal}
               >
                 <X size={20} />
@@ -808,6 +768,11 @@ function PersonnelDetailPage() {
             )}
 
             <div className="personnel-modal-content">
+              <div className="personnel-edit-section-heading">
+                <UserRound size={20} />
+                <h3>Thông tin cá nhân</h3>
+              </div>
+              <fieldset className="personnel-edit-fields" disabled={saving}>
               <div className="personnel-form-grid">
                 <label className="personnel-field">
                   <span>
@@ -818,6 +783,9 @@ function PersonnelDetailPage() {
                     className="input"
                     type="text"
                     required
+                    autoFocus
+                    maxLength={255}
+                    autoComplete="name"
                     value={editForm.fullName}
                     onChange={(event) =>
                       setEditForm((current) => ({
@@ -838,6 +806,9 @@ function PersonnelDetailPage() {
                     className="input"
                     type="tel"
                     required
+                    pattern={"\\+?[0-9 ]{9,20}"}
+                    title="Nhập số điện thoại từ 9 đến 20 chữ số hoặc dấu cách, có thể bắt đầu bằng dấu +."
+                    autoComplete="tel"
                     value={editForm.phone}
                     onChange={(event) =>
                       setEditForm((current) => ({
@@ -854,6 +825,10 @@ function PersonnelDetailPage() {
                   <input
                     className="input"
                     type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]{12}"
+                    maxLength={12}
+                    title="CCCD gồm 12 chữ số."
                     value={editForm.citizenId}
                     onChange={(event) =>
                       setEditForm((current) => ({
@@ -871,6 +846,7 @@ function PersonnelDetailPage() {
                   <input
                     className="input"
                     type="date"
+                    max={new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Ho_Chi_Minh", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date())}
                     value={editForm.dateOfBirth}
                     onChange={(event) =>
                       setEditForm((current) => ({
@@ -885,9 +861,10 @@ function PersonnelDetailPage() {
                 <label className="personnel-field field-full">
                   <span>Địa chỉ</span>
 
-                  <input
+                  <textarea
                     className="input"
-                    type="text"
+                    rows={3}
+                    autoComplete="street-address"
                     value={editForm.address}
                     onChange={(event) =>
                       setEditForm((current) => ({
@@ -900,6 +877,7 @@ function PersonnelDetailPage() {
                 </label>
 
               </div>
+              </fieldset>
             </div>
 
             <div className="personnel-modal-actions">
@@ -907,6 +885,7 @@ function PersonnelDetailPage() {
                 className="btn btn-secondary"
                 type="button"
                 onClick={closeModal}
+                disabled={saving}
               >
                 Hủy
               </button>

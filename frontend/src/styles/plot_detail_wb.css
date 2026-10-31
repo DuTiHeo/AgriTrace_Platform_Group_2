@@ -481,3 +481,50 @@
 
 
 }
+.plot-detail-page .plot-editor-modal {
+  width: min(1050px, calc(100vw - 40px));
+  max-height: calc(100dvh - 48px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.plot-editor-modal > :is(.app-modal-header, .app-modal-footer) {
+  flex-shrink: 0;
+}
+
+.plot-editor-modal > :is(.app-modal-body, .plot-edit-form) {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.plot-edit-boundary-section {
+  padding-top: 18px;
+  border-top: 1px solid var(--agri-border);
+}
+
+.plot-edit-boundary-section h3 {
+  margin-bottom: 16px;
+  color: var(--agri-title);
+  font-size: 16px;
+}
+
+.plot-edit-form select {
+  width: 100%;
+  height: 42px;
+  padding: 10px 11px;
+  border: 1px solid var(--agri-input-border);
+  border-radius: var(--agri-radius-control);
+  background: var(--agri-input);
+  color: var(--agri-text);
+  font: inherit;
+}
+
+.plot-edit-form input[readonly] {
+  color: var(--agri-muted-strong);
+  background: var(--agri-header);
+}
+.plot-detail-page .plot-detail-topbar {
+  justify-content: flex-end;
+}

@@ -1,6 +1,8 @@
+import BackButton from "../../components/owner/BackButton_wb";
+import { ListActionConfirmation } from "../../components/owner/ListRowActions_wb";
+import { QRCodeCanvas } from "qrcode.react";
 import "../../styles/harvests_wb.css";
 import {
-  ArrowLeft,
   CalendarDays,
   CheckCircle2,
   Edit3,
@@ -11,9 +13,11 @@ import {
   Scale,
   Sprout,
   Trash2,
+  X,
+  Download,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { farmService } from "../../sevices/farmService_wb";
 import { harvestService } from "../../sevices/harvestService_wb";
 import { plotService } from "../../sevices/plotService_wb";
@@ -60,6 +64,48 @@ function HarvestDetailPage() {
   const [notice, setNotice] = useState("");
   const [editing, setEditing] = useState(false);
   const [harvestDate, setHarvestDate] = useState("");
+  const [editCode, setEditCode] = useState("");
+  const [editStatus, setEditStatus] = useState<"pending" | "ready">("pending");
+  const [editTraceUrl, setEditTraceUrl] = useState("");
+  const [editQuantity, setEditQuantity] = useState("");
+  const [editContributions, setEditContributions] = useState<Record<string, string>>({});
+  const [editError, setEditError] = useState("");
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const editDialog = useRef<HTMLDialogElement>(null);
+  const qrCanvas = useRef<HTMLCanvasElement>(null);
+  const generateQr = async () => {
+    if (!batch || busy || batch.status === "cancelled") return;
+    setBusy(true); setError(""); setNotice("");
+    try { setBatch(await harvestService.generateTraceCode(batch.id)); setNotice("Đã tạo mã QR truy xuất cho lô thu hoạch."); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : "Không thể tạo mã QR."); }
+    finally { setBusy(false); }
+  };
+  const downloadQr = () => {
+    if (!qrCanvas.current || !batch) return;
+    const link = document.createElement("a");
+    link.href = qrCanvas.current.toDataURL("image/png");
+    link.download = `${batch.code.replace(/[^a-zA-Z0-9_-]/g, "_")}-QR.png`;
+    link.click();
+  };
+
+  useEffect(() => {
+    if (!editing) return;
+    const trigger = document.activeElement as HTMLElement | null;
+    editDialog.current?.showModal();
+    return () => { trigger?.focus(); };
+  }, [editing]);
+
+  const openEdit = () => {
+    if (!batch || batch.status === "cancelled") return;
+    setHarvestDate(batch.harvestDate);
+    setEditCode(batch.code);
+    setEditStatus(batch.status);
+    setEditTraceUrl(batch.traceUrl ?? "");
+    setEditQuantity(String(batch.quantityKg));
+    setEditContributions(Object.fromEntries(batch.contributions.map(item => [item.seasonId, String(item.quantityKg)])));
+    setEditError("");
+    setEditing(true);
+  };
 
   const loadRequest = useRef(0);
   const loadData = useCallback(async () => {
@@ -109,7 +155,7 @@ function HarvestDetailPage() {
   );
 
   const cancelBatch = async () => {
-    if (!batch || !window.confirm(`Hủy lô thu hoạch ${batch.code}? Dữ liệu vẫn được giữ để truy xuất lịch sử.`)) {
+    if (!batch) {
       return;
     }
 
@@ -118,25 +164,38 @@ function HarvestDetailPage() {
     try {
       await harvestService.cancel(batch.id);
       navigate("/harvests");
-    } catch (actionError) {
-      setError(actionError instanceof Error ? actionError.message : "Không thể hủy lô thu hoạch.");
     } finally {
       setBusy(false);
     }
   };
 
-  const saveBatch = async () => {
+  const saveBatch = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     if (!batch) return;
+    if (!editCode.trim() || !harvestDate) { setEditError("Vui lòng nhập mã lô và ngày thu hoạch."); return; }
     setBusy(true);
-    setError("");
+    setEditError("");
     setNotice("");
     try {
-      const updated = await harvestService.update(batch.id, { harvestDate });
+      let currentBatch = batch;
+      for (const contribution of batch.contributions) {
+        const quantityKg = Number(editContributions[contribution.seasonId]);
+        if (!Number.isFinite(quantityKg) || quantityKg <= 0) throw new Error("Sản lượng đóng góp phải lớn hơn 0.");
+        if (quantityKg !== contribution.quantityKg) {
+          currentBatch = await harvestService.updateContribution(batch.id, { seasonId: contribution.seasonId, quantityKg });
+          setBatch(currentBatch);
+        }
+      }
+      const updated = await harvestService.update(batch.id, {
+        harvestDate, code: editCode, status: editStatus,
+        ...(editTraceUrl.trim() !== (batch.traceUrl ?? "") ? { traceUrl: editTraceUrl } : {}),
+        ...(batch.contributions.length === 0 ? { quantityKg: Number(editQuantity) } : {}),
+      });
       setBatch(updated);
       setEditing(false);
       setNotice("Đã cập nhật thông tin lô thu hoạch.");
     } catch (actionError) {
-      setError(actionError instanceof Error ? actionError.message : "Không thể cập nhật lô thu hoạch.");
+      setEditError(actionError instanceof Error ? actionError.message : "Không thể cập nhật lô thu hoạch.");
     } finally {
       setBusy(false);
     }
@@ -150,8 +209,8 @@ function HarvestDetailPage() {
     return (
       <div className="page harvest-not-found">
         <PackageCheck size={38} />
-        <h1>Không tìm thấy lô thu hoạch</h1>
-        <Link className="btn btn-primary" to="/harvests">Quay lại danh sách</Link>
+        <div className="page-title-with-back"><BackButton to="/harvests" label="Quay lại danh sách thu hoạch" /><h1>Không tìm thấy lô thu hoạch</h1></div>
+
       </div>
     );
   }
@@ -159,9 +218,7 @@ function HarvestDetailPage() {
   return (
     <div className="page harvest-detail-page">
       <div className="harvest-detail-topbar">
-        <Link className="harvest-back-button" to="/harvests" aria-label="Quay lại danh sách">
-          <ArrowLeft size={20} />
-        </Link>
+        <BackButton to="/harvests" label="Quay lại danh sách thu hoạch" />
         <div className="harvest-detail-title">
           <div>
             <h1>{batch.code}</h1>
@@ -172,25 +229,41 @@ function HarvestDetailPage() {
           <p>{farm?.name ?? "Nông trại không xác định"}</p>
         </div>
         {batch.status !== "cancelled" && <div className="harvest-detail-actions">
-          <button className="btn btn-secondary" type="button" disabled={busy} onClick={() => setEditing((current) => !current)}><Edit3 size={16} />Chỉnh sửa</button>
-          <button className="harvest-delete-button" type="button" disabled={busy} onClick={() => void cancelBatch()}><Trash2 size={16} />Hủy lô</button>
+          <button className="btn btn-secondary" type="button" disabled={busy} onClick={openEdit}><Edit3 size={16} />Chỉnh sửa</button>
+          <button className="harvest-delete-button" type="button" disabled={busy} onClick={() => setCancelOpen(true)}><Trash2 size={16} />Hủy lô</button>
         </div>}
       </div>
 
       {error && <div className="page-error">{error}</div>}
       {notice && <div className="harvest-notice">{notice}</div>}
 
-      {editing && <section className="card harvest-edit-card">
-        <div><strong>Chỉnh sửa lô thu hoạch</strong><span>Mã lô và nguồn sản lượng được giữ nguyên để bảo toàn truy xuất.</span></div>
-        <label><span>Ngày thu hoạch</span><input type="date" required max={new Date().toISOString().slice(0, 10)} value={harvestDate} onChange={(event) => setHarvestDate(event.target.value)} /></label>
-        <div><button className="btn btn-secondary" type="button" onClick={() => { setHarvestDate(batch.harvestDate); setEditing(false); }}>Hủy</button><button className="btn btn-primary" type="button" disabled={busy || !harvestDate} onClick={() => void saveBatch()}><Save size={16} />{busy ? "Đang lưu..." : "Lưu thay đổi"}</button></div>
-      </section>}
+      {cancelOpen && <ListActionConfirmation action="delete" title="Hủy lô thu hoạch?" confirmLabel="Xác nhận hủy lô" name={batch.code} statusLabel="Hủy lô thu hoạch" description="Bạn có chắc muốn hủy lô thu hoạch này? Dữ liệu vẫn được giữ để truy xuất lịch sử." onClose={() => setCancelOpen(false)} onConfirm={cancelBatch} />}
+
+      {editing && <dialog ref={editDialog} className="harvest-edit-dialog" aria-labelledby="harvest-edit-title" onCancel={event => { event.preventDefault(); if (!busy) setEditing(false); }}>
+        <form onSubmit={saveBatch}>
+          <header className="harvest-edit-heading"><div><h2 id="harvest-edit-title">Chỉnh sửa lô thu hoạch</h2><p>{batch.code} · {farm?.name}</p></div><button type="button" aria-label="Đóng" disabled={busy} onClick={() => setEditing(false)}><X size={20} /></button></header>
+          <div className="harvest-edit-content">
+            {editError && <div className="form-error" role="alert">{editError}</div>}
+            <fieldset disabled={busy} className="harvest-edit-fields">
+              <label><span>Mã lô <b>*</b></span><input required autoFocus value={editCode} onChange={event => setEditCode(event.target.value)} /></label>
+              <label><span>Ngày thu hoạch <b>*</b></span><input required type="date" value={harvestDate} onChange={event => setHarvestDate(event.target.value)} /></label>
+              <label><span>Nông trại</span><input readOnly value={farm?.name ?? "Không xác định"} /></label>
+              <label><span>Trạng thái</span><select value={editStatus} onChange={event => setEditStatus(event.target.value as "pending" | "ready")}><option value="pending">{harvestStatusLabels.pending}</option><option value="ready">{harvestStatusLabels.ready}</option></select></label>
+              <label className="harvest-edit-full"><span>Đường dẫn truy xuất QR</span><input type="url" placeholder="https://..." value={editTraceUrl} onChange={event => setEditTraceUrl(event.target.value)} /></label>
+              <div className="harvest-edit-full harvest-edit-section-title"><Sprout size={19} /><h3>Nguồn sản lượng</h3></div>
+              {batch.contributions.map(contribution => <label key={contribution.seasonId}><span>{seasonById.get(contribution.seasonId)?.name ?? "Mùa vụ"} (kg) <b>*</b></span><input required type="number" min="0.01" step="0.01" value={editContributions[contribution.seasonId] ?? ""} onChange={event => setEditContributions(current => ({ ...current, [contribution.seasonId]: event.target.value }))} /></label>)}
+              <label className="harvest-edit-full"><span>Tổng sản lượng (kg)</span><input type="number" min="0" step="0.01" required readOnly={batch.contributions.length > 0} value={batch.contributions.length ? batch.contributions.reduce((sum, item) => sum + (Number(editContributions[item.seasonId]) || 0), 0).toFixed(2) : editQuantity} onChange={event => setEditQuantity(event.target.value)} />{batch.contributions.length > 0 && <small>Tự tính từ sản lượng của các mùa vụ đóng góp.</small>}</label>
+            </fieldset>
+          </div>
+          <footer className="harvest-edit-footer"><button className="btn btn-secondary" type="button" disabled={busy} onClick={() => setEditing(false)}>Hủy</button><button className="btn btn-primary" type="submit" disabled={busy}><Save size={17} />{busy ? "Đang lưu..." : "Lưu thay đổi"}</button></footer>
+        </form>
+      </dialog>}
 
       <section className="harvest-detail-summary">
         <article className="card"><CalendarDays size={20} /><div><span>Ngày thu hoạch</span><strong>{formatDate(batch.harvestDate)}</strong></div></article>
         <article className="card"><Scale size={20} /><div><span>Tổng sản lượng</span><strong>{formatQuantity(batch.quantityKg)} kg</strong></div></article>
         <article className="card"><Sprout size={20} /><div><span>Mùa vụ đóng góp</span><strong>{batch.contributions.length}</strong></div></article>
-        <article className="card"><QrCode size={20} /><div><span>Mã truy xuất</span><strong>{"Chưa hỗ trợ công khai"}</strong></div></article>
+        <article className="card"><QrCode size={20} /><div><span>Mã truy xuất</span><strong>{batch.traceUrl ? "Đã tạo mã QR" : "Chưa tạo mã QR"}</strong></div></article>
       </section>
 
       <div className="harvest-detail-grid">
@@ -204,20 +277,15 @@ function HarvestDetailPage() {
               {batch.contributions.map((contribution) => {
                 const season = seasonById.get(contribution.seasonId);
                 const plot = season ? plotById.get(season.plotId) : null;
-                const percentage = batch.quantityKg > 0
-                  ? (contribution.quantityKg / batch.quantityKg) * 100
-                  : 0;
                 return (
                   <article key={contribution.seasonId}>
                     <div className="harvest-contribution-icon"><Sprout size={19} /></div>
                     <div className="harvest-contribution-info">
                       <strong>{season?.name ?? "Mùa vụ không xác định"}</strong>
                       <span><MapPinned size={13} /> {plot?.name ?? "Vùng trồng"} · {season?.varietyName}</span>
-                      <div><span style={{ width: `${percentage}%` }} /></div>
                     </div>
                     <div className="harvest-contribution-quantity">
                       <strong>{formatQuantity(contribution.quantityKg)} kg</strong>
-                      <span>{percentage.toFixed(1)}%</span>
                     </div>
                   </article>
                 );
@@ -242,9 +310,8 @@ function HarvestDetailPage() {
           <div className="harvest-section-heading">
             <div><QrCode size={19} /><h2>Tem truy xuất</h2></div>
           </div>
-          <div className="harvest-qr-empty" role="status">
-            <QrCode size={44} /><strong>Truy xuất công khai chưa khả dụng</strong>
-            <p>Hiện chỉ có thể xem thông tin lô thu hoạch trong tài khoản chủ nông trại.</p>
+          <div className="harvest-qr-empty">
+            {batch.traceUrl ? <><QRCodeCanvas ref={qrCanvas} value={batch.traceUrl} size={240} marginSize={4} level="M" /><strong>{batch.code}</strong><button className="btn btn-secondary" type="button" onClick={downloadQr}><Download size={17} />Tải mã QR</button>{/^https?:\/\//i.test(batch.traceUrl) && <a href={batch.traceUrl} target="_blank" rel="noreferrer">Mở đường dẫn truy xuất</a>}</> : <><QrCode size={44} /><strong>Chưa có mã QR</strong><p>Tạo mã QR để gắn với thông tin lô thu hoạch.</p>{batch.status !== "cancelled" && <button type="button" className="btn btn-primary" disabled={busy} onClick={() => void generateQr()}><QrCode size={17} />{busy ? "Đang tạo..." : "Tạo mã QR"}</button>}</>}
           </div>
         </aside>
       </div>

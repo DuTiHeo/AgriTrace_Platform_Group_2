@@ -1,6 +1,7 @@
+import BackButton from "../../components/owner/BackButton_wb";
+import GeographicMap from "../../components/owner/GeographicMap_wb";
 import "../../styles/farming_logs_wb.css";
 import {
-  ArrowLeft,
   Camera,
   CheckCircle2,
   Clock3,
@@ -19,7 +20,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { farmService } from "../../sevices/farmService_wb";
 import { farmingLogService } from "../../sevices/farmingLogService_wb";
 import { plotService } from "../../sevices/plotService_wb";
@@ -150,11 +151,9 @@ function FarmingLogDetailPage() {
     return (
       <div className="page farming-log-not-found">
         <NotebookPen size={38} />
-        <h1>Không tìm thấy nhật ký</h1>
+        <div className="page-title-with-back"><BackButton to="/farming-logs" label="Quay lại danh sách nhật ký" /><h1>Không tìm thấy nhật ký</h1></div>
         <p>Bản ghi có thể đã bị xóa hoặc đường dẫn không còn hợp lệ.</p>
-        <Link className="btn btn-primary" to="/farming-logs">
-          Quay lại danh sách
-        </Link>
+
       </div>
     );
   }
@@ -164,13 +163,7 @@ function FarmingLogDetailPage() {
   return (
     <div className="page farming-log-detail-page">
       <div className="farming-log-detail-header">
-        <Link
-          className="farming-log-back-button"
-          to="/farming-logs"
-          aria-label="Quay lại danh sách nhật ký"
-        >
-          <ArrowLeft size={20} />
-        </Link>
+        <BackButton to="/farming-logs" label="Quay lại danh sách nhật ký" />
         <div>
           <div className="farming-log-detail-eyebrow">
             <span>Nhật ký canh tác</span>
@@ -374,10 +367,7 @@ function FarmingLogDetailPage() {
               <MapPin size={18} />
               <h2>Vị trí ghi nhận</h2>
             </div>
-            <div className="farming-log-map-placeholder">
-              <MapPin size={30} />
-              <span>Điểm GPS tại vùng trồng</span>
-            </div>
+            <GeographicMap label="Vị trí GPS của nhật ký canh tác" points={[log.gps]} />
             <dl>
               <div>
                 <dt>Vĩ độ</dt>

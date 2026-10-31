@@ -1,0 +1,48 @@
+.boundary-detail-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.boundary-detail-summary > div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 14px;
+  border-radius: var(--agri-radius-control);
+  background: var(--agri-header);
+}
+.boundary-detail-summary span { color: var(--agri-muted-strong); font-size: 12px; }
+.boundary-detail-summary strong { color: var(--agri-title); font-size: 14px; }
+.boundary-detail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  grid-template-rows: auto 360px auto;
+  gap: 12px 18px;
+}
+.boundary-detail-layout > .geographic-map { display: contents; }
+.boundary-detail-layout .geographic-map-legend { grid-column: 1 / -1; grid-row: 1; margin: 0; }
+.boundary-detail-layout .geographic-map-canvas { grid-column: 1; grid-row: 2; height: 360px; }
+.boundary-detail-layout .geographic-map-status { grid-column: 1 / -1; grid-row: 3; }
+.boundary-detail-points {
+  grid-column: 2;
+  grid-row: 2;
+  height: 360px;
+  min-width: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  border: 1px solid var(--agri-border);
+  border-radius: var(--agri-radius-control);
+}
+.boundary-detail-points table { width: 100%; min-width: 0; border-collapse: collapse; font-size: 12px; }
+.boundary-detail-points :is(th, td) { padding: 11px 8px; border-bottom: 1px solid var(--agri-border); text-align: center; overflow-wrap: anywhere; }
+.boundary-detail-points th { position: sticky; top: 0; z-index: 1; color: var(--agri-muted-strong); background: var(--agri-header); font-size: 11px; }
+@media (max-width: 1000px) {
+  .boundary-detail-layout { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto 360px auto auto; }
+  .boundary-detail-points { grid-column: 1; grid-row: 3; height: auto; max-height: 240px; }
+  .boundary-detail-layout .geographic-map-status { grid-row: 4; }
+}
+@media (max-width: 560px) {
+  .boundary-detail-summary { grid-template-columns: minmax(0, 1fr); }
+}
