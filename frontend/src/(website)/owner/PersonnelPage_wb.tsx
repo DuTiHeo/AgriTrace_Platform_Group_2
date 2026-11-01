@@ -160,6 +160,7 @@ function PersonnelPage() {
     return () => { window.clearTimeout(timer); loadRequest.current += 1; };
   }, [loadData]);
 
+  const effectiveTeamFilter = teamFilter === "all" || teamFilter === "unassigned" || teams.some(team => team.id === teamFilter) ? teamFilter : "all";
   const filteredPersonnel = useMemo(() => {
     const normalizedSearch = search
       .trim()
@@ -187,10 +188,10 @@ function PersonnelPage() {
         person.status === statusFilter;
 
       const matchesTeam =
-        teamFilter === "all" ||
-        (teamFilter === "unassigned"
+        effectiveTeamFilter === "all" ||
+        (effectiveTeamFilter === "unassigned"
           ? person.teamId === null
-          : person.teamId === teamFilter);
+          : person.teamId === effectiveTeamFilter);
 
       return (
         matchesSearch &&
@@ -204,7 +205,7 @@ function PersonnelPage() {
     roleFilter,
     search,
     statusFilter,
-    teamFilter,
+    effectiveTeamFilter,
   ]);
 
   const summary = useMemo(
@@ -347,7 +348,7 @@ function PersonnelPage() {
 
           <select
             className="input personnel-filter"
-            value={teamFilter}
+            value={effectiveTeamFilter}
             aria-label="Lọc theo tổ"
             onChange={(event) =>
               setTeamFilter(event.target.value)
@@ -428,6 +429,7 @@ function PersonnelPage() {
           <>
             <div className="personnel-table-wrapper">
               <table className="personnel-table">
+<colgroup><col style={{ width: "26%" }} /><col style={{ width: "16%" }} /><col style={{ width: "14%" }} /><col style={{ width: "20%" }} /><col style={{ width: "14%" }} /><col style={{ width: "10%" }} /></colgroup>
                 <thead>
                   <tr>
                     <th>Nhân sự</th>
@@ -531,4 +533,5 @@ function PersonnelPage() {
 }
 
 export default PersonnelPage;
+
 

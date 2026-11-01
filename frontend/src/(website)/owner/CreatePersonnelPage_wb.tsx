@@ -274,10 +274,7 @@ function CreatePersonnelPage() {
                 className="input"
                 value={farmId}
                 required
-                disabled={
-                  loadingFarms ||
-                  selectedFarmId !== "all"
-                }
+                disabled={loadingFarms}
                 onChange={(event) =>
                   setFarmId(event.target.value)
                 }
@@ -430,3 +427,4 @@ function CreatePersonnelPage() {
 }
 
 export default CreatePersonnelPage;
+

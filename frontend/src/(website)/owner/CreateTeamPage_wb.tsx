@@ -153,10 +153,7 @@ function CreateTeamPage() {
                 className="input"
                 value={farmId}
                 required
-                disabled={
-                  loadingFarms ||
-                  selectedFarmId !== "all"
-                }
+                disabled={loadingFarms}
                 onChange={(event) =>
                   setFarmId(event.target.value)
                 }
@@ -246,3 +243,4 @@ function CreateTeamPage() {
 }
 
 export default CreateTeamPage;
+

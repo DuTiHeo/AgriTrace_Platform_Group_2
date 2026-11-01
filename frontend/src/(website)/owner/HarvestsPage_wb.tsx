@@ -208,6 +208,7 @@ function HarvestsPage() {
         ) : (
           <div className="harvest-table-wrapper">
             <table className="harvest-table">
+<colgroup><col style={{ width: "20%" }} /><col style={{ width: "20%" }} /><col style={{ width: "12%" }} /><col style={{ width: "17%" }} /><col style={{ width: "10%" }} /><col style={{ width: "13%" }} /><col style={{ width: "8%" }} /></colgroup>
               <thead>
                 <tr>
                   <th>Mã lô</th>
@@ -282,4 +283,5 @@ function HarvestsPage() {
 }
 
 export default HarvestsPage;
+
 

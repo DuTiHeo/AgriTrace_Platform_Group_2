@@ -652,6 +652,7 @@ function TeamDetailPage() {
         ) : (
           <div className="personnel-table-wrapper">
             <table className="personnel-table team-member-table">
+<colgroup><col style={{ width: "32%" }} /><col style={{ width: "20%" }} /><col style={{ width: "16%" }} /><col style={{ width: "18%" }} /><col style={{ width: "14%" }} /></colgroup>
               <thead>
                 <tr>
                   <th>Nhân sự</th>
@@ -1200,3 +1201,4 @@ function TeamDetailPage() {
 }
 
 export default TeamDetailPage;
+

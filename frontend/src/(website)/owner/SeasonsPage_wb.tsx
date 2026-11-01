@@ -380,6 +380,7 @@ function SeasonsPage() {
         ) : (
           <div className="seasons-table-wrapper">
             <table className="seasons-table">
+<colgroup><col style={{ width: "18%" }} /><col style={{ width: "14%" }} /><col style={{ width: "11%" }} /><col style={{ width: "10%" }} /><col style={{ width: "12%" }} /><col style={{ width: "12%" }} /><col style={{ width: "11%" }} /><col style={{ width: "12%" }} /></colgroup>
               <thead>
                 <tr>
                   <th>Mùa vụ</th>
@@ -483,3 +484,4 @@ function SeasonsPage() {
 }
 
 export default SeasonsPage;
+

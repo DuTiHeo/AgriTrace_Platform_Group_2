@@ -67,10 +67,10 @@ const allowedNextStatuses: Record<
   SeasonStatus,
   SeasonStatus[]
 > = {
-  planned: ["active"],
-  active: ["ready"],
-  ready: ["active", "completed"],
-  completed: [],
+  planned: ["active", "ready", "completed"],
+  active: ["active", "ready", "completed"],
+  ready: ["active", "ready", "completed"],
+  completed: ["active", "ready", "completed"],
   cancelled: [],
 };
 
@@ -275,9 +275,9 @@ function SeasonDetailPage() {
       return;
     }
 
-    setNextStatus(nextStatusOptions[0]);
+    setNextStatus(season.status === "active" || season.status === "ready" || season.status === "completed" ? season.status : "active");
     setActualHarvestDate(
-      new Date().toISOString().slice(0, 10),
+      season.actualHarvestDate ?? new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Ho_Chi_Minh", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date()),
     );
     setActionError("");
     setDialog("status");
@@ -786,6 +786,9 @@ function SeasonDetailPage() {
                   <input
                     type="date"
                     value={editForm.expectedHarvestDate}
+                    required
+                    disabled={saving}
+                    min={season.sowingDate}
                     onChange={(event) =>
                       setEditForm((current) => ({
                         ...current,
@@ -982,3 +985,4 @@ function SeasonDetailPage() {
 }
 
 export default SeasonDetailPage;
+

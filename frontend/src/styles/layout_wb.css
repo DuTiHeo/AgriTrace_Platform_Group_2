@@ -103,6 +103,10 @@
   font-weight: 700;
 }
 
+.sidebar-logout { width: 100%; text-align: left; color: var(--agri-danger-text); background: var(--agri-surface); border: 0; cursor: pointer; font: inherit; font-weight: 600; }
+.sidebar-logout:hover { background: var(--agri-danger-soft); }
+.sidebar-logout:focus-visible { outline: 2px solid var(--agri-primary); outline-offset: -4px; }
+
 .sidebar-account {
   display: flex;
   align-items: center;

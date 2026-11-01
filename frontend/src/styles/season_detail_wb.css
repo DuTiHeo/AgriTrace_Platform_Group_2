@@ -482,6 +482,13 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
 }
+.season-edit-context { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 24px; padding: 18px; border: 1px solid var(--agri-border); border-radius: 5px; background: var(--agri-background); }
+.season-edit-context > div { display: flex; min-width: 0; flex-direction: column; gap: 6px; }
+.season-edit-context span { font-size: 12px; color: var(--agri-muted-strong); }
+.season-edit-context strong { font-size: 14px; color: var(--agri-title); overflow-wrap: anywhere; }
+.season-edit-form select { width: 100%; height: 42px; padding: 10px 11px; color: var(--agri-title); font: inherit; background: var(--agri-input); border: 1px solid var(--agri-input-border); border-radius: var(--agri-radius-control); }
+.season-edit-form label b { color: var(--agri-danger-text); }
+@media (max-width: 560px) { .season-edit-context, .season-edit-date-grid { grid-template-columns: 1fr; } }
 
 .season-edit-form input,
 .season-edit-form textarea,

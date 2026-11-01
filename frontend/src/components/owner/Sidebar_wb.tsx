@@ -1,9 +1,11 @@
+import { ListActionConfirmation } from "./ListRowActions_wb";
 import {
   Bell,
   CalendarRange,
   ClipboardCheck,
   LayoutDashboard,
   LifeBuoy,
+  LogOut,
   MapPinned,
   NotebookPen,
   PackageCheck,
@@ -11,10 +13,11 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   NavLink,
   useLocation,
+  useNavigate,
 } from "react-router-dom";
 import { accountService } from "../../sevices/accountService_wb";
 
@@ -79,33 +82,8 @@ const menuItems = [
 
 function Sidebar({ open, onClose }: SidebarProps) {
   const location = useLocation();
-  const [accountName, setAccountName] = useState("Chủ nông trại");
-
-  useEffect(() => {
-    let active = true;
-    const loadAccount = () => {
-      void accountService
-        .getAccount()
-        .then((account) => { if (active) setAccountName(account.fullName); })
-        .catch(() => { if (active) setAccountName("Không thể tải tài khoản"); });
-    };
-    const timer = window.setTimeout(loadAccount, 0);
-    window.addEventListener("account-updated", loadAccount);
-
-    return () => {
-      window.clearTimeout(timer);
-      active = false;
-      window.removeEventListener("account-updated", loadAccount);
-    };
-  }, []);
-
-  const accountInitials = accountName
-    .split(" ")
-    .filter(Boolean)
-    .slice(-2)
-    .map((part) => part[0])
-    .join("")
-    .toLocaleUpperCase("vi");
+  const navigate = useNavigate();
+  const [logoutOpen, setLogoutOpen] = useState(false);
 
   return (
     <>
@@ -186,17 +164,12 @@ function Sidebar({ open, onClose }: SidebarProps) {
           })}
         </nav>
 
-        <NavLink className="sidebar-account" to="/account" onClick={onClose}>
-          <div className="sidebar-avatar">{accountInitials || "HH"}</div>
-
-          <div className="sidebar-account-info">
-            <strong>{accountName}</strong>
-            <span>Chủ nông trại</span>
-          </div>
-        </NavLink>
+        <button className="sidebar-account sidebar-logout" type="button" onClick={() => setLogoutOpen(true)}><LogOut size={20} /><span>Đăng xuất</span></button>
       </aside>
+      {logoutOpen && <ListActionConfirmation action="status" title="Đăng xuất?" confirmLabel="Đăng xuất" name="AgriFarm" statusLabel="Đăng xuất" description="Bạn muốn đăng xuất khỏi tài khoản hiện tại?" onClose={() => setLogoutOpen(false)} onConfirm={async () => { try { await accountService.logout(); } catch { /* The service clears the local session even when the API is unavailable. */ } finally { onClose(); navigate("/login", { replace: true }); } }} />}
     </>
   );
 }
 
 export default Sidebar;
+

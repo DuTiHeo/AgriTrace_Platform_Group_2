@@ -234,6 +234,7 @@ function FarmsPage() {
         ) : filteredFarms.length > 0 ? (
           <div className="table-wrapper">
             <table className="farm-table">
+<colgroup><col style={{ width: "24%" }} /><col style={{ width: "28%" }} /><col style={{ width: "13%" }} /><col style={{ width: "11%" }} /><col style={{ width: "12%" }} /><col style={{ width: "12%" }} /></colgroup>
               <thead>
                 <tr>
                   <th>Nông trại</th>
@@ -429,3 +430,4 @@ function FarmsPage() {
 }
 
 export default FarmsPage;
+

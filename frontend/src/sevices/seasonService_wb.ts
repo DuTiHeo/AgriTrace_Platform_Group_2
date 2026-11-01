@@ -234,7 +234,7 @@ export const seasonService = {
     }
     return this.update(id, {
       status: nextStatus,
-      actualHarvestDate,
+      actualHarvestDate: nextStatus === "completed" ? actualHarvestDate : null,
     });
   },
 

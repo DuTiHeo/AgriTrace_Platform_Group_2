@@ -172,10 +172,9 @@ function CreateHarvestPage() {
               >
                 <option value="">Chọn nông trại</option>
                 {farms
-                  .filter((farm) => farm.status !== "suspended")
                   .map((farm) => (
-                    <option key={farm.id} value={farm.id}>
-                      {farm.name}
+                    <option key={farm.id} value={farm.id} disabled={farm.status === "suspended"}>
+                      {farm.name}{farm.status === "suspended" ? " (Tạm ngưng)" : ""}
                     </option>
                   ))}
               </select>

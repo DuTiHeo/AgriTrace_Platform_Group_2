@@ -413,3 +413,70 @@
 .account-success {
   padding: 9px 11px; color: var(--agri-title); background: var(--agri-success-soft); border: 1px solid var(--agri-border); border-radius: var(--agri-radius-card); font-size: 11px;
 }
+
+/* Shared outer shape for form and confirmation popups, including portaled dialogs. */
+html body :is(dialog, [role="dialog"][aria-modal="true"]) {
+  border-radius: 5px;
+}
+
+/* Keep list columns stable; narrow screens scroll instead of squeezing adjacent cells. */
+.app-content table:is(.farm-table, .plots-table, .seasons-table, .personnel-table, .harvest-table) {
+  width: 100%;
+  min-width: 1200px;
+  table-layout: fixed;
+}
+.app-content table.seasons-table { min-width: 1350px; }
+.app-content table.personnel-table { min-width: 1050px; }
+.app-content table.team-member-table { min-width: 950px; }
+.app-content :is(.farm-table, .plots-table, .seasons-table, .personnel-table, .harvest-table) :is(th, td) {
+  padding-left: 16px;
+  padding-right: 16px;
+  vertical-align: middle;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  text-align: left;
+}
+.app-content :is(.farm-table, .plots-table, .seasons-table, .harvest-table) :is(th, td):nth-child(n + 3),
+.app-content .personnel-table :is(th, td):is(:nth-child(2), :nth-child(3), :nth-child(5), :nth-child(6)),
+.app-content .team-member-table :is(th, td):nth-child(n + 2) {
+  text-align: center;
+}
+.app-content :is(.farm-table, .plots-table, .seasons-table, .personnel-table, .harvest-table) :is(.farm-name-cell, .plot-name-cell, .season-name-cell, .personnel-name-cell, .harvest-code-cell, .season-plot-cell) {
+  min-width: 0;
+  max-width: 100%;
+}
+.app-content :is(.farm-table, .plots-table, .seasons-table, .personnel-table, .harvest-table) td > div,
+.app-content :is(.farm-name-cell, .plot-name-cell, .season-name-cell, .personnel-name-cell, .personnel-identity, .harvest-code-cell) > div:last-child {
+  min-width: 0;
+  max-width: 100%;
+}
+.app-content :is(.plots-table .plot-season-cell, .seasons-table .season-date-cell, .harvest-table .harvest-season-cell) {
+  align-items: center;
+  text-align: center;
+}
+.app-content :is(.farm-table, .plots-table, .seasons-table, .personnel-table, .harvest-table) :is(.list-row-actions, .table-actions, .personnel-actions, .team-member-actions) {
+  justify-content: center;
+  flex-wrap: nowrap;
+  width: max-content;
+  max-width: none;
+  margin-left: auto;
+  margin-right: auto;
+}
+.app-content :is(.farm-table, .plots-table, .seasons-table, .personnel-table, .harvest-table) :is(th, td):last-child { padding-left: 10px; padding-right: 10px; }
+.app-content :is(.list-row-actions, .table-actions) > :is(a, button) { flex: 0 0 34px; }
+.app-content :is(.list-row-actions > .list-row-delete, .table-actions > .danger-action) {
+  color: color-mix(in srgb, var(--agri-danger-text) 72%, var(--agri-muted-strong));
+  border-color: var(--agri-danger-border-soft);
+  background: color-mix(in srgb, var(--agri-danger-soft) 35%, var(--agri-surface));
+}
+.app-content :is(.farm-table, .plots-table, .seasons-table, .personnel-table, .harvest-table) :is(.status-badge, .boundary-status, .season-status, .harvest-status, .personnel-status) {
+  max-width: 100%;
+  white-space: normal;
+}
+.app-content .harvest-table .harvest-season-cell span {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.app-content :is(.farm-table, .plots-table, .seasons-table, .personnel-table, .harvest-table) td {
+  font-variant-numeric: tabular-nums;
+}

@@ -412,17 +412,13 @@ function CreateSeasonPage() {
                     Chọn nông trại
                   </option>
 
-                  {farms
-                    .filter(
-                      (farm) =>
-                        farm.status === "active",
-                    )
-                    .map((farm) => (
+                  {farms.map((farm) => (
                       <option
                         key={farm.id}
                         value={farm.id}
+                        disabled={farm.status !== "active"}
                       >
-                        {farm.name}
+                        {farm.name}{farm.status === "suspended" ? " (Tạm ngưng)" : farm.status === "incomplete" ? " (Cần hoàn thiện)" : ""}
                       </option>
                     ))}
                 </select>
@@ -708,3 +704,4 @@ function CreateSeasonPage() {
 }
 
 export default CreateSeasonPage;
+
