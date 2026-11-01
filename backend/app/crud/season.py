@@ -13,7 +13,7 @@ def get_season(db: Session, season_id: UUID) -> dict | None:
             SELECT s.season_id, s.plot_id, p.code AS plot_code, p.org_id,
                    s.crop_id, c.name AS crop_name, c.growth_days, c.planting_guide,
                    s.planting_date, s.expected_harvest_date, s.actual_harvest_date,
-                   s.status, s.created_at, s.updated_at,
+                   s.notes, s.status, s.created_at, s.updated_at,
                    (SELECT COUNT(*) FROM farming_logs WHERE season_id = s.season_id) AS farming_logs_count
             FROM seasons s
             JOIN plots p ON s.plot_id = p.plot_id
@@ -103,7 +103,7 @@ def list_seasons(
         SELECT s.season_id, s.plot_id, p.code AS plot_code, p.org_id,
                s.crop_id, c.name AS crop_name,
                s.planting_date, s.expected_harvest_date, s.actual_harvest_date,
-               s.status, s.created_at,
+               s.notes, s.status, s.created_at,
                COALESCE(
                    (SELECT ARRAY_AGG(t.name)
                     FROM season_team_assignments sta2
@@ -135,6 +135,7 @@ def create_season(
     crop_id: UUID,
     planting_date: date,
     expected_harvest_date: date,
+    notes: str | None = None,
     assigned_team_ids: list[UUID] | None = None,
 ) -> dict:
     """
@@ -146,8 +147,8 @@ def create_season(
     """
     row = db.execute(
         text("""
-            INSERT INTO seasons (plot_id, crop_id, planting_date, expected_harvest_date, status)
-            VALUES (:plot_id, :crop_id, :planting_date, :expected_harvest_date, 'growing')
+            INSERT INTO seasons (plot_id, crop_id, planting_date, expected_harvest_date, notes, status)
+            VALUES (:plot_id, :crop_id, :planting_date, :expected_harvest_date, :notes, 'growing')
             RETURNING season_id
         """),
         {
@@ -155,6 +156,7 @@ def create_season(
             "crop_id": crop_id,
             "planting_date": planting_date,
             "expected_harvest_date": expected_harvest_date,
+            "notes": notes,
         },
     ).mappings().first()
     season_id = row["season_id"]
@@ -208,7 +210,7 @@ def create_season(
 
 
 def update_season(db: Session, season_id: UUID, data: dict) -> dict:
-    """Cap nhat thong tin mua vu (ngay thu hoach, trang thai)."""
+    """Cap nhat thong tin mua vu (ngay thu hoach, ghi chu, trang thai)."""
     set_clauses = []
     params: dict = {"season_id": season_id}
 
@@ -219,6 +221,10 @@ def update_season(db: Session, season_id: UUID, data: dict) -> dict:
     if "actual_harvest_date" in data:
         set_clauses.append("actual_harvest_date = :actual_harvest_date")
         params["actual_harvest_date"] = data["actual_harvest_date"]
+
+    if "notes" in data:
+        set_clauses.append("notes = :notes")
+        params["notes"] = data["notes"]
 
     if "status" in data:
         status_val = data["status"].value if hasattr(data["status"], "value") else data["status"]

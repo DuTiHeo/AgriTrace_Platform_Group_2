@@ -146,6 +146,7 @@ def create_season(
         crop_id=payload.crop_id,
         planting_date=payload.planting_date,
         expected_harvest_date=expected_harvest,
+        notes=payload.notes,
         assigned_team_ids=payload.assigned_team_ids,
     )
     season["reminders"] = crud_season.list_reminders_of_season(db, season["season_id"])
