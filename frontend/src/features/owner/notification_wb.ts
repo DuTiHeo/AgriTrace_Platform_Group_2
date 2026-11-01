@@ -8,6 +8,7 @@ export type NotificationCategory =
 export type NotificationPriority = "info" | "warning" | "action";
 
 export type OwnerNotification = {
+  type?: string | null;
   id: string;
   category: NotificationCategory;
   priority: NotificationPriority;

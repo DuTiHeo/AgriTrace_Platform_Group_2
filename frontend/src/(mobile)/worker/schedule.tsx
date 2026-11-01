@@ -1,4 +1,4 @@
-import { localDateKey as dateKey, taskOccursOn as occursOn } from '@/utils/task_dates';
+import { localDateKey, taskOccursOn as occursOn } from '@/utils/task_dates';
 import { getTaskTypeLabel } from '@/constants/task_types';
 import { router, type Href, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -13,6 +13,12 @@ import { colors } from '@/styles/theme';
 import { taskExecutionError } from '@/sevices/journal_filter';
 import { useTaskRefresh } from '@/hooks/use_task_refresh';
 import { useScopedState } from '@/hooks/use_scoped_state';
+
+function dateKey(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function todayDate() { return new Date(localDateKey(new Date()) + 'T12:00:00'); }
 
 function shift(date: Date, days: number) {
   const next = new Date(date);
@@ -37,7 +43,7 @@ export default function WorkerScheduleScreen() {
   const { user } = useAuth();
   const { workerTasks, ready, error, retry, startTask } = useWorkSchedule();
   const { drafts, reports } = useReports();
-  const [selected, setSelected] = useState(() => scheduleDate(date) ?? new Date());
+  const [selected, setSelected] = useState(() => scheduleDate(date) ?? todayDate());
   const [previousDate, setPreviousDate] = useState(date);
   if (previousDate !== date) {
     setPreviousDate(date);
@@ -80,7 +86,7 @@ export default function WorkerScheduleScreen() {
 
         <Pressable
           accessibilityRole="button"
-          onPress={() => setSelected(new Date())}
+          onPress={() => setSelected(todayDate())}
         >
           <Text style={shared.link}>
             Hôm nay
@@ -188,7 +194,7 @@ export default function WorkerScheduleScreen() {
         ) : !jobs.length ? (
           <View style={shared.card}>
             <Text style={shared.section}>
-              Tổ trưởng chưa giao việc
+              Không có công việc trong ngày này
             </Text>
 
             <Text style={shared.muted}>

@@ -43,3 +43,24 @@ export const createErrorReport = (token: string, payload: CreateErrorReport) =>
 // The author may delete only reports still in the 'new' state; enforced by BE.
 export const deleteErrorReport = (token: string, reportId: string) =>
   apiRequest<void>(token, `/error-reports/${encodeURIComponent(reportId)}`, { method: 'DELETE' });
+
+export const errorReportKinds: { label: string; value: ErrorReportCategory }[] = [
+  { label: 'Lỗi chức năng', value: 'bug' },
+  { label: 'Lỗi hiển thị', value: 'interface' },
+  { label: 'Lỗi dữ liệu', value: 'data' },
+  { label: 'Lỗi hiệu năng', value: 'performance' },
+  { label: 'Khác', value: 'other' },
+];
+
+export function buildErrorReportPayload(draft: { kind: string; text: string; photo?: string }): CreateErrorReport {
+  const description = draft.text.trim();
+  if (description.length < 5) throw new Error('Mô tả sự cố cần ít nhất 5 ký tự.');
+  const screenshot = draft.photo?.trim();
+  if (screenshot && (screenshot.length > 500 || !/^https?:\/\/[^\s]+$/i.test(screenshot)))
+    throw new Error('Ảnh minh họa cần là URL http/https, tối đa 500 ký tự. Ảnh trên điện thoại chưa được hỗ trợ tải lên.');
+  return {
+    error_type: errorReportKinds.find(kind => kind.label === draft.kind)?.value ?? 'other',
+    description,
+    ...(screenshot ? { screenshot_url: screenshot } : {}),
+  };
+}

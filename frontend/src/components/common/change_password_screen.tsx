@@ -1,3 +1,4 @@
+import type { ComponentRef } from 'react';
 import { colors } from '@/styles/theme';
 import { sharedStyles as shared } from '@/styles/role_styles';
 import { Redirect, router } from 'expo-router';
@@ -19,7 +20,7 @@ export function ChangePasswordScreen() {
   const [busy, setBusy] = useState(false);
   const [success, setSuccess] = useState(false);
   const pending = useRef(false);
-  const oldRef = useRef<TextInput>(null), passwordRef = useRef<TextInput>(null), confirmRef = useRef<TextInput>(null);
+  const oldRef = useRef<ComponentRef<typeof TextInput>>(null), passwordRef = useRef<ComponentRef<typeof TextInput>>(null), confirmRef = useRef<ComponentRef<typeof TextInput>>(null);
   const [errorField, setErrorField] = useState<'old' | 'password' | 'confirm' | ''>('');
 
   async function submit(recover = false) {

@@ -3,13 +3,13 @@ import { NotificationProvider } from '@/contexts/notification_context';
 import { WorkScheduleProvider } from '@/contexts/work_schedule_context';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme } from 'react-native';
+import { useColorScheme, View } from 'react-native';
 
 import { AnimatedSplashOverlay } from '@/components/animated_icon';
 import { ReportProvider } from '@/contexts/report_context';
 import { AuthProvider } from '@/contexts/auth_context';
 import { RecoveryProvider } from '@/contexts/recovery_context';
-SplashScreen.preventAutoHideAsync();
+void SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -22,8 +22,10 @@ export default function RootLayout() {
 
         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
           <ReportProvider>
-            <AnimatedSplashOverlay />
-            <Stack screenOptions={{ headerShown: false }} />
+            <View style={{ flex: 1 }}>
+              <Stack screenOptions={{ headerShown: false }} />
+              <AnimatedSplashOverlay />
+            </View>
           </ReportProvider>
         </ThemeProvider>
 

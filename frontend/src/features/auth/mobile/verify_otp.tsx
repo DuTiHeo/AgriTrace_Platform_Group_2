@@ -1,3 +1,4 @@
+import type { ComponentRef } from 'react';
 import { Redirect, router } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Keyboard, Pressable, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from 'react-native';
@@ -16,7 +17,7 @@ export default function VerifyOtpScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const pending = useRef(false);
-  const otpRef = useRef<TextInput>(null);
+  const otpRef = useRef<ComponentRef<typeof TextInput>>(null);
 
   useEffect(() => {
     let remaining = 5;

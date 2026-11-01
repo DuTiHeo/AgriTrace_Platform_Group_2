@@ -2,7 +2,7 @@ import { localDateKey } from '@/utils/task_dates';
 import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, type PropsWithChildren } from 'react';
 import { useAuth } from './auth_context';
 import { decodeTaskContent, listMyTasks, updateTaskStatus, type ApiTask, type TaskStatus } from '@/sevices/farming_log.service';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { sessionUserId } from '@/sevices/session_user';
 import { taskExecutionError } from '@/sevices/journal_filter';
 
 export type TaskDisplayStatus = 'pending' | 'in_progress' | 'incomplete' | 'completed' | 'completed_late';
@@ -44,12 +44,12 @@ export type ScheduledTask = {
   createdAt?: string | null;
 };
 
-function mapTask(task: ApiTask): ScheduledTask {
+export function mapTask(task: ApiTask): ScheduledTask {
   const content = decodeTaskContent(task.content);
   const startDate = localDateKey(task.start_at);
   const dueDate = localDateKey(task.due_at);
-  const completedLate = task.status === 'completed' && !!dueDate && !!task.updated_at && localDateKey(task.updated_at) > dueDate;
-  const overdue = task.status === 'incomplete' || (['pending', 'in_progress'].includes(task.status) && !!dueDate && dueDate < localDateKey(new Date().toISOString()));
+  const completedLate = task.status === 'completed' && !!task.due_at && !!task.updated_at && new Date(task.updated_at).getTime() > new Date(task.due_at).getTime();
+  const overdue = task.status === 'incomplete' || (['pending', 'in_progress'].includes(task.status) && !!task.due_at && new Date(task.due_at).getTime() < Date.now());
 
   const displayStatus: TaskDisplayStatus =
     task.status === 'completed'
@@ -99,13 +99,12 @@ function mapTask(task: ApiTask): ScheduledTask {
   };
 }
 
-function groupLeaderTasks(tasks: ScheduledTask[]) {
+export function groupLeaderTasks(tasks: ScheduledTask[]) {
   const groups = new Map<string, ScheduledTask>();
   for (const task of tasks) {
-    const legacyMinute = task.createdAt?.slice(0, 16) ?? task.startDate ?? '';
     const key = task.owner ? `owner:${task.id}` : task.assignmentId
-      ? `assignment:${task.assignmentId}`
-      : `legacy:${task.rawContent}|${task.plotId}|${task.due}|${legacyMinute}`;
+      ? `assignment:${task.assignmentId}|${task.rawContent}|${task.plotId}|${task.startDate}|${task.due}`
+      : `task:${task.id}`;
     const current = groups.get(key);
 
     if (!current) {
@@ -173,9 +172,9 @@ function useScheduleState() {
   const registerCreatedTasks = useCallback((created: ApiTask[]) => {
     ++loadSequence.current;
     pendingLoad.current = null;
-    const mapped = created.map(task => ({ ...mapTask(task), owner: task.worker_phone === user?.phone }));
+    const mapped = created.map(task => ({ ...mapTask(task), owner: task.worker_id === sessionUserId(accessToken ?? '') }));
     setTasks(old => groupLeaderTasks([...mapped, ...old.filter(task => !created.some(item => task.taskIds.includes(item.task_id)))]));
-  }, [user?.phone]);
+  }, [accessToken]);
 
   const loadTasks = useCallback(async () => {
     if (!accessToken || !user || ![
@@ -189,23 +188,18 @@ function useScheduleState() {
     const sequence = ++loadSequence.current;
     const operation = (async () => {
     try {
-      const [result, stored] = await Promise.all([
-        listMyTasks(accessToken),
-        AsyncStorage.getItem(`worker-started-tasks:${user.phone}`),
-      ]);
-      const saved: unknown = stored ? JSON.parse(stored) : [];
+      const result = await listMyTasks(accessToken);
       if (sequence !== loadSequence.current || currentToken.current !== accessToken) return;
-      const startedIds = new Set(Array.isArray(saved) ? saved.filter(id => typeof id === 'string') : []);
       const mapped = result.filter(task => task.status !== 'cancelled').map(task => ({
         ...mapTask(task),
-        started: task.status === 'in_progress' || task.status === 'completed' || startedIds.has(task.task_id),
-        owner: user.role === 'leader' && task.worker_phone === user.phone,
+        owner: user.role === 'leader' && task.worker_id === sessionUserId(accessToken),
       }));
       setTasks(user.role === 'leader' ? groupLeaderTasks(mapped) : mapped);
       setReady(true);
     } catch (e) {
       if (sequence !== loadSequence.current || currentToken.current !== accessToken) return;
       setError(e instanceof Error ? e.message : 'Không tải được danh sách công việc.');
+      setReady(true);
     }
     })();
     pendingLoad.current = { token: accessToken, promise: operation };
@@ -242,38 +236,10 @@ function useScheduleState() {
     }
 
     try {
-      if (accessToken) {
-        await updateTaskStatus(accessToken, taskId, 'in_progress');
-      }
-      const key = `worker-started-tasks:${user.phone}`;
-      const stored = await AsyncStorage.getItem(key);
-      const saved: unknown = stored ? JSON.parse(stored) : [];
-      const ids = Array.isArray(saved) ? saved.filter(id => typeof id === 'string') : [];
-      await AsyncStorage.setItem(key, JSON.stringify([...new Set([
-        ...ids,
-        taskId
-      ])]));
-      setTasks(old => old.map(t => {
-        if (t.id !== taskId) return t;
-        const updatedAssignees = { ...t.assigneeStatuses };
-        for (const workerId of t.memberIds) {
-          if (updatedAssignees[workerId]) {
-            updatedAssignees[workerId] = {
-              ...updatedAssignees[workerId],
-              status: 'in_progress',
-              displayStatus: 'in_progress',
-              completed: false,
-            };
-          }
-        }
-        return {
-          ...t,
-          started: true,
-          status: 'doing',
-          displayStatus: 'in_progress',
-          assigneeStatuses: updatedAssignees,
-        };
-      }));
+      if (!accessToken) throw new Error('Vui lòng đăng nhập lại.');
+      const updated = await updateTaskStatus(accessToken, taskId, 'in_progress');
+      if (currentToken.current !== accessToken) return;
+      setTasks(old => old.map(t => t.id === taskId ? { ...mapTask(updated), owner: t.owner } : t));
       await loadTasks();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Không lưu được trạng thái bắt đầu. Vui lòng thử lại.');

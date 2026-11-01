@@ -13,10 +13,7 @@ export function ReportPhotos({ photos }: { photos: string[] }) {
 export function ReportComments({ comments = [] }: {
   comments?: WorkReport['comments']
 }) {
-  const remarks = comments.filter(comment => ![
-    'Đánh giá: Đạt',
-    'Đánh giá: Không đạt'
-  ].includes(comment.text))
+  const remarks = [...comments]
     .sort((a, b) => Date.parse(b.time) - Date.parse(a.time));
 
   return <View style={[
@@ -25,7 +22,7 @@ export function ReportComments({ comments = [] }: {
       gap: 10
     }
   ]}>
-    <Text style={s.section}>Nhận xét từ tổ trưởng</Text>
+    <Text style={s.section}>Nhận xét và đánh giá</Text>
     {remarks.length ? remarks.map(comment => <View
       key={comment.id}
       style={{

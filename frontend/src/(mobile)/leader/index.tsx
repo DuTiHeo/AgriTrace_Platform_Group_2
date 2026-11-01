@@ -220,7 +220,7 @@ export default function HomeScreen() {
         </Text>
       </Pressable>
 
-      <Section title="Công việc chủ nông trại giao" />
+      <Section title="Công việc được giao cho bạn" />
 
       {!!error && (
         <Text

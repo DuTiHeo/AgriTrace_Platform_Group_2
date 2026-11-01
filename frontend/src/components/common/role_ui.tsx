@@ -1,4 +1,5 @@
-import { forwardRef, type PropsWithChildren } from 'react';
+import { type ComponentRef, forwardRef, type PropsWithChildren } from 'react';
+
 import { Keyboard, Pressable, Text, TextInput, View, type TextInputProps } from 'react-native';
 import { sharedStyles as s } from '@/styles/role_styles';
 import { colors } from '@/styles/theme';
@@ -118,7 +119,7 @@ export function Button({
   );
 }
 
-export const Input = forwardRef<TextInput, TextInputProps & {
+export const Input = forwardRef<ComponentRef<typeof TextInput>, TextInputProps & {
   label: string
 }>(function Input({ label, ...props }, ref) {
   return (

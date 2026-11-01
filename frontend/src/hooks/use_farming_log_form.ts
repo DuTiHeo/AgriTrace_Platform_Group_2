@@ -122,6 +122,9 @@ export function useFarmingLogForm(draft: ReportDraft, updateDraft: (update: (old
       if (!task)
         throw new Error('Không tìm thấy công việc. Vui lòng tải lại lịch làm việc.');
 
+      if (task.plotId !== draft.plotId)
+        throw new Error('Vị trí nhật ký không khớp vùng trồng được giao. Hãy đến đúng vùng trồng và lấy lại GPS.');
+
       const blocked = taskExecutionError(task);
 
       if (blocked)

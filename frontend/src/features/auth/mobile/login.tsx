@@ -1,3 +1,4 @@
+import type { ComponentRef } from 'react';
 import { type Href, router } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Image, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from 'react-native';
@@ -16,11 +17,11 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const phoneRef = useRef<TextInput>(null), passwordRef = useRef<TextInput>(null);
+  const phoneRef = useRef<ComponentRef<typeof TextInput>>(null), passwordRef = useRef<ComponentRef<typeof TextInput>>(null);
   const submitting = useRef(false);
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
   const scrollY = useRef(0);
-  const focusedInput = useRef<TextInput | null>(null);
+  const focusedInput = useRef<ComponentRef<typeof TextInput> | null>(null);
   const keyboardTop = useRef<number | null>(null);
 
   const revealFocusedInput = useCallback(() => {

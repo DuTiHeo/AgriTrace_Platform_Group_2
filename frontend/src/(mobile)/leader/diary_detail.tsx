@@ -1,16 +1,18 @@
+import { Comments } from '@/components/leader/diary_comments';
+import { ReportReview } from '@/components/leader/report_review';
 import { getTaskTypeLabel } from '@/constants/task_types';
 import { useCallback, useState } from 'react';
 import { useFocusEffect, useLocalSearchParams } from "expo-router";
 import { Text } from "react-native";
 import { useLeader } from "@/contexts/leader_context";
-import { useReports } from '@/contexts/report_context';
+import { reviewLabel, useReports } from '@/contexts/report_context';
 import { Card, Chip, Empty, Row, Screen, Section, s } from "@/components/leader/ui";
 import { Photos } from "@/components/leader/report_photos";
 
 export default function DiaryDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { diaries } = useLeader();
-  const { loadReport } = useReports();
+  const { loadReport, getReport } = useReports();
   const [error, setError] = useState('');
   useFocusEffect(useCallback(() => { setError(''); if (id) void loadReport(id).catch(e => setError(e instanceof Error ? e.message : 'Không tải được nhật ký.')); }, [id, loadReport]));
   const diary = diaries.find(d => d.id === id);
@@ -20,7 +22,7 @@ export default function DiaryDetailScreen() {
       {diary ? (
         <>
           <Card>
-            <Chip text="Báo cáo đã ghi nhận" />
+            <Chip text={reviewLabel(getReport(id) ?? {})} tone={getReport(id)?.review === 'rejected' ? 'danger' : 'green'} />
             <Text style={s.title}>{getTaskTypeLabel(diary.title)}</Text>
             <Row label="Người thực hiện" value={diary.name} />
             <Row label="Khu vực" value={diary.area} />
@@ -29,6 +31,7 @@ export default function DiaryDetailScreen() {
           </Card>
           <Card><Section title="Nội dung công việc" /><Text style={{ color: '#617A68', lineHeight: 23 }}>{diary.note || 'Không có ghi chú.'}</Text></Card>
           <Card><Section title={`Hình ảnh minh chứng (${diary.photos.length})`} /><Photos photos={diary.photos} /></Card>
+          <Card><ReportReview id={diary.id} /><Comments diary={diary} /></Card>
         </>
       ) : <Empty text="Đang tải nhật ký…" />}
     </Screen>

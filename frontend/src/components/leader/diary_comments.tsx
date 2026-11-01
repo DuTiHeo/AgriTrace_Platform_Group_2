@@ -1,3 +1,4 @@
+import type { ComponentRef } from 'react';
 import { useRef, useState } from "react";
 import { Text, TextInput, View } from "react-native";
 import { useLeader, type Diary } from "@/contexts/leader_context";
@@ -12,7 +13,7 @@ export function Comments({
   const [text, setText] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
-  const inputRef = useRef<TextInput>(null);
+  const inputRef = useRef<ComponentRef<typeof TextInput>>(null);
 
   return (
     <View

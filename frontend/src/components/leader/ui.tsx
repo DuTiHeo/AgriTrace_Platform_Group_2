@@ -1,9 +1,10 @@
+import { type ComponentRef, useState, type ReactNode, type RefObject, type PropsWithChildren } from 'react';
 import { useAccountUtilities } from '@/contexts/account_utilities_context';
 import { PersonalAvatarButton } from '@/components/common/personal_avatar_button';
 import { sharedStyles as s } from '@/styles/role_styles';
 import { Button } from '@/components/common/role_ui';
 import { router, type Href } from 'expo-router';
-import { useState, type ReactNode, type RefObject, type PropsWithChildren } from 'react';
+
 import {
   Keyboard,
   KeyboardAvoidingView,
@@ -52,7 +53,7 @@ export function Screen({
   title?: string;
   titleAction?: ReactNode;
   back?: boolean;
-  scrollRef?: RefObject<ScrollView | null>;
+  scrollRef?: RefObject<ComponentRef<typeof ScrollView> | null>;
   onScroll?: ScrollViewProps['onScroll'];
   onBack?: () => void;
 }>) {

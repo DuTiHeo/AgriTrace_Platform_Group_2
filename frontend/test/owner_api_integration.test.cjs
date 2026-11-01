@@ -44,6 +44,16 @@ test('notification read/count/delete use real routes and failed changes do not e
   await assert.rejects(module.notificationService.markRead('n'), /Forbidden/);
   assert.equal(events.length, count);
 });
+test('notification filters reach backend on every page and retain is_read=false', async () => {
+  const { module, calls } = loadService('notificationService_wb', (_, url) => url.includes('offset=0') ? Array(200).fill({ notification_id: 'n', content: '', is_read: false }) : []);
+  await module.notificationService.getAll({ type: 'error_report_response', isRead: false });
+  assert.equal(calls.length, 2);
+  for (const call of calls) {
+    const params = new URL(call.args[0], 'http://test').searchParams;
+    assert.equal(params.get('type'), 'error_report_response');
+    assert.equal(params.get('is_read'), 'false');
+  }
+});
 test('system error reports paginate, scope by farm and submit API fields without a client author/status', async () => {
   const { module, calls } = loadService('supportService_wb', (method, url, body) => method === 'get' ? (url.includes('offset=0') ? Array(100).fill({ report_id: 'r' }) : []) : body);
   assert.equal((await module.supportService.getAll('farm /')).length, 100);

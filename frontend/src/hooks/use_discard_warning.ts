@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useRef, type RefObject } from 'react';
+import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import { Alert, BackHandler, Keyboard, Platform } from 'react-native';
-import { useFocusEffect, useNavigation } from 'expo-router';
+import { useFocusEffect, useNavigation, usePreventRemove } from 'expo-router';
 
 export function useDiscardWarning({
   dirty,
@@ -19,9 +19,13 @@ export function useDiscardWarning({
 }) {
   const navigation = useNavigation();
   const allowLeave = useRef(false);
+  const [leaving, setLeaving] = useState(false);
+  const disablePreventionRef = useRef<() => void>(() => {});
 
   const confirmLeave = useCallback((action: () => void) => {
     if (allowLeave.current || bypassRef?.current) {
+      setLeaving(true);
+      disablePreventionRef.current();
       action();
 
       return;
@@ -30,6 +34,8 @@ export function useDiscardWarning({
     const leave = () => {
       onDiscard();
       allowLeave.current = true;
+      setLeaving(true);
+      disablePreventionRef.current();
       // Cho context kịp ghi nhận việc xóa bản nháp trước khi màn hình bị tháo khỏi cây UI.
       setTimeout(action, 0);
     };
@@ -69,20 +75,12 @@ export function useDiscardWarning({
     title
   ]);
 
-  useEffect(() => navigation.addListener('beforeRemove', event => {
-    if (allowLeave.current || bypassRef?.current)
-      return;
-
-    event.preventDefault();
-    confirmLeave(() => navigation.dispatch(event.data.action));
-  }), [
-    bypassRef,
-    confirmLeave,
-    navigation
-  ]);
+  const disablePrevention = usePreventRemove(!leaving, ({ repeat }) => confirmLeave(repeat));
+  useEffect(() => { disablePreventionRef.current = disablePrevention; }, [disablePrevention]);
 
   useFocusEffect(useCallback(() => {
     allowLeave.current = false;
+    setLeaving(false);
 
     if (Platform.OS !== 'android')
       return undefined;

@@ -6,7 +6,7 @@ import { sharedStyles as shared } from '@/styles/role_styles';
 import { type Href, router } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
-import { AppState, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, AppState, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useReports } from '@/contexts/report_context';
@@ -14,7 +14,7 @@ import { WorkerHeader } from '@/components/worker/worker_header';
 
 export default function WorkerHome() {
   const { reports } = useReports();
-  const { workerTasks, loadWorkerTasks, startTask, error } = useWorkSchedule();
+  const { workerTasks, loadWorkerTasks, startTask, error, ready } = useWorkSchedule();
   const [today, setToday] = useState(() => localDateKey(new Date().toISOString()));
 
   useFocusEffect(
@@ -111,6 +111,7 @@ export default function WorkerHome() {
           />
         </View>
 
+        {!ready && <ActivityIndicator color={colors.primary} />}
         <View style={styles.section}>
           <View style={styles.sectionHeading}>
             <Text style={styles.sectionTitle}>
@@ -122,7 +123,7 @@ export default function WorkerHome() {
             </Text>
           </View>
 
-          {!tasks.length && (
+          {ready && !error && !tasks.length && (
             <Text style={styles.meta}>
               Hôm nay không còn công việc nào cần làm.
             </Text>

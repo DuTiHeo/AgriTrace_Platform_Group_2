@@ -191,3 +191,5 @@ export type VerifyRequest = { "challenge": string; "otp": string };
 export type app__schemas__reminder_schedules__ReminderScheduleOut = { "milestone_type": string; "remind_date": string; "channel"?: ReminderChannel; "status"?: ReminderStatus; "reminder_id": string; "season_id": string; "plot_code"?: (string | null); "crop_name"?: (string | null); "created_at"?: (string | null) };
 
 export type app__schemas__season__ReminderScheduleOut = { "reminder_id": string; "milestone_type": string; "remind_date": string; "channel"?: string; "status"?: string };
+
+

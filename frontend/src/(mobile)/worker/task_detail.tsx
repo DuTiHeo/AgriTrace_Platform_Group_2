@@ -81,7 +81,7 @@ export default function WorkerTaskDetailScreen() {
           />
 
           <Row
-            label="Người giao việc"
+            label="Tổ trưởng phụ trách việc"
             value={task?.leaderName || (task?.teamName ? `Tổ trưởng · ${task.teamName}` : 'Chưa có dữ liệu')}
           />
 

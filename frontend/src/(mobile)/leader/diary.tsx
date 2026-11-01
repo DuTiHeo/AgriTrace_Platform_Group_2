@@ -52,7 +52,7 @@ export default function DiaryScreen() {
       && (review === 'all' || (review === 'pending' ? !result : result === review));
   });
   const visible = filtered.slice(0, limit);
-  const visibleIds = visible.map(item => item.id).join('|');
+  const visibleIds = (review === 'all' ? visible : diaries).map(item => item.id).join('|');
   useEffect(() => { if (!loading && visibleIds) void ensureReportDetails(visibleIds.split('|')); }, [ensureReportDetails, visibleIds, loading]);
   return (
     <Screen title="Nhật ký canh tác" titleAction={<AreaJournalFilter allowAll />}>

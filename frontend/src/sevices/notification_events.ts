@@ -47,7 +47,7 @@ export function buildWorkerNotices(tasks: ScheduledTask[], reports: WorkReport[]
 
 export function buildLeaderNotices(tasks: ScheduledTask[], reports: WorkReport[], now = new Date()): AppNotice[] {
   const notices: AppNotice[] = tasks.map(task => ({ id: `task:${task.id}`,
-    category: task.owner ? 'work' : 'schedule', title: task.owner ? 'Chủ nông trại · Giao việc' : 'Lịch phân công',
+    category: task.owner ? 'work' : 'schedule', title: task.owner ? 'Công việc được giao cho bạn' : 'Lịch phân công',
     text: `${getTaskTypeLabel(task.title)} · ${task.area}`, occurredAt: task.createdAt,
     timeLabel: task.owner ? noticeTime(task.createdAt) : scheduleDateLabel(task.startDate, task.due),
     target: { pathname: task.owner ? '/leader' : '/leader/assignments', params: { taskId: task.id } },

@@ -1,3 +1,4 @@
+import type { ComponentRef } from 'react';
 import { type Href, router } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Keyboard, Pressable, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from 'react-native';
@@ -12,7 +13,7 @@ export default function ForgotPasswordScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const pending = useRef(false);
-  const phoneRef = useRef<TextInput>(null);
+  const phoneRef = useRef<ComponentRef<typeof TextInput>>(null);
   const { setRecovery } = useRecovery();
 
   async function submit() {

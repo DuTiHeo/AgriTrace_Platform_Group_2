@@ -1,3 +1,4 @@
+import type { ComponentRef } from 'react';
 import { getTaskTypeLabel } from '@/constants/task_types';
 import { type Href, router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -14,9 +15,9 @@ import { AreaJournalFilter } from '@/components/common/season_journal_filter';
 import { useScopedState } from '@/hooks/use_scoped_state';
 
 export default function WorkerDiaryScreen() {
-  const { reports, refresh, loadReport, ensureReportDetails, loading, error, selectedSeasonId, seasons } = useReports();
+  const { reports, refresh, loadReport, ensureReportDetails, loading, error, selectedSeasonId } = useReports();
   const { reportId } = useLocalSearchParams<{ reportId?: string }>();
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
   const scrolledReport = useRef<string | null>(null);
   const { user } = useAuth();
   const [query, setQuery] = useState('');
@@ -61,7 +62,6 @@ export default function WorkerDiaryScreen() {
 
   const filtered = reports.filter(
     report => reportId ? report.id === reportId :
-      seasons.some(season => season.season_id === report.seasonId) &&
       inJournalPeriod(report.completedAt, period) &&
       `${getTaskTypeLabel(report.taskTitle)} ${report.area}`
         .toLocaleLowerCase('vi')

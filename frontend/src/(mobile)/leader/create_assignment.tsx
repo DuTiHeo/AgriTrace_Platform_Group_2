@@ -1,3 +1,5 @@
+import { PartialAssignmentError } from '@/sevices/task_batch';
+import type { ComponentRef } from 'react';
 import { isValidDateKey, localDateKey } from '@/utils/task_dates';
 import { DEFAULT_WORK_START_TIME, DEFAULT_WORK_END_TIME } from '@/constants/work_hours';
 import { getTaskTypeLabel } from '@/constants/task_types';
@@ -31,12 +33,12 @@ export default function CreateAssignmentScreen() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const scrollRef = useRef<ScrollView>(null);
-  const submitAreaRef = useRef<View>(null);
+  const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
+  const submitAreaRef = useRef<ComponentRef<typeof View>>(null);
   const scrollY = useRef(0);
   const keyboardTop = useRef<number | null>(null);
   const focusedInput = useRef<'tools' | 'instructions' | null>(null);
-  const fields = useRef<Record<string, View | null>>({});
+  const fields = useRef<Record<string, ComponentRef<typeof View> | null>>({});
   const allowLeave = useRef(false);
   useFocusEffect(useCallback(() => {
     allowLeave.current = false;
@@ -130,7 +132,8 @@ export default function CreateAssignmentScreen() {
       Keyboard.dismiss();
       requestAnimationFrame(() => {
         const scroll = scrollRef.current;
-        if (scroll) fields.current[first]?.measureLayout(scroll.getInnerViewNode(), (_x, y) => scroll.scrollTo({ y: Math.max(0, y - 20), animated: true }));
+        const inner = scroll?.getInnerViewNode();
+        if (scroll && inner != null) fields.current[first]?.measureLayout(inner, (_x, y) => scroll.scrollTo({ y: Math.max(0, y - 20), animated: true }));
       });
     }
     return !!first;
@@ -157,6 +160,7 @@ export default function CreateAssignmentScreen() {
       clearAssignmentForm();
       router.replace({ pathname: '/leader/assignments', params: { taskId: '' } });
     } catch (error) {
+      if (error instanceof PartialAssignmentError) setSelected(old => old.filter(id => !error.succeededWorkerIds.includes(id)));
       setMessage(error instanceof Error ? error.message : 'Không thể lưu phân công.');
     } finally {
       setSaving(false);

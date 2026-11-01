@@ -58,10 +58,7 @@ function useReportState() {
   const { accessToken, user } = useAuth();
   const role = user?.role;
   const teamId = user?.team_id;
-  const { workerTasks, leaderTasks, ready: scheduleReady } = useWorkSchedule();
-  const assignedPlotKey = [...new Set((user?.role === 'worker' ? workerTasks : user?.role === 'leader' ? leaderTasks : [])
-    .map(task => task.plotId)
-    .filter(Boolean))].sort().join('|');
+  const { ready: scheduleReady } = useWorkSchedule();
   const session = useRef(accessToken);
   useLayoutEffect(() => {
     session.current = accessToken;
@@ -107,6 +104,7 @@ function useReportState() {
   const [details, setDetails] = useState<Record<string, api.FarmingLogDetail>>({});
   const detailsRef = useRef<Record<string, api.FarmingLogDetail>>({});
   const pendingDetails = useRef(new Set<string>());
+  const detailLoadedAt = useRef<Record<string, number>>({});
   const [seasons, setSeasons] = useState<api.Season[]>([]);
   const seasonsRef = useRef<api.Season[]>([]);
   const [selectedSeasonId, updateSelectedSeasonId] = useState<string | null>('all');
@@ -143,7 +141,7 @@ function useReportState() {
       const scopedSeasons = seasonId.startsWith('plot:')
         ? seasonsRef.current.filter(season => season.plot_id === seasonId.slice(5))
         : seasonsRef.current;
-      const seasonLogs = seasonId.startsWith('plot:') || (seasonId === 'all' && role === 'worker')
+      const seasonLogs = seasonId.startsWith('plot:')
         ? (await Promise.all(scopedSeasons.map(season => api.listLogs(accessToken, season.season_id))))
           .flat().sort((a, b) => new Date(b.logged_at).getTime() - new Date(a.logged_at).getTime())
         : await api.listLogs(accessToken, seasonId === 'all' ? undefined : seasonId);
@@ -151,9 +149,6 @@ function useReportState() {
       if (session.current !== accessToken || sequence !== listSequence.current)
         return;
 
-      setDetails({});
-      detailsRef.current = {};
-      pendingDetails.current.clear();
       setLogs(seasonLogs);
       lastLoadedAt.current = Date.now();
     } catch (loadError) {
@@ -164,10 +159,7 @@ function useReportState() {
       if (session.current === accessToken && sequence === listSequence.current)
         setLoading(false);
     }
-  }, [
-    accessToken,
-    role
-  ]);
+  }, [accessToken]);
   const refresh = useCallback((options: {
     skipIfFresh?: boolean
   } = {}) => {
@@ -197,17 +189,9 @@ function useReportState() {
         if (session.current !== token)
           return;
 
-        const assignedPlotIds = new Set(assignedPlotKey ? assignedPlotKey.split('|') : []);
-        const seasonList = [
-          'worker',
-          'leader'
-        ].includes(role ?? '')
-          ? availableSeasons.filter(season => (role === 'leader' || assignedPlotIds.has(season.plot_id))
-            && (role !== 'worker' || [
-              'growing',
-              'ready_to_harvest'
-            ].includes(season.status)))
-          : availableSeasons;
+        // Historical journals remain readable after a season closes or an assignment ends.
+        // The server applies the caller's team/account access rules.
+        const seasonList = availableSeasons;
         seasonsRef.current = seasonList;
         setSeasons(seasonList);
         const current = selectedSeasonRef.current;
@@ -258,7 +242,6 @@ function useReportState() {
     return operation;
   }, [
     accessToken,
-    assignedPlotKey,
     loadSeasonLogs,
     scheduleReady,
     role,
@@ -309,6 +292,7 @@ function useReportState() {
     if (session.current !== token)
       return;
 
+    detailLoadedAt.current[detail.log_id] = Date.now();
     detailsRef.current = {
       ...detailsRef.current,
       [detail.log_id]: detail
@@ -327,7 +311,7 @@ function useReportState() {
     if (!accessToken)
       return;
 
-    const uniqueIds = [...new Set(ids)].filter(id => id && !detailsRef.current[id] && !pendingDetails.current.has(id));
+    const uniqueIds = [...new Set(ids)].filter(id => id && (!detailsRef.current[id] || Date.now() - (detailLoadedAt.current[id] ?? 0) >= 10000) && !pendingDetails.current.has(id));
 
     if (!uniqueIds.length)
       return;
@@ -343,8 +327,10 @@ function useReportState() {
 
     const loaded: Record<string, api.FarmingLogDetail> = {};
     for (const result of results) {
-      if (result.status === 'fulfilled')
+      if (result.status === 'fulfilled') {
         loaded[result.value.log_id] = result.value;
+        detailLoadedAt.current[result.value.log_id] = Date.now();
+      }
     }
 
     if (Object.keys(loaded).length) {
@@ -365,13 +351,6 @@ function useReportState() {
   const loadReport = useCallback(async (id: string) => {
     if (!accessToken)
       throw new Error('Vui lòng đăng nhập lại.');
-
-    const cached = detailsRef.current[id];
-
-    if (cached) {
-      storeDetail(cached, accessToken);
-      return cached;
-    }
 
     const detail = await api.getLog(accessToken, id);
     storeDetail(detail, accessToken);
@@ -411,12 +390,6 @@ function useReportState() {
     if (session.current !== accessToken)
       throw new Error('Phiên đăng nhập đã thay đổi.');
 
-    selectedSeasonRef.current = input.seasonId;
-    updateSelectedSeasonId(input.seasonId);
-    setLogs([]);
-    setDetails({});
-    detailsRef.current = {};
-    pendingDetails.current.clear();
     storeDetail(detail, accessToken);
     lastLoadedAt.current = Date.now();
 

@@ -8,7 +8,7 @@ import { useReports } from '@/contexts/report_context';
 import { useAuth } from '@/contexts/auth_context';
 
 export default function WorkerDiaryDetailScreen() {
-  const { id, fromNotification } = useLocalSearchParams<{
+  const { id } = useLocalSearchParams<{
     id: string;
     fromNotification?: string;
   }>();
@@ -127,9 +127,7 @@ export default function WorkerDiaryDetailScreen() {
               <ReportPhotos photos={report.photos} />
             </View>
 
-            {fromNotification === 'true' && (
-              <ReportComments comments={report.comments} />
-            )}
+            <ReportComments comments={report.comments} />
           </>
         ) : (
           <View style={s.card}>

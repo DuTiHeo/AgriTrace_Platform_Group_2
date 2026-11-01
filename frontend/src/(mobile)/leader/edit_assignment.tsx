@@ -1,3 +1,4 @@
+import { settleTaskRequests } from '@/sevices/task_batch';
 import { isValidDateKey } from '@/utils/task_dates';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Keyboard, Pressable, Text, View } from 'react-native';
@@ -87,12 +88,13 @@ export default function EditAssignmentScreen() {
     try {
       const startTime = task.startTime || DEFAULT_WORK_START_TIME;
       const endTime = task.endTime || DEFAULT_WORK_END_TIME;
-      await Promise.all(task.taskIds.map(taskId => updateTask(accessToken, taskId, {
+      const result = await settleTaskRequests(task.taskIds, taskId => updateTask(accessToken, taskId, {
         content: encodeTaskContent({ ...decodeTaskContent(task.rawContent), title: title.trim(), instructions: instructions.trim(), tools: tools.trim() || undefined, assignmentId: task.assignmentId, startTime, endTime }),
         start_at: `${startDate}T${startTime}:00+07:00`,
         due_at: `${due}T${endTime}:00+07:00`,
-      })));
+      }));
       await loadTasks();
+      if (result.failed.length) throw new Error(`Đã cập nhật ${result.succeeded.length}/${task.taskIds.length} công việc. ${result.failed[0].message}`);
       allowLeave.current = true;
       router.back();
     } catch (e) { setError(e instanceof Error ? e.message : 'Không cập nhật được công việc.'); }
@@ -112,8 +114,9 @@ export default function EditAssignmentScreen() {
             if (!accessToken || !task) return;
             setBusy(true);
             try {
-              await Promise.all(task.taskIds.map(taskId => deleteTask(accessToken, taskId)));
+              const result = await settleTaskRequests(task.taskIds, taskId => deleteTask(accessToken, taskId));
               await loadTasks();
+              if (result.failed.length) throw new Error(`Đã hủy ${result.succeeded.length}/${task.taskIds.length} công việc. ${result.failed[0].message}`);
               allowLeave.current = true;
               router.back();
             } catch (err) {
@@ -127,7 +130,7 @@ export default function EditAssignmentScreen() {
     );
   };
 
-  if (!task) return <Screen title="Chỉnh sửa công việc" back onBack={() => requestLeave()}><Text style={s.empty}>Không tìm thấy công việc trong tổ của bạn.</Text></Screen>;
+  if (!task) return <Screen title="Chỉnh sửa công việc" back onBack={() => requestLeave()}><Feedback text={error} /><Text style={s.empty}>Công việc không còn trong danh sách hiện tại. Quay lại danh sách để kiểm tra các công việc còn lại.</Text></Screen>;
   return <Screen title="Chỉnh sửa công việc" back onBack={() => requestLeave()}>
     <Feedback text={error} />
     <Card>

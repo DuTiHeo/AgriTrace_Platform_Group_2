@@ -12,7 +12,9 @@ export function useFinishTabFlow() {
   const navigation = useNavigation();
 
   return (name: string) => {
-    navigation.dispatch(state => {
+    const state = navigation.getState();
+    if (!state) throw new Error('Navigation is not ready.');
+    navigation.dispatch((() => {
       const index = state.routes.findIndex(route => route.name === name);
 
       if (state.type !== 'tab' || index < 0 || !('history' in state)) {
@@ -40,6 +42,6 @@ export function useFinishTabFlow() {
           history
         },
       };
-    });
+    })());
   };
 }

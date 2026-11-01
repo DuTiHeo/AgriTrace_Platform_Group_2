@@ -1,9 +1,10 @@
+import { type ComponentRef, useCallback, useMemo, useRef, useState, type RefObject } from 'react';
 import { getTaskTypeLabel } from '@/constants/task_types';
 import { useFinishTabFlow } from '@/hooks/use_finish_tab_flow';
 import { colors } from '@/styles/theme';
 import { sharedStyles as shared } from '@/styles/role_styles';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
-import { useCallback, useMemo, useRef, useState, type RefObject } from 'react';
+
 import * as ImagePicker from 'expo-image-picker';
 import { Image, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -70,13 +71,13 @@ export function FarmingLogFormScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const scrollRef = useRef<ScrollView>(null);
-  const contentRef = useRef<View>(null);
-  const titleRef = useRef<TextInput>(null), noteRef = useRef<TextInput>(null);
+  const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
+  const contentRef = useRef<ComponentRef<typeof View>>(null);
+  const titleRef = useRef<ComponentRef<typeof TextInput>>(null), noteRef = useRef<ComponentRef<typeof TextInput>>(null);
   const fieldY = useRef<Record<string, number>>({});
   const pending = useRef(false);
   const submitted = useRef(false);
-  const revealInput = useCallback((ref: RefObject<TextInput | null>) => {
+  const revealInput = useCallback((ref: RefObject<ComponentRef<typeof TextInput> | null>) => {
     setTimeout(() => {
       const scroll = scrollRef.current;
       const input = ref.current;
@@ -484,30 +485,6 @@ export function FarmingLogFormScreen() {
                 <View onLayout={event => {
                   fieldY.current.area = event.nativeEvent.layout.y;
                 }}>
-                  <Text style={styles.label}>Khu vực làm việc *</Text>
-                  <View style={[
-                    styles.readOnlyPlotBox,
-                    !draft.plotId && locationError ? styles.readOnlyPlotBoxError : draft.plotId ? styles.readOnlyPlotBoxSuccess : null
-                  ]}>
-                    <View style={styles.readOnlyPlotRow}>
-                      <Text style={[
-                        styles.readOnlyPlotName,
-                        !draft.plotId && styles.readOnlyPlotMuted
-                      ]}>
-                        {draft.plotId ? `Lô ${draft.area}` : (isLocating ? 'Đang định vị lô đất…' : 'Chưa xác định được lô đất')}
-                      </Text>
-                      {draft.plotId && draft.seasonId ? (
-                        <Text style={styles.readOnlyCropText} numberOfLines={1}>
-                          {activeSeasons.find(s => s.season_id === draft.seasonId)?.crop_name || 'Đang canh tác'}
-                        </Text>
-                      ) : draft.plotId && !draft.seasonId ? (
-                        <Text style={styles.readOnlyWarningText}>
-                          Chưa có mùa vụ
-                        </Text>
-                      ) : null}
-                    </View>
-                  </View>
-
                   {/* Cảnh báo khi GPS nằm ngoài ranh giới nông trại (EX-15) */}
                   {!!locationError && (
                     <View style={styles.alertBanner} accessibilityRole="alert">

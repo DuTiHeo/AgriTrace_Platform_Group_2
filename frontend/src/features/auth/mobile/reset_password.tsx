@@ -1,3 +1,4 @@
+import type { ComponentRef } from 'react';
 import { type Href, Redirect, router } from 'expo-router';
 import { useRef, useState } from 'react';
 import { Keyboard, Pressable, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from 'react-native';
@@ -15,7 +16,7 @@ export default function ResetPasswordScreen() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const pending = useRef(false);
-  const passwordRef = useRef<TextInput>(null), confirmRef = useRef<TextInput>(null);
+  const passwordRef = useRef<ComponentRef<typeof TextInput>>(null), confirmRef = useRef<ComponentRef<typeof TextInput>>(null);
   const [field, setField] = useState<'password' | 'confirm' | ''>('');
   const { recovery, setRecovery } = useRecovery();
   const { clearAuth } = useAuth();

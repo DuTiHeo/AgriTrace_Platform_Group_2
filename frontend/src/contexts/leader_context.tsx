@@ -1,3 +1,4 @@
+import { PartialAssignmentError, settleTaskRequests } from '@/sevices/task_batch';
 import { buildLeaderNotices } from '@/sevices/notification_events';
 import { DEFAULT_WORK_START_TIME, DEFAULT_WORK_END_TIME } from '@/constants/work_hours';
 import { useReports } from './report_context';
@@ -140,7 +141,7 @@ function useLeaderState() {
       throw new Error('Thiếu thông tin tổ, lô đất hoặc ngày bắt đầu để giao việc.');
 
     const assignmentId = `assignment-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-    const createdTasks = await Promise.all(value.memberIds.map(workerId => createTask(accessToken, {
+    const result = await settleTaskRequests(value.memberIds, workerId => createTask(accessToken, {
       team_id: user.team_id!,
       worker_id: workerId,
       plot_id: value.plotId!,
@@ -154,9 +155,13 @@ function useLeaderState() {
         endTime: DEFAULT_WORK_END_TIME,
         assignmentId
       }),
-    })));
-    registerCreatedTasks(createdTasks);
+    }));
+    registerCreatedTasks(result.succeeded.map(item => item.value));
     await loadTasks();
+    if (result.failed.length) {
+      throw new PartialAssignmentError(result.succeeded.map(item => item.id),
+        `Đã giao cho ${result.succeeded.length}/${value.memberIds.length} người. Chưa giao được cho ${result.failed.length} người: ${result.failed[0].message}`);
+    }
   };
   const addComment = (id: string, text: string) => addReportComment(id, text);
 
