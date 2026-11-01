@@ -17,12 +17,12 @@
   align-items: center;
   justify-content: center;
   border: 1px solid var(--gray-300);
-  border-radius: var(--radius-sm);
+  border-radius: var(--agri-radius-control);
   background: var(--white);
   color: var(--gray-700);
 }
 
-.create-farm-header > button:hover {
+.create-farm-header > button:hover:not(:disabled) {
   border-color: var(--green-600);
   color: var(--green-800);
 }
@@ -42,7 +42,7 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   overflow: hidden;
   border: 1px solid var(--gray-200);
-  border-radius: var(--radius-md);
+  border-radius: var(--agri-radius-card);
   background: var(--white);
   margin-bottom: 20px;
 }
@@ -170,7 +170,7 @@
   align-items: center;
   gap: 12px;
   border: 1px solid var(--gray-200);
-  border-radius: var(--radius-sm);
+  border-radius: var(--agri-radius-card);
   background: var(--gray-100);
   padding: 13px;
 }
@@ -202,10 +202,10 @@
 }
 
 .owner-summary > span {
-  border-radius: 999px;
+  border-radius: var(--agri-radius-chip);
   background: var(--green-100);
   padding: 4px 9px;
-  color: var(--green-800);
+  color: var(--agri-success-text);
   font-size: 11px;
   font-weight: 700;
 }
@@ -221,7 +221,7 @@
   align-items: flex-start;
   gap: 10px;
   border: 1px solid var(--gray-300);
-  border-radius: var(--radius-sm);
+  border-radius: var(--agri-radius-control);
   padding: 13px;
   cursor: pointer;
 }
@@ -269,7 +269,7 @@
   align-items: flex-start;
   gap: 12px;
   border: 1px solid var(--gray-300);
-  border-radius: var(--radius-md);
+  border-radius: var(--agri-radius-control);
   background: var(--white);
   padding: 16px;
   color: var(--gray-500);
@@ -283,7 +283,7 @@
 .boundary-method.active {
   border-color: var(--green-600);
   background: var(--green-50);
-  color: var(--green-800);
+  color: var(--agri-success-text);
 }
 
 .boundary-method > span {
@@ -319,9 +319,9 @@
 .boundary-toolbar select {
   min-height: 40px;
   border: 1px solid var(--gray-300);
-  border-radius: var(--radius-sm);
+  border-radius: var(--agri-radius-control);
   outline: 0;
-  background: var(--white);
+  background: var(--agri-input);
   padding: 8px 11px;
   color: var(--gray-700);
 }
@@ -333,14 +333,14 @@
   justify-content: center;
   gap: 7px;
   border: 1px solid var(--gray-300);
-  border-radius: var(--radius-sm);
+  border-radius: var(--agri-radius-control);
   padding: 8px 13px;
   color: var(--gray-700);
   font-weight: 600;
   cursor: pointer;
 }
 
-.file-upload-button:hover {
+.file-upload-button:hover:not(:disabled) {
   border-color: var(--green-600);
   color: var(--green-800);
 }
@@ -403,14 +403,14 @@
   height: 340px;
   overflow: hidden;
   border: 1px solid var(--gray-300);
-  border-radius: var(--radius-md);
+  border-radius: var(--agri-radius-card);
   background:
     linear-gradient(
       35deg,
-      rgba(22, 148, 71, 0.08),
-      rgba(255, 255, 255, 0.2)
+      rgb(var(--agri-primary-rgb) / 0.08),
+      rgb(var(--agri-surface-rgb) / 0.2)
     ),
-    #eef4ee;
+    var(--agri-background);
   padding: 0;
 }
 
@@ -424,8 +424,8 @@
   z-index: 2;
   top: 12px;
   left: 12px;
-  border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.92);
+  border-radius: var(--agri-radius-card);
+  background: rgb(var(--agri-surface-rgb) / 0.92);
   padding: 7px 10px;
   color: var(--gray-700);
   font-size: 12px;
@@ -439,14 +439,14 @@
   justify-content: space-between;
   gap: 15px;
   border: 1px solid var(--gray-300);
-  border-radius: var(--radius-sm);
+  border-radius: var(--agri-radius-card);
   background: var(--gray-100);
   padding: 13px 15px;
   color: var(--gray-700);
 }
 
 .boundary-result.valid {
-  border-color: #a7e8b6;
+  border-color: var(--agri-border);
   background: var(--green-50);
   color: var(--green-900);
 }
@@ -478,7 +478,7 @@
 
 .review-card {
   border: 1px solid var(--gray-200);
-  border-radius: var(--radius-md);
+  border-radius: var(--agri-radius-card);
   padding: 18px;
 }
 
@@ -621,7 +621,7 @@
 }
 
 .form-message {
-  border-radius: var(--radius-sm);
+  border-radius: var(--agri-radius-card);
   margin-top: 18px;
   padding: 11px 13px;
   font-size: 12px;
@@ -629,7 +629,7 @@
 }
 
 .form-message-error {
-  border: 1px solid #fda29b;
-  background: #fff5f4;
+  border: 1px solid var(--agri-danger-border-soft);
+  background: var(--agri-danger-soft);
   color: var(--red-700);
 }

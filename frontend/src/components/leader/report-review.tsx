@@ -4,6 +4,7 @@ import { useReports } from '@/contexts/report-context';
 import { useAuth } from '@/contexts/auth-context';
 import { getLogAuthor } from '@/sevices/farming-log.service';
 import { Button, s } from './ui';
+import { useScopedState } from '@/hooks/use-scoped-state';
 
 export function ReportReview({ id, onReviewed }: {
   id: string;
@@ -14,11 +15,10 @@ export function ReportReview({ id, onReviewed }: {
   const report = getReport(id);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [isWorkerLog, setIsWorkerLog] = useState(false);
+  const [isWorkerLog, setIsWorkerLog] = useScopedState(false, JSON.stringify([accessToken, report?.workerId]));
   const pending = useRef(false);
   useEffect(() => {
     let active = true;
-    setIsWorkerLog(false);
 
     if (accessToken && report?.workerId) {
       void getLogAuthor(accessToken, report.workerId)
@@ -37,7 +37,8 @@ export function ReportReview({ id, onReviewed }: {
     };
   }, [
     accessToken,
-    report?.workerId
+    report?.workerId,
+    setIsWorkerLog
   ]);
 
   if (!report || !isWorkerLog)

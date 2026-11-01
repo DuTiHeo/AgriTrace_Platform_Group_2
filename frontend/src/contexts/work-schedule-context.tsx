@@ -1,4 +1,5 @@
-import { createContext, useCallback, useContext, useEffect, useRef, useState, type PropsWithChildren } from 'react';
+import { localDateKey } from '@/utils/task-dates';
+import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, type PropsWithChildren } from 'react';
 import { useAuth } from './auth-context';
 import { decodeTaskContent, listMyTasks, updateTaskStatus, type ApiTask, type TaskStatus } from '@/sevices/farming-log.service';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -42,18 +43,6 @@ export type ScheduledTask = {
   assignmentId?: string;
   createdAt?: string | null;
 };
-
-function localDateKey(value: string | null) {
-  if (!value)
-    return '';
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime()))
-    return '';
-
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-}
 
 function mapTask(task: ApiTask): ScheduledTask {
   const content = decodeTaskContent(task.content);
@@ -153,10 +142,6 @@ function groupLeaderTasks(tasks: ScheduledTask[]) {
         ...current.assigneeStatuses,
         ...task.assigneeStatuses
       },
-      assigneePhones: [...new Set([
-        ...current.assigneePhones,
-        ...task.assigneePhones
-      ])],
       taskIds: [
         ...current.taskIds,
         ...task.taskIds
@@ -175,13 +160,15 @@ function groupLeaderTasks(tasks: ScheduledTask[]) {
 function useScheduleState() {
   const { user, accessToken } = useAuth();
   const [tasks, setTasks] = useState<ScheduledTask[]>([]);
-  const [leaderCompletedTasks, setLeaderCompletedTasks] = useState<ScheduledTask[]>([]);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState('');
   const loadSequence = useRef(0);
   const pendingLoad = useRef<{ token: string; promise: Promise<void> } | null>(null);
   const currentToken = useRef(accessToken);
-  currentToken.current = accessToken;
+  useLayoutEffect(() => {
+    currentToken.current = accessToken;
+    return () => { currentToken.current = null; };
+  }, [accessToken]);
 
   const registerCreatedTasks = useCallback((created: ApiTask[]) => {
     ++loadSequence.current;
@@ -215,7 +202,6 @@ function useScheduleState() {
         owner: user.role === 'leader' && task.worker_phone === user.phone,
       }));
       setTasks(user.role === 'leader' ? groupLeaderTasks(mapped) : mapped);
-      setLeaderCompletedTasks(user.role === 'leader' ? mapped.filter(task => !task.owner && task.status === 'done') : []);
       setReady(true);
     } catch (e) {
       if (sequence !== loadSequence.current || currentToken.current !== accessToken) return;
@@ -231,8 +217,9 @@ function useScheduleState() {
   ]);
 
   useEffect(() => {
+    // Clear the previous account's schedule before loading the new account's tasks.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTasks([]);
-    setLeaderCompletedTasks([]);
     setReady(false);
     void loadTasks();
   }, [loadTasks]);
@@ -301,7 +288,6 @@ function useScheduleState() {
   return {
     workerTasks: user?.role === 'worker' ? tasks : [],
     leaderTasks: user?.role === 'leader' ? tasks : [],
-    leaderCompletedTasks: user?.role === 'leader' ? leaderCompletedTasks : [],
     ready,
     error,
     retry: loadTasks,

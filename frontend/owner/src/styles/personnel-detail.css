@@ -17,14 +17,14 @@
 }
 
 .personnel-lock-button {
-  border-color: var(--red-700);
-  background: var(--red-700);
+  border-color: var(--agri-danger);
+  background: var(--agri-danger);
   color: var(--white);
 }
 
-.personnel-lock-button:hover {
-  border-color: #912018;
-  background: #912018;
+.personnel-lock-button:hover:not(:disabled) {
+  border-color: var(--agri-danger-text);
+  background: var(--agri-danger-text);
 }
 
 .personnel-locked-banner {
@@ -32,8 +32,8 @@
   align-items: flex-start;
   gap: 12px;
   margin-bottom: 18px;
-  border: 1px solid #f5b7b1;
-  border-radius: var(--radius-md);
+  border: 1px solid var(--agri-danger-border-soft);
+  border-radius: var(--agri-radius-card);
   background: var(--red-100);
   padding: 14px 16px;
   color: var(--red-700);
@@ -164,7 +164,7 @@
   font-weight: 700;
 }
 
-.personnel-card-heading > button:hover {
+.personnel-card-heading > button:hover:not(:disabled) {
   text-decoration: underline;
 }
 
@@ -242,13 +242,13 @@
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  background: #e0ecff;
-  color: #175cd3;
+  background: var(--agri-info-soft);
+  color: var(--agri-info-text);
 }
 
 .history-icon.success {
   background: var(--green-100);
-  color: var(--green-800);
+  color: var(--agri-success-text);
 }
 
 .history-icon.danger {
@@ -307,7 +307,8 @@
   align-items: flex-start;
   justify-content: center;
   overflow-y: auto;
-  background: rgba(15, 23, 17, 0.55);
+  background: var(--agri-backdrop);
+  backdrop-filter: blur(var(--agri-backdrop-blur));
   padding: 48px 18px;
 }
 
@@ -315,7 +316,7 @@
   width: 100%;
   max-width: 760px;
   overflow: hidden;
-  box-shadow: 0 22px 60px rgba(15, 23, 17, 0.24);
+  box-shadow: 0 22px 60px rgb(var(--agri-shadow-rgb) / 0.24);
 }
 
 .personnel-modal-small {
@@ -350,12 +351,12 @@
   align-items: center;
   justify-content: center;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--agri-radius-control);
   background: var(--gray-100);
   color: var(--gray-700);
 }
 
-.personnel-modal-heading > button:hover {
+.personnel-modal-heading > button:hover:not(:disabled) {
   background: var(--gray-200);
   color: var(--gray-900);
 }
@@ -386,20 +387,20 @@
   display: flex;
   align-items: flex-start;
   gap: 9px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--agri-radius-card);
   padding: 12px;
   font-size: 13px;
 }
 
 .personnel-modal-note {
-  border: 1px solid #bbd4ff;
-  background: #eff6ff;
-  color: #175cd3;
+  border: 1px solid var(--agri-info-border);
+  background: var(--agri-info-soft);
+  color: var(--agri-info-text);
 }
 
 .personnel-lock-warning {
-  border: 1px solid #fed7aa;
-  background: #fff7ed;
+  border: 1px solid var(--agri-warning-border);
+  background: var(--agri-warning-soft);
   color: var(--orange-700);
 }
 

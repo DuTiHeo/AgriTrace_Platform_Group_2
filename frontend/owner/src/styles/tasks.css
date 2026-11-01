@@ -30,40 +30,40 @@
   height: 38px;
   grid-row: span 2;
   padding: 9px;
-  color: #08783e;
-  background: #dcfce7;
+  color: var(--agri-title);
+  background: var(--agri-success-soft);
   border-radius: 8px;
 }
 
 .task-summary span {
-  color: #64756a;
+  color: var(--agri-muted-strong);
   font-size: 12px;
 }
 
 .task-summary strong {
-  color: #173a28;
+  color: var(--agri-title);
   font-size: 22px;
   line-height: 1.2;
 }
 
 .task-summary-active > svg {
-  color: #1d4ed8;
-  background: #dbeafe;
+  color: var(--agri-info-text);
+  background: var(--agri-info-soft);
 }
 
 .task-summary-incomplete > svg {
-  color: #b91c1c;
-  background: #fef2f2;
+  color: var(--agri-danger-text);
+  background: var(--agri-danger-soft);
 }
 
 .task-summary-awaiting > svg {
-  color: #b45309;
-  background: #ffedd5;
+  color: var(--agri-warning-text);
+  background: var(--agri-warning-soft);
 }
 
 .task-summary-completed > svg {
-  color: #08783e;
-  background: #dcfce7;
+  color: var(--agri-title);
+  background: var(--agri-success-soft);
 }
 
 .task-notice {
@@ -72,10 +72,10 @@
   justify-content: space-between;
   gap: 12px;
   padding: 11px 14px;
-  color: #175c35;
-  background: #effaf2;
-  border: 1px solid #cbead4;
-  border-radius: 8px;
+  color: var(--agri-title);
+  background: var(--agri-success-soft);
+  border: 1px solid var(--agri-border);
+  border-radius: var(--agri-radius-card);
 }
 
 .task-notice button {
@@ -87,11 +87,11 @@
   color: inherit;
   background: transparent;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--agri-radius-control);
 }
 
-.task-notice button:hover {
-  background: #dff3e5;
+.task-notice button:hover:not(:disabled) {
+  background: var(--agri-success-soft);
 }
 
 .task-list-panel {
@@ -103,7 +103,7 @@
   align-items: center;
   gap: 12px;
   padding: 16px;
-  border-bottom: 1px solid #e7ebe8;
+  border-bottom: 1px solid var(--agri-background);
 }
 
 .task-search {
@@ -114,16 +114,16 @@
   align-items: center;
   gap: 9px;
   padding: 0 11px;
-  color: #758078;
-  background: #ffffff;
-  border: 1px solid #d8ded9;
-  border-radius: 8px;
+  color: var(--agri-muted-strong);
+  background: var(--agri-input);
+  border: 1px solid var(--agri-input-border);
+  border-radius: var(--agri-radius-control);
 }
 
 .task-search input {
   width: 100%;
   min-width: 0;
-  color: #17251b;
+  color: var(--agri-title);
   background: transparent;
   border: 0;
   outline: 0;
@@ -132,15 +132,15 @@
 .task-toolbar > select {
   min-height: 40px;
   padding: 0 32px 0 11px;
-  color: #334155;
-  background: #ffffff;
-  border: 1px solid #d8ded9;
-  border-radius: 8px;
+  color: var(--agri-text);
+  background: var(--agri-input);
+  border: 1px solid var(--agri-input-border);
+  border-radius: var(--agri-radius-control);
 }
 
 .task-result-count {
   flex: 0 0 auto;
-  color: #64756a;
+  color: var(--agri-muted-strong);
   font-size: 12px;
 }
 
@@ -155,7 +155,7 @@
   justify-content: space-between;
   gap: 18px;
   padding: 18px 20px;
-  border-bottom: 1px solid #edf0ed;
+  border-bottom: 1px solid var(--agri-background);
 }
 
 .task-row-card:last-child {
@@ -176,7 +176,7 @@
 
 .task-row-title h2 {
   min-width: 0;
-  color: #173a28;
+  color: var(--agri-title);
   font-size: 15px;
   font-weight: 700;
   line-height: 1.4;
@@ -187,43 +187,43 @@
   min-height: 24px;
   align-items: center;
   padding: 3px 8px;
-  color: #475569;
-  background: #f1f5f9;
-  border-radius: 999px;
+  color: var(--agri-muted-strong);
+  background: var(--agri-background);
+  border-radius: var(--agri-radius-chip);
   font-size: 11px;
   font-weight: 700;
   white-space: nowrap;
 }
 
 .task-status-pending {
-  color: #4b5563;
-  background-color: #f3f4f6;
-  border: 1px solid #e5e7eb;
+  color: var(--agri-text);
+  background-color: var(--agri-background);
+  border: 1px solid var(--agri-background);
 }
 
 .task-status-in_progress {
-  color: #1d4ed8;
-  background: #eff6ff;
+  color: var(--agri-info-text);
+  background: var(--agri-info-soft);
 }
 
 .task-status-awaiting_confirmation {
-  color: #9a4d00;
-  background: #fff5e8;
+  color: var(--agri-warning-text);
+  background: var(--agri-warning-soft);
 }
 
 .task-status-completed {
-  color: #08783e;
-  background: #eaf8ee;
+  color: var(--agri-title);
+  background: var(--agri-success-soft);
 }
 
 .task-status-incomplete {
-  color: #b91c1c;
-  background: #fef2f2;
+  color: var(--agri-danger-text);
+  background: var(--agri-danger-soft);
 }
 
 .task-status-cancelled {
-  color: #64756a;
-  background: #f1f3f1;
+  color: var(--agri-muted-strong);
+  background: var(--agri-background);
 }
 
 .task-context-line,
@@ -233,7 +233,7 @@
   gap: 8px 17px;
   flex-wrap: wrap;
   margin-top: 8px;
-  color: #64756a;
+  color: var(--agri-muted-strong);
   font-size: 12px;
 }
 
@@ -242,7 +242,7 @@
   width: 4px;
   height: 4px;
   margin: 0 9px 2px 0;
-  background: #aab4ac;
+  background: var(--agri-muted);
   border-radius: 50%;
   content: "";
 }
@@ -255,18 +255,18 @@
 
 .task-assignment-line svg {
   flex: 0 0 auto;
-  color: #829087;
+  color: var(--agri-muted-strong);
 }
 
 .task-pending-note,
 .task-confirmed-note {
   margin-top: 9px;
-  color: #9a4d00;
+  color: var(--agri-warning-text);
   font-size: 12px;
 }
 
 .task-confirmed-note {
-  color: #08783e;
+  color: var(--agri-title);
 }
 
 .task-row-actions {
@@ -287,16 +287,16 @@
   width: 36px;
   height: 36px;
   place-items: center;
-  color: #8b5b5b;
+  color: var(--agri-danger-text);
   background: transparent;
-  border: 1px solid #e7dede;
-  border-radius: 8px;
+  border: 1px solid var(--agri-danger-border-soft);
+  border-radius: var(--agri-radius-control);
 }
 
-.task-cancel-button:hover {
-  color: #b42318;
-  background: #fff3f2;
-  border-color: #fecaca;
+.task-cancel-button:hover:not(:disabled) {
+  color: var(--agri-danger-text);
+  background: var(--agri-danger-soft);
+  border-color: var(--agri-danger-border-soft);
 }
 
 .task-empty-state {
@@ -307,16 +307,16 @@
   flex-direction: column;
   gap: 10px;
   padding: 28px;
-  color: #64756a;
+  color: var(--agri-muted-strong);
   text-align: center;
 }
 
 .task-empty-state > svg {
-  color: #168348;
+  color: var(--agri-primary);
 }
 
 .task-empty-state strong {
-  color: #173a28;
+  color: var(--agri-title);
   font-size: 15px;
 }
 
@@ -351,7 +351,7 @@
 }
 
 .task-create-form label > span {
-  color: #334155;
+  color: var(--agri-text);
   font-size: 12px;
   font-weight: 700;
 }
@@ -362,10 +362,10 @@
   width: 100%;
   min-height: 42px;
   padding: 9px 11px;
-  color: #17251b;
-  background: #ffffff;
-  border: 1px solid #d0d8d1;
-  border-radius: 8px;
+  color: var(--agri-title);
+  background: var(--agri-input);
+  border: 1px solid var(--agri-input-border);
+  border-radius: var(--agri-radius-control);
   outline: 0;
 }
 
@@ -377,8 +377,8 @@
 .task-create-form input:focus,
 .task-create-form select:focus,
 .task-create-form textarea:focus {
-  border-color: #169447;
-  box-shadow: 0 0 0 3px rgb(22 148 71 / 12%);
+  border-color: var(--agri-primary);
+  box-shadow: 0 0 0 3px rgb(var(--agri-primary-rgb) / 12%);
 }
 
 .task-field-full,
@@ -389,7 +389,7 @@
 }
 
 .task-field-hint {
-  color: #78867c;
+  color: var(--agri-muted-strong);
   font-size: 11px;
   line-height: 1.45;
 }
@@ -440,6 +440,7 @@
 
   .task-toolbar > select {
     width: 100%;
+    background: var(--agri-input);
   }
 
   .task-row-card {

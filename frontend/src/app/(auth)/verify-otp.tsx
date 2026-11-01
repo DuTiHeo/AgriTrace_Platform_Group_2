@@ -6,24 +6,25 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { PrimaryButton } from '@/components/common/primary-button';
 import { useRecovery } from '@/contexts/recovery-context';
 import { forgotPassword, verifyOtp } from '@/sevices/auth.sevice';
+import { useScopedState } from '@/hooks/use-scoped-state';
 
 export default function VerifyOtpScreen() {
   const { recovery, setRecovery } = useRecovery();
-  const [otp, setOtp] = useState('');
-  const [seconds, setSeconds] = useState(5);
+  const challengeScope = JSON.stringify([recovery?.challenge, recovery?.demo_otp]);
+  const [otp, setOtp] = useScopedState('', challengeScope);
+  const [seconds, setSeconds] = useScopedState(5, challengeScope);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const pending = useRef(false);
   const otpRef = useRef<TextInput>(null);
 
   useEffect(() => {
-    setOtp('');
-    setSeconds(5);
-
-    const countdown = setInterval(
-      () => setSeconds(value => Math.max(0, value - 1)),
-      1000
-    );
+    let remaining = 5;
+    const countdown = setInterval(() => {
+      remaining -= 1;
+      setSeconds(remaining);
+      if (remaining === 0) clearInterval(countdown);
+    }, 1000);
 
     const fill = recovery?.demo_otp
       ? setTimeout(
@@ -36,7 +37,7 @@ export default function VerifyOtpScreen() {
       clearInterval(countdown);
       if (fill) clearTimeout(fill);
     };
-  }, [recovery?.challenge, recovery?.demo_otp]);
+  }, [recovery?.demo_otp, setOtp, setSeconds]);
 
   async function confirm() {
     Keyboard.dismiss();
@@ -237,12 +238,6 @@ const styles = StyleSheet.create({
     marginTop: 8
   },
 
-  otpRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 26
-  },
-
   otpBox: {
     width: 54,
     height: 54,
@@ -252,11 +247,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center'
-  },
-
-  focusedBox: {
-    borderColor: '#2F8437',
-    borderWidth: 2
   },
 
   otpText: {

@@ -256,14 +256,6 @@ const styles = StyleSheet.create({
     alignItems: "center"
   },
 
-  avatar: {
-    ...shared.avatar
-  },
-
-  avatarText: {
-    fontSize: 30
-  },
-
   name: {
     ...shared.section
   },

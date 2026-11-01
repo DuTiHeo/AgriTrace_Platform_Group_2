@@ -7,9 +7,9 @@
   align-items: flex-start;
   gap: 11px;
   margin-bottom: 18px;
-  border: 1px solid #fed7aa;
-  border-radius: var(--radius-md);
-  background: #fff7ed;
+  border: 1px solid var(--agri-warning-border);
+  border-radius: var(--agri-radius-card);
+  background: var(--agri-warning-soft);
   padding: 14px 16px;
   color: var(--orange-700);
 }
@@ -102,7 +102,7 @@
 .team-profile-stats > div {
   display: flex;
   flex-direction: column;
-  border-radius: var(--radius-sm);
+  border-radius: var(--agri-radius-card);
   background: var(--gray-100);
   padding: 10px 12px;
 }
@@ -128,7 +128,7 @@
   align-items: center;
   gap: 13px;
   border: 1px solid var(--gray-200);
-  border-radius: var(--radius-md);
+  border-radius: var(--agri-radius-card);
   background: var(--green-50);
   padding: 15px;
 }
@@ -184,9 +184,9 @@
   justify-content: center;
   flex-direction: column;
   gap: 7px;
-  border: 1px dashed #e4b37b;
-  border-radius: var(--radius-md);
-  background: #fffaf4;
+  border: 1px dashed var(--agri-warning-border);
+  border-radius: var(--agri-radius-card);
+  background: var(--agri-warning-soft);
   padding: 24px;
   color: var(--orange-700);
   text-align: center;
@@ -253,8 +253,8 @@
   font-weight: 700;
 }
 
-.team-member-actions button:hover,
-.team-member-actions a:hover {
+.team-member-actions button:hover:not(:disabled),
+.team-member-actions a:hover:not(:disabled) {
   text-decoration: underline;
 }
 
@@ -276,7 +276,7 @@
   align-items: center;
   gap: 11px;
   border: 1px solid var(--gray-200);
-  border-radius: var(--radius-sm);
+  border-radius: var(--agri-radius-card);
   padding: 12px;
   cursor: pointer;
   transition:
@@ -292,7 +292,7 @@
 .team-personnel-options label.selected {
   border-color: var(--green-700);
   background: var(--green-50);
-  box-shadow: 0 0 0 3px rgba(22, 148, 71, 0.1);
+  box-shadow: 0 0 0 3px rgb(var(--agri-primary-rgb) / 0.1);
 }
 
 .team-personnel-options input {

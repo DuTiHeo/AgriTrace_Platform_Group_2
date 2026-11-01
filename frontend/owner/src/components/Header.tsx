@@ -97,7 +97,7 @@ function Header({ onMenuClick }: HeaderProps) {
 
         <div className="header-system">
           <span>Hệ thống quản lý</span>
-          <strong>Farmer QuickLog</strong>
+          <strong>AgriFarm</strong>
         </div>
       </div>
 

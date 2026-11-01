@@ -1,6 +1,7 @@
+import { localDateKey as dateKey, taskOccursOn as occursOn } from '@/utils/task-dates';
 import { getTaskTypeLabel } from '@/constants/task-types';
 import { router, type Href, useLocalSearchParams } from 'expo-router';
-import { useCallback, useState, useEffect } from 'react';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/auth-context';
@@ -11,10 +12,7 @@ import { sharedStyles as shared } from '@/styles/role-styles';
 import { colors } from '@/styles/theme';
 import { taskExecutionError } from '@/sevices/journal-filter';
 import { useTaskRefresh } from '@/hooks/use-task-refresh';
-
-function dateKey(date: Date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-}
+import { useScopedState } from '@/hooks/use-scoped-state';
 
 function shift(date: Date, days: number) {
   const next = new Date(date);
@@ -28,9 +26,10 @@ function weekStart(date: Date) {
 
 const dayLabels = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
 
-function occursOn(task: { startDate?: string; due: string }, day: string) {
-  const start = task.startDate || task.due;
-  return !!start && !!task.due && start <= day && day <= task.due;
+function scheduleDate(value: string | undefined) {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const date = new Date(value + 'T12:00:00');
+  return Number.isNaN(date.getTime()) ? null : date;
 }
 
 export default function WorkerScheduleScreen() {
@@ -38,26 +37,20 @@ export default function WorkerScheduleScreen() {
   const { user } = useAuth();
   const { workerTasks, ready, error, retry, startTask } = useWorkSchedule();
   const { drafts, reports } = useReports();
-  const [selected, setSelected] = useState(() => new Date());
-  const [executionMessage, setExecutionMessage] = useState('');
+  const [selected, setSelected] = useState(() => scheduleDate(date) ?? new Date());
+  const [previousDate, setPreviousDate] = useState(date);
+  if (previousDate !== date) {
+    setPreviousDate(date);
+    const value = scheduleDate(date);
+    if (value) setSelected(value);
+  }
+  const [executionMessage, setExecutionMessage] = useScopedState('', String(selected.getTime()));
   const [refreshing, setRefreshing] = useState(false);
   useTaskRefresh(retry);
   const refreshSchedule = useCallback(async () => {
     setRefreshing(true);
     try { await retry(); } finally { setRefreshing(false); }
   }, [retry]);
-
-  useEffect(() => {
-    setExecutionMessage('');
-  }, [selected]);
-
-  useEffect(() => {
-    if (typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      const value = new Date(date + 'T12:00:00');
-
-      if (!Number.isNaN(value.getTime())) setSelected(value);
-    }
-  }, [date]);
 
   const days = Array.from(
     { length: 7 },

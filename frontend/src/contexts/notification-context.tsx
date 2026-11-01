@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useRef, useState, type PropsWithC
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { type Href } from 'expo-router';
 import { useAuth } from './auth-context';
+import { localDateKey } from '@/utils/task-dates';
 export type NoticeCategory = 'work' | 'schedule' | 'alert';
 export type AppNotice = {
   id: string;
@@ -83,9 +84,7 @@ export function useNotificationRead() {
 }
 
 export function localToday() {
-  const d = new Date();
-
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return localDateKey(new Date());
 }
 
 export function scheduleDateLabel(start: string | undefined, due: string) {

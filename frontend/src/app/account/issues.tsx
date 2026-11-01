@@ -6,6 +6,7 @@ import { Button, Card, Chip, Empty, Input, Section } from '@/components/common/r
 import { FullScreenImageViewer } from '@/components/common/full-screen-image-viewer';
 import { useAccountUtilities } from '@/contexts/account-utilities-context';
 import { sharedStyles as s } from '@/styles/role-styles';
+import { RemovePhotoButton } from '@/components/common/remove-photo-button';
 
 export default function IssuesScreen() {
   const { issues, draft, setDraft, saveIssue } = useAccountUtilities();
@@ -105,16 +106,13 @@ export default function IssuesScreen() {
         />
 
         {!!draft.photo && (
-          <>
+          <View style={{ width: 128 }}>
             {photo(draft.photo)}
-
-            <Button
-              secondary
-              title="Bỏ ảnh"
+            <RemovePhotoButton
               disabled={busy}
               onPress={() => setDraft({ ...draft, photo: undefined })}
             />
-          </>
+          </View>
         )}
 
         <Button

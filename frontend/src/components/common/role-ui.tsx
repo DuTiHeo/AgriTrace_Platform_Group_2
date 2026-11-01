@@ -203,9 +203,7 @@ export function Status({
             ? 'Đã hoàn thành'
             : status === 'in_progress' || status === 'doing'
               ? 'Đang làm'
-              : status === 'incomplete'
-                ? 'Chưa hoàn thành'
-                : 'Chưa hoàn thành'
+              : 'Chưa hoàn thành'
       }
       tone={
         status === 'completed' || status === 'done'

@@ -8,7 +8,9 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "node review/check-api.cjs"
+    "test": "node review/check-api.cjs",
+    "theme:check": "node review/check-theme.cjs",
+    "theme:sync": "node review/check-theme.cjs --write"
   },
   "dependencies": {
     "lucide-react": "^1.48.0",

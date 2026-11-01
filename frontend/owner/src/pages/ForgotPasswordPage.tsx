@@ -47,7 +47,7 @@ function ForgotPasswordPage() {
     <main className="login-page recovery-page">
       <section className="login-brand-panel">
         <div className="login-brand-content">
-          <img src="/branding/logo.svg" alt="Farmer QuickLog" />
+          <img src="/branding/agrifarm.png" alt="AgriFarm" />
           <span>Khôi phục an toàn</span>
           <h1>Lấy lại quyền truy cập tài khoản quản trị.</h1>
           <p>Yêu cầu mã xác nhận bằng số điện thoại đã đăng ký để đặt lại mật khẩu.</p>

@@ -1,9 +1,7 @@
 import { useAccountUtilities } from '@/contexts/account-utilities-context';
 import { PersonalAvatarButton } from '@/components/common/personal-avatar-button';
 import { sharedStyles as s } from '@/styles/role-styles';
-export { sharedStyles as s } from '@/styles/role-styles';
 import { Button } from '@/components/common/role-ui';
-export { Avatar, Button, Card, Section, Input, Chip, Status, Empty, Row } from '@/components/common/role-ui';
 import { router, type Href } from 'expo-router';
 import { useState, type ReactNode, type RefObject, type PropsWithChildren } from 'react';
 import {
@@ -22,6 +20,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { SymbolView } from 'expo-symbols';
 import { useAuth } from '@/contexts/auth-context';
 import { useLeader } from '@/contexts/leader-context';
+export { sharedStyles as s } from '@/styles/role-styles';
+export { Avatar, Button, Card, Section, Input, Chip, Status, Empty, Row } from '@/components/common/role-ui';
 
 export const go = (path: string, id?: string) =>
   router.push(

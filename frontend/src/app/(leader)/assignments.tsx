@@ -1,6 +1,7 @@
 import { getTaskTypeLabel } from '@/constants/task-types';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
+import { useScopedState } from '@/hooks/use-scoped-state';
 import { Pressable, Text, View } from 'react-native';
 import { useLeader } from '@/contexts/leader-context';
 import { useWorkSchedule } from '@/contexts/work-schedule-context';
@@ -15,14 +16,12 @@ export default function AssignmentsScreen() {
   const { error, retry } = useWorkSchedule();
   useFocusEffect(useCallback(() => { void retry(); }, [retry]));
   const [period, setPeriod] = useState<JournalPeriod>('today');
-  const [limit, setLimit] = useState(10);
+  const [limit, setLimit] = useScopedState(10, JSON.stringify([period, taskId]));
 
   const assigned = tasks.filter(task => !task.owner && (!taskId || task.id === taskId))
     .sort((a, b) => (Date.parse(b.createdAt ?? '') || 0) - (Date.parse(a.createdAt ?? '') || 0));
   const filtered = taskId ? assigned : assigned.filter(task => period === 'all' || (!!task.createdAt && inJournalPeriod(task.createdAt, period)));
   const visible = filtered.slice(0, limit);
-
-  useEffect(() => { setLimit(10); }, [period, taskId]);
 
   return (
     <Screen
