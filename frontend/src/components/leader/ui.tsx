@@ -20,7 +20,7 @@ import type { ScrollViewProps } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { SymbolView } from 'expo-symbols';
 import { useAuth } from '@/contexts/auth_context';
-import { useLeader } from '@/contexts/leader_context';
+import { useNotifications } from '@/contexts/notification_context';
 export { sharedStyles as s } from '@/styles/role_styles';
 export { Avatar, Button, Card, Section, Input, Chip, Status, Empty, Row } from '@/components/common/role_ui';
 
@@ -59,8 +59,7 @@ export function Screen({
 }>) {
   const { user } = useAuth();
   const { showBadge } = useAccountUtilities();
-  const { notices } = useLeader();
-  const unread = notices.filter(n => !n.read).length;
+  const { unread } = useNotifications();
 
   return (
     <SafeAreaView

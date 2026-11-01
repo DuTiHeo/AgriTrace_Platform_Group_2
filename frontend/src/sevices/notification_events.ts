@@ -5,7 +5,6 @@ import type { WorkReport } from '@/contexts/report_context';
 import { getTaskTypeLabel } from '@/constants/task_types';
 import { reviewContent } from './log_review';
 import type { FarmingLog } from './farming_log.service';
-import { apiQuery, apiRequest } from './api_client';
 
 export function notificationLogs(logs: FarmingLog[], role: string | undefined, teamId: string | null | undefined, userId: string): FarmingLog[] {
   return logs.filter(log => role === 'worker' ? log.user_id === userId
@@ -67,36 +66,5 @@ export function buildLeaderNotices(tasks: ScheduledTask[], reports: WorkReport[]
   }
   return notices;
 }
-// Raw backend API. Existing event builders above remain unchanged.
-
-export type NotificationType = 'task_assigned' | 'log_note' | 'reminder' | 'error_report' | 'error_report_response';
-export type ApiNotification = {
-  notification_id: string;
-  user_id: string;
-  content: string;
-  // BE permits arbitrary notification types, including future additions.
-  type: string | null;
-  is_read: boolean;
-  created_at: string;
-};
-export type NotificationFilters = {
-  is_read?: boolean;
-  type?: string;
-  limit?: number;
-  offset?: number;
-};
-export type UnreadNotificationCount = { unread_count: number };
-export type MarkAllNotificationsReadResult = { updated_count: number; message: string };
-
-export const listNotifications = (token: string, filters: NotificationFilters = {}) =>
-  apiRequest<ApiNotification[]>(token, `/notifications${apiQuery(filters)}`);
-export const getNotification = (token: string, notificationId: string) =>
-  apiRequest<ApiNotification>(token, `/notifications/${encodeURIComponent(notificationId)}`);
-export const getUnreadNotificationCount = (token: string) =>
-  apiRequest<UnreadNotificationCount>(token, '/notifications/unread-count');
-export const markNotificationRead = (token: string, notificationId: string) =>
-  apiRequest<ApiNotification>(token, `/notifications/${encodeURIComponent(notificationId)}/read`, { method: 'PATCH' });
-export const markAllNotificationsRead = (token: string) =>
-  apiRequest<MarkAllNotificationsReadResult>(token, '/notifications/read-all', { method: 'PATCH' });
-export const deleteNotification = (token: string, notificationId: string) =>
-  apiRequest<void>(token, `/notifications/${encodeURIComponent(notificationId)}`, { method: 'DELETE' });
+// Shared API transport used by the mobile notification inbox.
+export * from './notification_api';

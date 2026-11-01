@@ -3,8 +3,6 @@ import { useAuth } from '@/contexts/auth_context';
 import { useWorkSchedule } from '@/contexts/work_schedule_context';
 import * as api from '@/sevices/farming_log.service';
 import { latestReview, reviewContent } from '@/sevices/log_review';
-import { sessionUserId } from '@/sevices/session_user';
-import { notificationLogs } from '@/sevices/notification_events';
 
 export type ReportDraft = {
   taskTitle: string;
@@ -64,41 +62,6 @@ function useReportState() {
     session.current = accessToken;
     return () => { session.current = null; };
   }, [accessToken]);
-  const [notificationReports, setNotificationReports] = useState<WorkReport[]>([]);
-  const [notificationsReady, setNotificationsReady] = useState(false);
-  const [notificationsError, setNotificationsError] = useState('');
-  const notificationSequence = useRef(0);
-  const refreshNotifications = useCallback(async () => {
-    if (!accessToken) return;
-    const sequence = ++notificationSequence.current;
-    try {
-      const userId = sessionUserId(accessToken);
-      if (!userId) throw new Error('Không xác định được tài khoản nhận thông báo. Vui lòng đăng nhập lại.');
-      const allLogs = notificationLogs(await api.listLogs(accessToken), role, teamId, userId);
-      const results = role === 'worker'
-        ? await Promise.allSettled(allLogs.map(log => api.getLog(accessToken, log.log_id)))
-        : allLogs.map(() => ({ status: 'rejected' as const }));
-      if (session.current !== accessToken || sequence !== notificationSequence.current) return;
-      setNotificationReports(allLogs.map((log, index) => {
-        const result = results[index];
-        return mapReport(log, result.status === 'fulfilled' ? result.value : undefined);
-      }));
-      setNotificationsError(role === 'worker' && results.some(result => result.status === 'rejected') ? 'Một số nhận xét hoặc đánh giá chưa tải được. Vui lòng thử lại.' : '');
-      setNotificationsReady(true);
-    } catch (e) {
-      if (session.current === accessToken && sequence === notificationSequence.current)
-        setNotificationsError(e instanceof Error ? e.message : 'Không tải được thông báo nhật ký.');
-    }
-  }, [accessToken, role, teamId]);
-  useEffect(() => {
-    ++notificationSequence.current;
-    // Clear the previous account's notifications before loading this account's events.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setNotificationReports([]);
-    setNotificationsReady(false);
-    setNotificationsError('');
-    void refreshNotifications();
-  }, [refreshNotifications]);
   const [cacheOwner, setCacheOwner] = useState(accessToken);
   const [logs, setLogs] = useState<api.FarmingLog[]>([]);
   const [details, setDetails] = useState<Record<string, api.FarmingLogDetail>>({});
@@ -440,10 +403,6 @@ function useReportState() {
   }
 
   return {
-    notificationReports,
-    notificationsReady,
-    notificationsError,
-    refreshNotifications,
     reports,
     drafts: cacheOwner === accessToken ? drafts : {},
     setDrafts,

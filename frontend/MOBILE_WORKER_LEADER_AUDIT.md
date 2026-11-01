@@ -15,13 +15,13 @@ Leader giao đúng Worker nhưng chọn ngày khác. API lấy việc của Work
 | Worker | Ghi mới; report_note; camera_report | Đã kiểm tra route tới form dùng chung, validation, GPS, ảnh, lưu và hoàn thành công việc. Chặn gửi nhật ký cho vùng khác rồi hoàn thành task ban đầu. Chưa kiểm tra camera/GPS thực trên Android. |
 | Worker | Nhật ký; tìm kiếm/thời gian/khu vực; chi tiết; ảnh/nhận xét | Không bỏ lịch sử chỉ vì mùa vụ đã kết thúc/không còn task. Gửi mới giữ danh sách và bộ lọc. Mở chi tiết tải lại dữ liệu; nhận xét/đánh giá không phụ thuộc vào việc đi từ thông báo. |
 | Worker | Cá nhân; thông tin cá nhân; đổi mật khẩu; đăng xuất | Hồ sơ dùng auth/me, đổi mật khẩu/đăng xuất gọi auth API. auth/me chưa trả ngày tham gia. Không tự bổ sung backend. |
-| Worker | Thông báo | Đang dựng sự kiện từ tasks/log notes; trạng thái đọc lưu AsyncStorage, chưa đồng bộ notification API. Đây là phần cần nối tiếp, không phải API đã thiếu. |
+| Worker | Thông báo | Đã nối notification API: lọc type, phân trang, số chưa đọc và đánh dấu đọc một/tất cả; trạng thái đọc lưu ở backend. |
 | Leader | Trang chủ; việc giao cho bản thân; bắt đầu/gửi nhật ký | Dùng ID trong phiên đăng nhập để nhận diện người nhận thay vì so số điện thoại. Bỏ khẳng định người tạo là Owner khi API không trả creator. |
 | Leader | Danh sách giao việc; bộ lọc; tạo; sửa; hủy | Bổ sung khai báo route edit_assignment. Nhiều người nhận dùng allSettled: giữ thành công, báo rõ thất bại; bỏ người đã giao thành công khỏi lựa chọn để tránh giao lại khi thử lại. Sửa/hủy lỗi một phần vẫn tải lại trạng thái thật. |
 | Leader | Nhật ký; lọc đánh giá; chi tiết; Đạt/Không đạt; nhận xét; ảnh | Không đánh rơi cache khi tải danh sách cùng phạm vi; cache chi tiết được làm mới sau 10 giây khi tải lại danh sách. Lọc đánh giá tải chi tiết cả tập ứng viên, tránh chỉ tải những dòng đang hiện rồi không tìm thấy Đạt/Không đạt. Chi tiết có cùng đánh giá/nhận xét như danh sách. |
 | Leader | Thành viên; lọc/tìm; chi tiết thành viên | Đối chiếu users role=worker và users/{id}; API kiểm soát quyền trong tổ. Ngày tham gia thành viên lấy created_at nếu API trả. Chưa chạy thử bằng tài khoản thật. |
 | Leader | Vùng trồng; Cá nhân; thông tin cá nhân | Vùng trồng lấy danh sách được phép từ API; hồ sơ cá nhân dùng component chung. Không sửa quyền backend. |
-| Leader | Thông báo; cài đặt; báo lỗi | Thông báo và trạng thái đọc còn cục bộ như Worker. Cài đặt badge chỉ áp dụng trong app. Báo lỗi đã nối POST/GET error-reports, phân trang và hiển thị phản hồi Admin; ảnh chỉ nhận URL. |
+| Leader | Thông báo; cài đặt; báo lỗi | Thông báo và trạng thái đọc đã dùng API như Worker. Cài đặt badge chỉ áp dụng trong app. Báo lỗi đã nối POST/GET error-reports, phân trang và hiển thị phản hồi Admin; ảnh chỉ nhận URL. |
 | Chung | Tab, quay lại, form phụ, auth/account routes | Test dùng hook điều hướng SDK58 thật từ expo-router và kiểm tra mọi file màn hình Worker/Leader được khai báo trong layout. Không dùng href:null để ẩn route có thể điều hướng. |
 
 ## Các lỗi dữ liệu đã sửa
@@ -35,7 +35,7 @@ Leader giao đúng Worker nhưng chọn ngày khác. API lấy việc của Work
 
 ## Còn thiếu hoặc cần xác minh riêng
 
-1. **Thông báo:** API `/notifications` và các lệnh đọc/đánh dấu đọc đã có service. UI mobile hiện dùng bộ dựng sự kiện + trạng thái đọc local. Chưa đồng bộ đã đọc giữa các thiết bị; chưa có push realtime. Các màn hình tải lại theo focus/polling.
+1. **Thông báo:** đã nối API `/notifications`, lọc theo type, phân trang, `/notifications/unread-count`, PATCH đọc một và đọc tất cả. UI và chuông dùng cùng context, trạng thái đọc lưu backend. Không còn dựng thông báo từ task/log hoặc lưu đã đọc local. Tải lại theo focus/polling; chưa có push realtime. DTO chưa có task_id/log_id/report_id nên nút xem liên quan mở danh sách, không đoán bản ghi bằng nội dung. Backend hiện không tạo thông báo cho Leader khi Worker tạo nhật ký mới; app chỉ hiện các thông báo thực sự có trong API.
 2. **Báo lỗi:** đã nối màn hình mobile với `/error-reports` để gửi và tải báo cáo của tài khoản, xem trạng thái và phản hồi Admin. API hiện nhận screenshot_url, không nhận trực tiếp file ảnh local; giao diện nhận URL http/https và không gửi file:// URI. Cần bổ sung luồng upload nếu muốn đính kèm ảnh từ điện thoại.
 3. **Nhật ký ↔ task:** schema FarmingLogCreate/FarmingLogSummary không có task_id. App gửi log và cập nhật completed bằng hai request độc lập. Không thể bảo đảm liên kết chính xác một đánh giá Không đạt với task sau khi tải lại chỉ bằng API hiện tại. Không ghép bằng tiêu đề vì có thể trùng. Nhật ký vẫn xem được đánh giá và lịch sử, nhưng “Công việc cần làm lại” theo task chưa thể xem là đầy đủ.
 4. **Ngày tham gia của chính Worker/Leader:** auth/me không trả created_at; quyền Worker không cho đọc users/{id}. Không lấy ngày đăng nhập thay thế ngày tham gia.
@@ -50,3 +50,5 @@ Leader giao đúng Worker nhưng chọn ngày khác. API lấy việc của Work
 - Không dùng Vite/Owner build để kết luận mobile đã hoạt động trên thiết bị.
 
 Kết quả cuối: 12 test mobile đạt; chạy toàn bộ `node --test test/*.test.cjs` có 23/23 test đạt. Kiểm thử giả lập không tạo công việc, nhật ký hay báo lỗi thật.
+
+Cập nhật nối thông báo Worker/Leader: bổ sung test phân trang/type, read/count, lỗi PATCH, chuyển tài khoản, phản hồi cũ và chặn bấm lặp trong `test/mobile_notifications.test.cjs`.

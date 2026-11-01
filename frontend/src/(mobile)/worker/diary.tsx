@@ -16,14 +16,17 @@ import { useScopedState } from '@/hooks/use_scoped_state';
 
 export default function WorkerDiaryScreen() {
   const { reports, refresh, loadReport, ensureReportDetails, loading, error, selectedSeasonId } = useReports();
-  const { reportId } = useLocalSearchParams<{ reportId?: string }>();
+  const { reportId, fromNotification } = useLocalSearchParams<{ reportId?: string; fromNotification?: string }>();
   const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
   const scrolledReport = useRef<string | null>(null);
   const { user } = useAuth();
   const [query, setQuery] = useState('');
-  const [period, setPeriod] = useState<JournalPeriod>('today');
+  const [period, setPeriod] = useState<JournalPeriod>(fromNotification === 'true' ? 'all' : 'today');
   const [limit, setLimit] = useScopedState(10, JSON.stringify([period, query, selectedSeasonId]));
   const [targetError, setTargetError] = useState('');
+  useFocusEffect(useCallback(() => {
+    if (fromNotification === 'true') { setPeriod('all'); setQuery(''); }
+  }, [fromNotification]));
 
   useFocusEffect(
     useCallback(() => {

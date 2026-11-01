@@ -1,8 +1,7 @@
 import { PartialAssignmentError, settleTaskRequests } from '@/sevices/task_batch';
-import { buildLeaderNotices } from '@/sevices/notification_events';
 import { DEFAULT_WORK_START_TIME, DEFAULT_WORK_END_TIME } from '@/constants/work_hours';
 import { useReports } from './report_context';
-import { useNotificationRead } from './notification_context';
+import { useNotifications } from './notification_context';
 import { useWorkSchedule } from './work_schedule_context';
 import { createContext, useCallback, useContext, useEffect, useState, type PropsWithChildren } from 'react';
 import { useAuth } from './auth_context';
@@ -111,7 +110,7 @@ function useLeaderState() {
     void loadMembers();
   }, [loadMembers]);
   const { leaderTasks, loadTasks, registerCreatedTasks } = useWorkSchedule();
-  const { reports, notificationReports, addReportComment } = useReports();
+  const { reports, addReportComment } = useReports();
   const tasks: Task[] = leaderTasks;
   const diaries: Diary[] = reports.map(r => ({
     id: r.id,
@@ -130,12 +129,7 @@ function useLeaderState() {
     }))
   }));
   const [draft, setDraft] = useState<Draft>(blankDraft);
-  const { readIds } = useNotificationRead();
-  const events = buildLeaderNotices(leaderTasks, notificationReports);
-  const notices = events.map(n => ({
-    ...n,
-    read: readIds.includes(n.id)
-  }));
+  const { notices } = useNotifications();
   const addTask = async (value: Omit<Task, 'id' | 'status' | 'displayStatus' | 'rawContent' | 'taskIds' | 'assignmentId'>) => {
     if (!accessToken || !user?.team_id || !value.plotId || !value.startDate)
       throw new Error('Thiếu thông tin tổ, lô đất hoặc ngày bắt đầu để giao việc.');

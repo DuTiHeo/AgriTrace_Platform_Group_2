@@ -59,10 +59,12 @@ liệu hoặc import backend để sinh mã. Các kiểm tra HTTP giả lập kh
 
 ## App Worker / Leader
 
-Các module dưới đây chỉ khai báo kiểu dữ liệu và hàm gọi API. Import module không
-tự gửi request. Các API mới chưa tích hợp vào màn hình hoặc context.
-Các hàm tổng hợp sự kiện sẵn có trong `notification-events.ts` tiếp tục phục vụ
-luồng thông báo hiện tại; các hàm API được bổ sung ngay trong file này.
+Import các service không tự gửi request. Form báo lỗi Worker/Leader đã dùng
+`error_report.service.ts`. Hộp thông báo và số trên chuông của cả hai role dùng
+`NotificationProvider` với API `/notifications`, không còn dựng sự kiện hoặc
+lưu trạng thái đã đọc bằng AsyncStorage. Bộ lọc gửi `type` qua mọi trang API;
+số chưa đọc lấy endpoint riêng và các thao tác đọc một/tất cả dùng PATCH.
+Tải lại khi mở màn hình, trở về app và định kỳ; chưa có push notification.
 Giữ tên thư mục `sevices` theo cấu trúc hiện có của app.
 
 | File | API | Phạm vi app |
@@ -72,7 +74,8 @@ Giữ tên thư mục `sevices` theo cấu trúc hiện có của app.
 | `api-client.ts` | Dùng `API_BASE_URL`, Bearer token, timeout 15 giây, query và JSON | Xử lý lỗi HTTP/mạng; hỗ trợ phản hồi rỗng 204 |
 | `error-report.service.ts` | Danh sách, chi tiết, tạo, xóa `/error-reports` | Worker/Leader xem báo cáo của mình; chỉ xóa khi trạng thái `new` |
 | `reminder.service.ts` | Danh sách, chi tiết `/reminders`, tạo, cập nhật, cập nhật trạng thái | Worker/Leader xem và cập nhật trạng thái; Leader được tạo/sửa nội dung |
-| `notification-events.ts` | Danh sách, chi tiết, số chưa đọc, đánh dấu đọc một/tất cả, xóa `/notifications` | Thông báo của tài khoản đang đăng nhập |
+| `notification_api.ts` | Danh sách, chi tiết, số chưa đọc, đánh dấu đọc một/tất cả, xóa `/notifications` | Bearer token của tài khoản đang đăng nhập |
+| `mobile_notifications.ts` | Phân trang, bộ lọc type, ánh xạ nội dung API | Dùng chung Worker và Leader; không suy đoán ID bản ghi liên quan |
 
 Quyền truy cập do backend kiểm tra. Những hàm dành riêng Admin/Owner (phản hồi
 báo cáo lỗi, phát hành/xóa nhắc nhở và `/system-logs`) không được bổ sung vào app.
