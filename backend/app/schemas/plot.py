@@ -4,6 +4,8 @@ from typing import Optional
 from uuid import UUID
 from pydantic import BaseModel, Field
 
+from app.schemas.organization import VN2000BoundaryInput
+
 
 class PlotStatus(str, Enum):
     active = "active"
@@ -12,18 +14,26 @@ class PlotStatus(str, Enum):
 
 class PlotBase(BaseModel):
     code: str = Field(..., max_length=50, description="Tên hoặc mã lô đất (VD: Lô A1), duy nhất trong nông trại")
-    area: Optional[float] = Field(None, ge=0, description="Diện tích (m² hoặc ha). Nếu để trống và có ranh giới, hệ thống tự tính")
+    area: Optional[float] = Field(None, ge=0, description="Diện tích (ha). Nếu để trống và có ranh giới, hệ thống tự tính")
     boundary_geojson: Optional[dict] = Field(None, description="Ranh giới lô đất dạng Polygon GeoJSON")
 
 
 class PlotCreate(PlotBase):
     org_id: UUID = Field(..., description="ID nông trại chứa lô đất này")
+    boundary_vn2000: Optional[VN2000BoundaryInput] = Field(
+        None,
+        description="Tọa độ ranh giới lô đất hệ VN-2000 (sẽ tự động quy đổi sang boundary_geojson WGS84)",
+    )
 
 
 class PlotUpdate(BaseModel):
     code: Optional[str] = Field(None, max_length=50)
     area: Optional[float] = Field(None, ge=0)
     boundary_geojson: Optional[dict] = None
+    boundary_vn2000: Optional[VN2000BoundaryInput] = Field(
+        None,
+        description="Tọa độ ranh giới lô đất hệ VN-2000 (sẽ tự động quy đổi sang boundary_geojson WGS84)",
+    )
     status: Optional[PlotStatus] = None
 
 

@@ -7,6 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from app.db.session import get_db
 from app.core.security import get_current_user
 from app.crud import plot as crud_plot
+from app.schemas.organization import VN2000BoundaryInput, VN2000ConvertOut
 from app.schemas.plot import (
     PlotCreate,
     PlotUpdate,
@@ -16,6 +17,7 @@ from app.schemas.plot import (
     PlotLocateResponse,
 )
 from app.routers.user import require_role, ensure_owns_org
+from app.utils.vn2000 import parse_central_meridian, vn2000_polygon_to_geojson
 
 router = APIRouter()
 
@@ -118,6 +120,30 @@ def locate_plot_by_gps(
     return plot
 
 
+@router.post("/convert-vn2000", response_model=VN2000ConvertOut)
+def convert_plot_vn2000_boundary(
+    payload: VN2000BoundaryInput,
+    current_user: dict = Depends(get_current_user),
+):
+    """Chuyển đổi danh sách đỉnh lô đất từ hệ tọa độ VN-2000 sang GeoJSON Polygon WGS84 (SRID 4326)."""
+    try:
+        lon_0 = parse_central_meridian(payload.central_meridian)
+        geojson = vn2000_polygon_to_geojson(
+            points=payload.points,
+            central_meridian=lon_0,
+            zone_width=payload.zone_width,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+
+    return VN2000ConvertOut(
+        boundary_geojson=geojson,
+        wgs84_vertices=geojson["coordinates"][0],
+        central_meridian=lon_0,
+        zone_width=payload.zone_width,
+    )
+
+
 @router.get("/{plot_id}", response_model=PlotDetail)
 def get_plot_detail(
     plot_id: UUID,
@@ -159,8 +185,19 @@ def create_plot(
             f"Ma lo '{payload.code}' da ton tai trong nong trai nay",
         )
 
-    if payload.boundary_geojson is not None:
-        within = crud_plot.is_within_org_boundary(db, payload.org_id, payload.boundary_geojson)
+    boundary_geojson = payload.boundary_geojson
+    if boundary_geojson is None and payload.boundary_vn2000 is not None:
+        try:
+            boundary_geojson = vn2000_polygon_to_geojson(
+                points=payload.boundary_vn2000.points,
+                central_meridian=payload.boundary_vn2000.central_meridian,
+                zone_width=payload.boundary_vn2000.zone_width,
+            )
+        except ValueError as exc:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(exc))
+
+    if boundary_geojson is not None:
+        within = crud_plot.is_within_org_boundary(db, payload.org_id, boundary_geojson)
         # within = None nghia la nong trai cha chua co ranh gioi (status='incomplete') ->
         # khong co gi de doi chieu nen cho qua, chi chan khi biet chac (within = False)
         if within is False:
@@ -174,7 +211,7 @@ def create_plot(
         org_id=payload.org_id,
         code=payload.code,
         area=payload.area,
-        boundary_geojson=payload.boundary_geojson,
+        boundary_geojson=boundary_geojson,
     )
 
 
@@ -193,6 +230,19 @@ def update_plot(
     ensure_owns_org(db, current_user, plot["org_id"])
 
     data = payload.model_dump(exclude_unset=True)
+    if "boundary_vn2000" in data:
+        vn2000_input = payload.boundary_vn2000
+        data.pop("boundary_vn2000", None)
+        if data.get("boundary_geojson") is None and vn2000_input is not None:
+            try:
+                data["boundary_geojson"] = vn2000_polygon_to_geojson(
+                    points=vn2000_input.points,
+                    central_meridian=vn2000_input.central_meridian,
+                    zone_width=vn2000_input.zone_width,
+                )
+            except ValueError as exc:
+                raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(exc))
+
     if not data:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Khong co du lieu cap nhat")
 

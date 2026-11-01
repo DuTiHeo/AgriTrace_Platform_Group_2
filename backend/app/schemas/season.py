@@ -19,6 +19,7 @@ class SeasonCreate(BaseModel):
         None,
         description="Ngày thu hoạch dự kiến (nếu không nhập, backend tự động tính theo số ngày sinh trưởng của giống)",
     )
+    notes: Optional[str] = Field(None, description="Ghi chú khi khởi tạo mùa vụ")
     assigned_team_ids: Optional[list[UUID]] = Field(
         default=[],
         description="Danh sách ID các tổ công nhân được phân công phụ trách ngay khi tạo mùa vụ",
@@ -28,6 +29,7 @@ class SeasonCreate(BaseModel):
 class SeasonUpdate(BaseModel):
     expected_harvest_date: Optional[date] = None
     actual_harvest_date: Optional[date] = None
+    notes: Optional[str] = Field(None, description="Ghi chú mùa vụ")
     status: Optional[SeasonStatus] = None
 
 
@@ -57,6 +59,7 @@ class SeasonSummary(BaseModel):
     planting_date: date
     expected_harvest_date: Optional[date] = None
     actual_harvest_date: Optional[date] = None
+    notes: Optional[str] = None
     status: str
     org_id: UUID
     assigned_team_names: list[str] = []

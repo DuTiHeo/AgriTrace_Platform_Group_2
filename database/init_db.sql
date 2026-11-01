@@ -166,12 +166,14 @@ CREATE TABLE seasons (
     planting_date           DATE NOT NULL,
     expected_harvest_date   DATE,
     actual_harvest_date     DATE,
+    notes                   TEXT,
     status                  VARCHAR(30) NOT NULL DEFAULT 'growing' CHECK (status IN ('growing', 'ready_to_harvest', 'completed')),
     created_at              TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at              TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 COMMENT ON TABLE seasons IS 'Mùa vụ canh tác trên một lô đất';
+COMMENT ON COLUMN seasons.notes IS 'Ghi chú mùa vụ canh tác';
 COMMENT ON COLUMN seasons.status IS 'growing | ready_to_harvest | completed';
 
 -- Index để kiểm tra nhanh lô đang có mùa vụ active

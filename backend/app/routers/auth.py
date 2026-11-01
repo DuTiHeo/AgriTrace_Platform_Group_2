@@ -30,13 +30,17 @@ def login(request: Request, payload: LoginRequest, db: Session = Depends(get_db)
 @router.get("/me", response_model=UserInformation)
 def me(current_user: dict = Depends(get_current_user)):
     return UserInformation(
+        user_id=str(current_user["user_id"]) if current_user.get("user_id") else None,
         full_name=current_user["full_name"],
         phone=current_user["phone"],
         national_id=current_user.get("national_id"),
+        date_of_birth=current_user.get("date_of_birth"),
         address=current_user.get("address"),
         role=current_user["role"],
+        status=current_user.get("status"),
         org_id=str(current_user["org_id"]) if current_user.get("org_id") else None,
         team_id=str(current_user["team_id"]) if current_user.get("team_id") else None,
+        created_at=current_user.get("created_at"),
     )
 
 @router.post("/logout")

@@ -16,7 +16,32 @@ Usecase | Method | Endpoint | Mo ta | Trang thai |
 |UC-SH01| POST | limiter thiết lập 5/minutes | Bất kể ai nhập đăng nhập quá 5 lần/1p -> Tạm khóa | Đã xong |
 |UC-SH02| POST | /auth/change-password |Đổi mật khẩu khi đăng nhập thành công | Đã xong |
 |UC-SH02| POST | /auth/forgot-password + OTP |Đổi mật khẩu khi quên mật khẩu| Chưa làm (để đợt 3) |
-|Null| GET | /auth/me | Lấy thông tin của người dùng hiện tại | Đã xong |
+|UC-SH01 + UC-SH02| GET | /auth/me | Lấy thông tin hồ sơ của người dùng hiện tại (`UserInformation`: bao gồm `user_id`, `full_name`, `phone`, `national_id`, `date_of_birth`, `address`, `role`, `status`, `org_id`, `team_id`, `created_at` - ngày gia nhập) | Đã xong |
+
+Ghi chú Request/Response chính cho `GET /auth/me` (`UserInformation`):
+
+```http
+GET /auth/me
+Authorization: Bearer <token>
+```
+
+- **Response thành công (200 OK - `UserInformation`)**:
+```json
+{
+  "user_id": "10000000-0000-0000-0000-000000000001",
+  "full_name": "Nguyễn Văn An",
+  "phone": "0901000001",
+  "national_id": "001085000001",
+  "date_of_birth": "1985-03-15",
+  "address": "Đồng Tâm, Hai Bà Trưng, Hà Nội",
+  "role": "owner",
+  "status": "active",
+  "org_id": "20000000-0000-0000-0000-000000000001",
+  "team_id": null,
+  "created_at": "2026-01-10T08:00:00+07:00"
+}
+```
+> **Lưu ý Backward Compatibility**: Các trường mở rộng (`user_id`, `date_of_birth`, `status`, `created_at`) được khai báo `Optional` bên cạnh toàn bộ các trường hiện hữu (`full_name`, `phone`, `national_id`, `address`, `role`, `org_id`, `team_id`), đảm bảo tương thích 100% với cả Mobile App và Owner Web.
 
 Đợt 1: Module User
 Usecase | Method | Endpoint | Mo ta | Trang thai |
@@ -45,10 +70,11 @@ Usecase | Method | Endpoint | Mo ta | Trang thai |
 Usecase | Method | Endpoint | Mo ta | Trang thai |
 |---|---|---|---|---|
 |UC-O01.1| GET | /organizations/mine | Owner xem danh sách nông trại mình sở hữu (dùng để chọn org trước khi gọi các API khác) | Đã xong |
+|UC-O01.1 + UC-O01.2| POST | /organizations/convert-vn2000 | Chuyển đổi danh sách đỉnh ranh giới từ hệ tọa độ phẳng VN-2000 (`x`: Northing, `y`: Easting, `central_meridian`, `zone_width` 3°/6°) sang GeoJSON Polygon WGS84 (SRID 4326). Đặt trước `/{org_id}` | Đã xong |
 |UC-SH04.1| GET | /organizations | Danh sách + tìm kiếm, scope theo role (Admin: all/lọc theo owner_id, Owner: chỉ farm mình sở hữu, Leader/Worker: farm trực thuộc) | Đã xong |
 |UC-SH04.1| GET | /organizations/{org_id} | Xem chi tiết 1 nông trại, kèm ranh giới GeoJSON và thống kê nhanh (số plot, số team, số mùa vụ đang hoạt động) | Đã xong |
-|UC-O01.1| POST | /organizations | Owner tự tạo nông trại (owner_id lấy từ token); hoặc Admin tạo hộ, tự chỉ định owner_id. Status tự động incomplete nếu chưa có ranh giới | Đã xong |
-|UC-O01.2 + UC-O01.3 + UC-O01.4/.5| PATCH | /organizations/{org_id} | Sửa tên/địa chỉ, đổi trạng thái (active/suspended/incomplete), hoặc cập nhật ranh giới Polygon. Nếu bổ sung ranh giới khi đang incomplete, tự chuyển sang active | Đã xong |
+|UC-O01.1| POST | /organizations | Owner tự tạo nông trại (owner_id lấy từ token); hoặc Admin tạo hộ, tự chỉ định owner_id. Hỗ trợ nhập ranh giới trực tiếp qua `boundary_geojson` (WGS84) hoặc `boundary_vn2000` (tự động quy đổi sang GeoJSON Polygon WGS84 SRID 4326). Status tự động incomplete nếu chưa có ranh giới | Đã xong |
+|UC-O01.2 + UC-O01.3 + UC-O01.4/.5| PATCH | /organizations/{org_id} | Sửa tên/địa chỉ, đổi trạng thái (active/suspended/incomplete), hoặc cập nhật ranh giới Polygon qua `boundary_geojson` hoặc `boundary_vn2000`. Nếu bổ sung ranh giới khi đang incomplete, tự chuyển sang active | Đã xong |
 |UC-O01.3| DELETE | /organizations/{org_id}?soft=true\|false | Xóa nông trại. Mặc định xóa mềm (chuyển status=suspended); soft=false xóa cứng — trả 400 nếu đã phát sinh dữ liệu liên quan (harvest_batches, error_reports) thay vì lỗi 500 | Đã xong |
 
 Đợt 1: Module Plot (Vùng trồng / Lô đất)
@@ -56,29 +82,133 @@ Usecase | Method | Endpoint | Mo ta | Trang thai |
 |---|---|---|---|---|
 |UC-SH04.1| GET | /plots | Danh sách + tìm kiếm, scope theo role (tương tự Organization), lọc thêm theo org_id/status/keyword | Đã xong |
 |UC-W03.4 + BR-14| GET | /plots/locate | Tự động suy luận Lô đất và Mùa vụ từ tọa độ GPS (PostGIS ST_Contains). Khóa chọn thủ công (BR-14, UC-W03.4, EX-15). Bắt buộc đứng trước GET /{plot_id} để tránh xung đột UUID | Đã xong |
+|UC-O02.1 + UC-O02.2| POST | /plots/convert-vn2000 | Chuyển đổi danh sách đỉnh lô đất từ hệ tọa độ phẳng VN-2000 sang GeoJSON Polygon WGS84 (SRID 4326). Đặt trước `/{plot_id}` | Đã xong |
 |UC-SH04.1| GET | /plots/{plot_id} | Xem chi tiết lô đất kèm ranh giới GeoJSON và mùa vụ đang canh tác hiện tại (nếu có) | Đã xong |
-|UC-O02.1| POST | /plots | Tạo lô đất mới thuộc 1 nông trại. Tự tính diện tích từ ranh giới nếu không nhập tay; chặn nếu ranh giới lô vượt ra ngoài ranh giới nông trại cha (ST_Contains) | Đã xong |
-|UC-O02.2| PATCH | /plots/{plot_id} | Sửa mã lô, diện tích, trạng thái hoặc ranh giới. Chặn sửa ranh giới nếu lô đang có mùa vụ hoạt động (growing/ready_to_harvest); ranh giới mới vẫn phải nằm trong nông trại cha | Đã xong |
+|UC-O02.1 + BR-01 + BR-02| POST | /plots | Tạo lô đất mới thuộc 1 nông trại. Hỗ trợ truyền `boundary_geojson` hoặc `boundary_vn2000` (tự động chuyển đổi sang GeoJSON Polygon WGS84 SRID 4326). Tự tính diện tích `area` theo đơn vị **ha** (`ST_Area / 10000`) nếu không nhập tay; chặn nếu ranh giới lô vượt ra ngoài ranh giới nông trại cha (`ST_Contains`) | Đã xong |
+|UC-O02.2 + BR-01 + BR-02| PATCH | /plots/{plot_id} | Sửa mã lô, diện tích, trạng thái hoặc ranh giới (`boundary_geojson` hoặc `boundary_vn2000`). Chặn sửa ranh giới nếu lô đang có mùa vụ hoạt động (growing/ready_to_harvest); ranh giới mới vẫn phải nằm trong nông trại cha; tự tính lại `area` theo đơn vị **ha** nếu cập nhật ranh giới mà không truyền `area` | Đã xong |
 |UC-O02.3| DELETE | /plots/{plot_id}?soft=true\|false | Xóa lô đất. Mặc định xóa mềm (status=inactive); luôn chặn nếu đang có mùa vụ hoạt động; soft=false trả 400 nếu lô đã có lịch sử mùa vụ/nhiệm vụ | Đã xong |
 
-Ghi chú nghiệp vụ và Request/Response chính cho Plot (Định vị tự động GPS - BR-14, UC-W03.4, EX-15):
+Ghi chú nghiệp vụ và Request/Response chính cho Organization & Plot (Chuyển đổi tọa độ VN-2000, Diện tích chuẩn ha & Định vị tự động GPS):
 
-1. **Nguyên tắc định vị không gian & Khóa chọn thủ công (`BR-14`, `UC-W03.4`)**:
+1. **Chuyển đổi Hệ tọa độ phẳng VN-2000 sang WGS84 SRID 4326 (`pyproj`)**:
+   - Hỗ trợ nhập tọa độ trích lục địa chính / sổ đỏ theo hệ quy chiếu **VN-2000** thông qua object `boundary_vn2000` (`VN2000BoundaryInput`) trong `POST /organizations`, `PATCH /organizations/{org_id}`, `POST /plots`, `PATCH /plots/{plot_id}`, hoặc gọi trực tiếp API chuyển đổi `POST /organizations/convert-vn2000` và `POST /plots/convert-vn2000`.
+   - **Quy ước trục tọa độ địa chính Việt Nam**:
+     - `x`: Tọa độ hướng Bắc (**Northing**, đơn vị mét, thường trong khoảng `900,000` – `2,600,000`).
+     - `y`: Tọa độ hướng Đông (**Easting**, đơn vị mét, thường trong khoảng `300,000` – `800,000`, `false_easting = 500000`).
+     - `central_meridian`: Kinh tuyến trục địa phương — chấp nhận số thực (`105.0`, `107.75`), chuỗi độ-phút (`"105°00'"`, `"107°45'"`, `"108°30'"`) hoặc tên tỉnh/thành phố (`"Ha Noi"`, `"Lam Dong"`, `"TP HCM"`, `"Dak Lak"`).
+     - `zone_width`: Múi chiếu `3` độ (mặc định cho bản đồ địa chính tỷ lệ lớn, `k_0 = 0.9999`) hoặc `6` độ (`k_0 = 0.9996`).
+   - Hệ thống sử dụng phép chiếu Transverse Mercator kèm 7 tham số Helmert chuẩn QĐ 05/2007/QĐ-BTNMT để quy đổi từng đỉnh sang `(longitude, latitude)` WGS84, tự động khép kín vòng đa giác (`ring[0] == ring[-1]`) và kiểm tra tính hợp lệ không gian PostGIS `ST_Contains` (`BR-01`).
+
+2. **Quy chuẩn diện tích tự tính `plots.area` theo đơn vị Hecta (`ha` - `BR-02`)**:
+   - Khi tạo mới hoặc cập nhật ranh giới lô đất mà không truyền trường `area`, Backend tự động tính diện tích mặt cầu từ đa giác WGS84 và quy đổi sang đơn vị **ha (hecta)** làm tròn 4 chữ số thập phân:
+     `ROUND((ST_Area(ST_SetSRID(ST_GeomFromGeoJSON(:boundary), 4326)::geography) / 10000.0)::numeric, 4)::double precision`
+
+3. **Nguyên tắc định vị không gian & Khóa chọn thủ công (`BR-14`, `UC-W03.4`)**:
    - Sử dụng hàm không gian PostGIS `ST_Contains(boundary_geojson, ST_SetSRID(ST_MakePoint(:longitude, :latitude), 4326))` để xác định Lô đất chứa tọa độ GPS. Lưu ý thứ tự trục PostGIS: kinh độ `longitude` (trục X), vĩ độ `latitude` (trục Y).
    - Truy vấn đồng thời mùa vụ đang hoạt động (`status IN ('growing', 'ready_to_harvest')`) và tên giống cây trồng tương ứng.
    - **Phân quyền & Cô lập dữ liệu**:
      - `worker`, `leader`: Tự động trích xuất `org_id` từ token người dùng (`current_user["org_id"]`), tuyệt đối không được truy vấn lô đất của nông trại khác.
      - `owner`: Lấy `org_id` từ query parameter (thẩm định quyền sở hữu qua `ensure_owns_org`) hoặc mặc định lấy nông trại active đầu tiên của mình.
      - `admin`: Bắt buộc truyền query parameter `org_id`.
-   - **Bất biến định tuyến FastAPI**: Route `GET /plots/locate` **BẮT BUỘC ĐỨNG TRƯỚC** `GET /plots/{plot_id}` để tránh xung đột định tuyến UUID (FastAPI parse nhầm `"locate"` thành UUID parameter gây lỗi `422 Unprocessable Entity`).
+   - **Bất biến định tuyến FastAPI**: Các route tĩnh `GET /plots/locate`, `POST /plots/convert-vn2000` **BẮT BUỘC ĐỨNG TRƯỚC** `GET /plots/{plot_id}` (và `POST /organizations/convert-vn2000` đứng trước `GET /organizations/{org_id}`) để tránh xung đột định tuyến UUID.
 
-2. **Query Parameters**:
-   - `latitude`: float (bắt buộc, `-90.0` đến `90.0`) - Vĩ độ GPS của thiết bị.
-   - `longitude`: float (bắt buộc, `-180.0` đến `180.0`) - Kinh độ GPS của thiết bị.
-   - `org_id`: UUID (tùy chọn với Owner, bắt buộc với Admin, tự động lấy từ token với Worker/Leader).
+4. **Ví dụ Request / Response**:
 
-3. **Ví dụ Request / Response**:
+- **Chuyển đổi tọa độ VN-2000 sang GeoJSON Polygon WGS84 (`POST /plots/convert-vn2000` hoặc `POST /organizations/convert-vn2000`)**:
+```http
+POST /plots/convert-vn2000
+Authorization: Bearer <token>
+Content-Type: application/json
+```
+```json
+{
+  "central_meridian": "105°00'",
+  "zone_width": 3,
+  "points": [
+    { "x": 2322650.0, "y": 587550.0 },
+    { "x": 2322650.0, "y": 587850.0 },
+    { "x": 2322920.0, "y": 587850.0 },
+    { "x": 2322920.0, "y": 587550.0 }
+  ]
+}
+```
+- **Response thành công (200 OK - `VN2000ConvertOut`)**:
+```json
+{
+  "boundary_geojson": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [105.841825, 20.999112],
+        [105.844711, 20.999096],
+        [105.844729, 21.001535],
+        [105.841843, 21.001551],
+        [105.841825, 20.999112]
+      ]
+    ]
+  },
+  "wgs84_vertices": [
+    [105.841825, 20.999112],
+    [105.844711, 20.999096],
+    [105.844729, 21.001535],
+    [105.841843, 21.001551],
+    [105.841825, 20.999112]
+  ],
+  "central_meridian": 105.0,
+  "zone_width": 3
+}
+```
 
+- **Tạo lô đất mới bằng tọa độ VN-2000 và tự động tính diện tích theo đơn vị `ha` (`POST /plots`)**:
+```http
+POST /plots
+Authorization: Bearer <token_owner_hoac_admin>
+Content-Type: application/json
+```
+```json
+{
+  "org_id": "20000000-0000-0000-0000-000000000001",
+  "code": "NEU-A1",
+  "boundary_vn2000": {
+    "central_meridian": "105°00'",
+    "zone_width": 3,
+    "points": [
+      { "x": 2322650.0, "y": 587550.0 },
+      { "x": 2322650.0, "y": 587650.0 },
+      { "x": 2322750.0, "y": 587650.0 },
+      { "x": 2322750.0, "y": 587550.0 }
+    ]
+  }
+}
+```
+- **Response thành công (201 Created - `PlotDetail`, diện tích `area` tự tính theo đơn vị `ha`)**:
+```json
+{
+  "plot_id": "30000000-0000-0000-0000-000000000099",
+  "org_id": "20000000-0000-0000-0000-000000000001",
+  "code": "NEU-A1",
+  "area": 1.0002,
+  "status": "active",
+  "current_season_id": null,
+  "current_crop_name": null,
+  "boundary_geojson": {
+    "type": "Polygon",
+    "coordinates": [
+      [
+        [105.841825, 20.999112],
+        [105.842787, 20.999107],
+        [105.842793, 21.000010],
+        [105.841831, 21.000015],
+        [105.841825, 20.999112]
+      ]
+    ]
+  },
+  "created_at": "2026-11-01T10:00:00+07:00",
+  "updated_at": "2026-11-01T10:00:00+07:00"
+}
+```
+
+- **Định vị lô đất từ tọa độ GPS (`GET /plots/locate`)**:
 ```http
 GET /plots/locate?latitude=21.000217&longitude=105.843090
 Authorization: Bearer <token_worker_hoac_leader>
@@ -87,10 +217,10 @@ Authorization: Bearer <token_worker_hoac_leader>
 - **Response thành công (200 OK - `PlotLocateResponse`)**:
 ```json
 {
-  "plot_id": "40000000-0000-0000-0000-000000000001",
+  "plot_id": "30000000-0000-0000-0000-000000000001",
   "org_id": "20000000-0000-0000-0000-000000000001",
   "code": "DL-01",
-  "area": 5000.0,
+  "area": 0.83,
   "status": "active",
   "current_season_id": "70000000-0000-0000-0000-000000000001",
   "current_crop_name": "Xà lách Lollo Rossa"
@@ -105,7 +235,7 @@ Authorization: Bearer <token_worker_hoac_leader>
 ```
 
 - **Các mã lỗi khác**:
-  - `400 Bad Request`: Người dùng chưa thuộc nông trại nào / Admin thiếu tham số `org_id`.
+  - `400 Bad Request`: Người dùng chưa thuộc nông trại nào / Admin thiếu tham số `org_id` / Tọa độ VN-2000 ít hơn 3 đỉnh phân biệt hoặc rơi ngoài phạm vi lãnh thổ Việt Nam / Đa giác lô đất vượt ra ngoài ranh giới nông trại cha (`EX-01`).
   - `401 Unauthorized`: Chưa đăng nhập hoặc Access Token không hợp lệ / hết hạn (`EX-05`).
   - `403 Forbidden`: Người dùng không có quyền truy cập nông trại chỉ định (`EX-06`).
   - `422 Unprocessable Entity`: Thiếu hoặc sai định dạng tham số tọa độ (ví dụ vĩ độ ngoài khoảng `[-90, 90]`).
@@ -124,13 +254,61 @@ Usecase | Method | Endpoint | Mo ta | Trang thai |
 Đợt 1: Module Season (Mùa vụ canh tác)
 Usecase | Method | Endpoint | Mo ta | Trang thai |
 |---|---|---|---|---|
-|UC-SH04.1| GET | /seasons | Danh sách + tìm kiếm mùa vụ, lọc theo org/plot/crop/status/team, scope theo role | Đã xong |
-|UC-SH04.1 + UC-O03.5| GET | /seasons/{season_id} | Xem chi tiết mùa vụ kèm lịch nhắc nhở tự sinh (reminder_schedules) và danh sách tổ đang hỗ trợ | Đã xong |
-|UC-O03.1 + UC-O03.2 + UC-O03.3| POST | /seasons | Khởi tạo mùa vụ. Tự tính ngày thu hoạch dự kiến nếu không nhập; tự sinh reminder_schedules theo mốc chăm sóc chuẩn của giống cây (crop_care_milestones); chặn nếu lô đã có mùa vụ khác đang hoạt động | Đã xong |
-|UC-O03.4| PATCH | /seasons/{season_id} | Cập nhật ngày thu hoạch thực tế / trạng thái mùa vụ | Đã xong |
+|UC-SH04.1| GET | /seasons | Danh sách + tìm kiếm mùa vụ (`SeasonSummary`: bao gồm cả trường `notes` - ghi chú mùa vụ), lọc theo org/plot/crop/status/team, scope theo role | Đã xong |
+|UC-SH04.1 + UC-O03.5| GET | /seasons/{season_id} | Xem chi tiết mùa vụ (`SeasonDetail`: bao gồm `notes`, `planting_guide`, `growth_days`, `farming_logs_count`) kèm lịch nhắc nhở tự sinh (`reminder_schedules`) và danh sách tổ đang hỗ trợ | Đã xong |
+|UC-O03.1 + UC-O03.2 + UC-O03.3| POST | /seasons | Khởi tạo mùa vụ (hỗ trợ truyền `notes` - ghi chú mùa vụ). Tự tính ngày thu hoạch dự kiến nếu không nhập; tự sinh `reminder_schedules` theo mốc chăm sóc chuẩn của giống cây (`crop_care_milestones`); chặn nếu lô đã có mùa vụ khác đang hoạt động | Đã xong |
+|UC-O03.4| PATCH | /seasons/{season_id} | Cập nhật ngày thu hoạch dự kiến / thực tế, ghi chú mùa vụ (`notes`) hoặc trạng thái mùa vụ (`status`) | Đã xong |
 |-| DELETE | /seasons/{season_id} | Xóa mùa vụ. Chặn nếu đã có nhật ký canh tác hoặc đã được gom vào lô thu hoạch | Đã xong |
 |-| POST | /seasons/{season_id}/teams | Gán thêm tổ hỗ trợ mùa vụ | Đã xong |
 |-| DELETE | /seasons/{season_id}/teams/{team_id} | Hủy gán tổ khỏi mùa vụ | Đã xong |
+
+Ghi chú Request/Response chính cho Season (Hỗ trợ trường `notes` - Ghi chú mùa vụ):
+
+```json
+// POST /seasons - Khởi tạo mùa vụ kèm ghi chú (notes là tùy chọn)
+{
+  "plot_id": "30000000-0000-0000-0000-000000000001",
+  "crop_id": "60000000-0000-0000-0000-000000000001",
+  "planting_date": "2026-10-01",
+  "notes": "Canh tác nhà màng công nghệ cao tại Nông trại Thực nghiệm NEU, tưới nhỏ giọt tự động.",
+  "assigned_team_ids": [
+    "50000000-0000-0000-0000-000000000001"
+  ]
+}
+```
+
+```json
+// PATCH /seasons/{season_id} - Cập nhật ghi chú hoặc trạng thái mùa vụ
+{
+  "notes": "Đã bổ sung lưới chắn côn trùng và điều chỉnh nồng độ dinh dưỡng thủy canh.",
+  "status": "ready_to_harvest"
+}
+```
+
+```json
+// Response (SeasonDetail - 200 OK / 201 Created):
+{
+  "season_id": "70000000-0000-0000-0000-000000000001",
+  "plot_id": "30000000-0000-0000-0000-000000000001",
+  "plot_code": "DL-01",
+  "crop_id": "60000000-0000-0000-0000-000000000001",
+  "crop_name": "Xà lách Lollo Rossa",
+  "planting_date": "2026-10-01",
+  "expected_harvest_date": "2026-11-15",
+  "actual_harvest_date": null,
+  "notes": "Canh tác nhà màng công nghệ cao tại Nông trại Thực nghiệm NEU, tưới nhỏ giọt tự động.",
+  "status": "growing",
+  "org_id": "20000000-0000-0000-0000-000000000001",
+  "assigned_team_names": ["Tổ 1 - Nông trại NEU"],
+  "planting_guide": "Giữ ẩm 70-80%, thu hoạch sau 45 ngày",
+  "growth_days": 45,
+  "reminders": [],
+  "teams": [],
+  "farming_logs_count": 5,
+  "created_at": "2026-10-01T08:00:00+07:00",
+  "updated_at": "2026-11-01T09:00:00+07:00"
+}
+```
 
 Đợt 2: Module FarmingLog + LogPhoto
 Usecase | Method | Endpoint | Mo ta | Trang thai |
@@ -322,7 +500,7 @@ Ghi chú nghiệp vụ, Enum và Request/Response chính cho Tasks:
   "plot_id": "40000000-0000-0000-0000-000000000001",
   "plot_code": "PLOT-DL-01",
   "org_id": "20000000-0000-0000-0000-000000000001",
-  "org_name": "Nông trại Xanh Đà Lạt",
+  "org_name": "Nông trại Thực nghiệm NEU",
   "content": "Kiem tra sau benh va phun thuoc luong 1-3",
   "start_at": "2026-10-05T08:00:00+07:00",
   "due_at": "2026-10-05T17:00:00+07:00",
@@ -416,7 +594,7 @@ Ghi chú nghiệp vụ, Enum và Request/Response chính cho Tasks:
     "plot_id": "40000000-0000-0000-0000-000000000001",
     "plot_code": "PLOT-DL-01",
     "org_id": "20000000-0000-0000-0000-000000000001",
-    "org_name": "Nông trại Xanh Đà Lạt",
+    "org_name": "Nông trại Thực nghiệm NEU",
     "content": "Phun thuoc phong tru ray nau dot 2",
     "start_at": "2026-09-10T08:00:00+07:00",
     "due_at": "2026-09-11T17:00:00+07:00",
@@ -441,7 +619,7 @@ Ghi chú nghiệp vụ, Enum và Request/Response chính cho Tasks:
   "plot_id": "40000000-0000-0000-0000-000000000001",
   "plot_code": "PLOT-DL-01",
   "org_id": "20000000-0000-0000-0000-000000000001",
-  "org_name": "Nông trại Xanh Đà Lạt",
+  "org_name": "Nông trại Thực nghiệm NEU",
   "content": "Kiem tra sau benh va phun thuoc luong 1-3",
   "start_at": "2026-10-05T08:00:00+07:00",
   "due_at": "2026-10-05T17:00:00+07:00",
@@ -786,34 +964,61 @@ Content-Type: application/json
 Usecase | Method | Endpoint | Mo ta | Trang thai |
 |---|---|---|---|---|
 |UC-SH03 + UC-A03.1| GET | /error-reports | Danh sách + lọc báo cáo sự cố (status, error_type, org_id, user_id, phân trang limit 1..100, offset >= 0). Admin xem all; Owner xem farm mình; Worker/Leader xem báo cáo do mình gửi | Đã xong |
+|UC-SH03| POST | /error-reports/upload-screenshot | Tải lên ảnh chụp màn hình sự cố trước khi gửi form `POST /error-reports` (`multipart/form-data`, key `file`; chấp nhận `.jpg`, `.jpeg`, `.png`, `.webp` <= 5MB; lưu tại `/uploads/error-reports/{uuid}{ext}`). Đặt trước `/{report_id}` | Đã xong |
 |UC-SH03| POST | /error-reports | Người dùng gửi báo cáo sự cố kỹ thuật/phần mềm (tự động gán user_id và org_id từ token). Tự động kích hoạt Trigger gửi thông báo cho tất cả Admin đang hoạt động | Đã xong |
 |UC-SH03 + UC-A03.1| GET | /error-reports/{report_id} | Xem chi tiết 1 báo cáo sự cố kèm phản hồi từ Quản trị viên (kiểm tra quyền truy cập Data Isolation) | Đã xong |
-|UC-A03.2| PATCH | /error-reports/{report_id} | Admin cập nhật tiến độ (processing, resolved, rejected) và phản hồi hướng dẫn xử lý (admin_response). Tự động kích hoạt Trigger gửi thông báo phản hồi cho người gửi | Đã xong |
+|UC-SH03| POST | /error-reports/{report_id}/screenshot | Đính kèm hoặc cập nhật trực tiếp ảnh chụp màn hình cho báo cáo lỗi đã tồn tại (`multipart/form-data`, key `file`; kiểm tra quyền truy cập `_ensure_can_access_report`) | Đã xong |
+|UC-A03.2| PATCH | /error-reports/{report_id} | Admin cập nhật tiến độ (processing, resolved, rejected), phản hồi hướng dẫn xử lý (`admin_response`) hoặc đường dẫn ảnh (`screenshot_url`). Tự động kích hoạt Trigger gửi thông báo phản hồi cho người gửi | Đã xong |
 |UC-SH03 + UC-A03.1| DELETE | /error-reports/{report_id} | Xóa báo cáo sự cố (204 No Content). Admin xóa bất kỳ báo cáo nào; Người dùng chỉ được xóa báo cáo của chính mình khi status='new' (chặn xóa khi đã tiếp nhận xử lý) | Đã xong |
 
 Ghi chú nghiệp vụ, Enum, Database Triggers và Request/Response chính cho ErrorReports:
 
 1. **Phân quyền nghiệp vụ (`UC-SH03`, `UC-A03.1`, `UC-A03.2`)**:
-   - `admin`: Xem tất cả báo cáo hệ thống hoặc lọc theo `org_id` / `user_id`, cập nhật trạng thái/phản hồi xử lý (`admin_response`), xóa báo cáo bất kỳ lúc nào.
-   - `owner`: Xem các báo cáo phát sinh tại các nông trại mình sở hữu (`report.owner_id == user_id` hoặc cùng `org_id`), gửi báo cáo sự cố mới.
-   - `leader`, `worker`: Chỉ xem và quản lý các báo cáo do chính tài khoản của mình gửi (`report.user_id == current_user["user_id"]`).
+   - `admin`: Xem tất cả báo cáo hệ thống hoặc lọc theo `org_id` / `user_id`, cập nhật trạng thái/phản hồi xử lý (`admin_response`), đính kèm ảnh chụp màn hình, xóa báo cáo bất kỳ lúc nào.
+   - `owner`: Xem các báo cáo phát sinh tại các nông trại mình sở hữu (`report.owner_id == user_id` hoặc cùng `org_id`), gửi báo cáo sự cố mới và đính kèm ảnh chụp màn hình cho báo cáo thuộc nông trại mình.
+   - `leader`, `worker`: Chỉ xem, đính kèm ảnh chụp màn hình và quản lý các báo cáo do chính tài khoản của mình gửi (`report.user_id == current_user["user_id"]`).
 
-2. **Quy tắc xóa an toàn (Safe Deletion Rule)**:
+2. **Quy chuẩn Tải ảnh chụp màn hình báo lỗi (`POST /error-reports/upload-screenshot` & `POST /error-reports/{report_id}/screenshot`)**:
+   - Sử dụng `multipart/form-data` với tên trường là `file`.
+   - Định dạng cho phép: `.jpg`, `.jpeg`, `.png`, `.webp` (`image/jpeg`, `image/png`, `image/webp` hoặc `application/octet-stream` từ thiết bị di động).
+   - Kích thước tối đa: `5MB` (`5 * 1024 * 1024` bytes), không chấp nhận file rỗng (`0` byte).
+   - Lưu trữ tĩnh tại thư mục `uploads/error-reports/{uuid}.{ext}` và trả về đường dẫn công khai `/uploads/error-reports/{uuid}.{ext}` (truy cập qua `http://localhost:8000/uploads/error-reports/...`).
+   - **Bất biến định tuyến FastAPI**: Route `POST /error-reports/upload-screenshot` **BẮT BUỘC ĐỨNG TRƯỚC** `GET /error-reports/{report_id}` để tránh xung đột định tuyến UUID.
+
+3. **Quy tắc xóa an toàn (Safe Deletion Rule)**:
    - Người dùng thông thường (`worker`, `leader`, `owner`) chỉ được phép xóa báo cáo của chính mình khi `status == 'new'`.
    - Nếu báo cáo đã được Admin tiếp nhận hoặc chuyển sang `processing`, `resolved`, `rejected`, yêu cầu xóa sẽ bị chặn với mã lỗi `400 Bad Request`: `"Không thể xóa báo cáo đã được tiếp nhận xử lý"`.
 
-3. **Cơ chế Database Triggers tự động**:
+4. **Cơ chế Database Triggers tự động**:
    - **Trigger 2 (`trg_notify_on_error_report_created`)**: Khi có báo cáo mới được tạo (`INSERT ON error_reports`), trigger tự động tìm tất cả Admin đang hoạt động (`users.role = 'admin' AND users.status = 'active'`) và chèn thông báo vào `notifications` với `type = 'error_report'`, nội dung: `'Có báo cáo lỗi mới cần xử lý'`.
    - **Trigger 3 (`trg_notify_on_error_report_resolved`)**: Khi Admin cập nhật phản hồi hoặc trạng thái (`UPDATE ON error_reports` có `admin_response IS NOT NULL` hoặc chuyển sang `processing`, `resolved`, `rejected`), trigger tự động gửi thông báo đến người gửi báo cáo (`NEW.user_id`) với `type = 'error_report_response'`, nội dung: `'Báo cáo lỗi của bạn đã được Admin phản hồi: ' || COALESCE(NEW.admin_response, 'Trạng thái: ' || NEW.status)`.
 
-4. **Enum hỗ trợ**:
+5. **Enum hỗ trợ**:
    - `ErrorReportStatus`: `new` (Mới tiếp nhận), `processing` (Đang xử lý), `resolved` (Đã giải quyết), `rejected` (Từ chối).
    - `ErrorReportCategory`: `interface` (Giao diện), `data` (Dữ liệu), `performance` (Hiệu năng), `bug` (Lỗi logic), `other` (Khác).
 
-5. **Ví dụ Request / Response**:
+6. **Ví dụ Request / Response**:
 
 ```http
-# 1. POST /error-reports - Gửi báo cáo sự cố kỹ thuật mới
+# 0. POST /error-reports/upload-screenshot - Tải lên ảnh chụp màn hình sự cố (multipart/form-data)
+POST /error-reports/upload-screenshot
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+
+KEY: file (Type: File) -> VALUE: screenshot_bug.png
+```
+
+- **Response thành công (201 Created - `ErrorScreenshotUploadOut`)**:
+```json
+{
+  "screenshot_url": "/uploads/error-reports/8f14e45fceea167a5a36dedd4bea2543.png",
+  "filename": "8f14e45fceea167a5a36dedd4bea2543.png",
+  "size_bytes": 142850
+}
+```
+
+```http
+# 1. POST /error-reports - Gửi báo cáo sự cố kỹ thuật mới (gắn screenshot_url vừa tải lên)
 POST /error-reports
 Authorization: Bearer <token>
 Content-Type: application/json
@@ -821,7 +1026,7 @@ Content-Type: application/json
 {
   "error_type": "bug",
   "description": "Nút bấm Ghi nhật ký nhanh bị đơ không phản hồi khi chụp 3 ảnh liên tiếp trên Android",
-  "screenshot_url": "https://cdn.agritrace.vn/reports/screenshot-android-01.png"
+  "screenshot_url": "/uploads/error-reports/8f14e45fceea167a5a36dedd4bea2543.png"
 }
 ```
 
@@ -833,10 +1038,10 @@ Content-Type: application/json
   "user_full_name": "Phạm Thị Dung",
   "user_phone": "0901000003",
   "org_id": "20000000-0000-0000-0000-000000000001",
-  "org_name": "Nông trại Xanh Đà Lạt",
+  "org_name": "Nông trại Thực nghiệm NEU",
   "error_type": "bug",
   "description": "Nút bấm Ghi nhật ký nhanh bị đơ không phản hồi khi chụp 3 ảnh liên tiếp trên Android",
-  "screenshot_url": "https://cdn.agritrace.vn/reports/screenshot-android-01.png",
+  "screenshot_url": "/uploads/error-reports/8f14e45fceea167a5a36dedd4bea2543.png",
   "status": "new",
   "admin_response": null,
   "submitted_at": "2026-10-29T10:15:00+07:00",
@@ -845,7 +1050,35 @@ Content-Type: application/json
 ```
 
 ```http
-# 2. PATCH /error-reports/{report_id} - Admin cập nhật phản hồi và trạng thái
+# 2. POST /error-reports/{report_id}/screenshot - Đính kèm/cập nhật trực tiếp ảnh chụp màn hình vào báo cáo đã có
+POST /error-reports/b0000000-0000-0000-0000-000000000001/screenshot
+Authorization: Bearer <token>
+Content-Type: multipart/form-data
+
+KEY: file (Type: File) -> VALUE: screenshot_updated.jpg
+```
+
+- **Response thành công (200 OK - `ErrorReportOut`)**:
+```json
+{
+  "report_id": "b0000000-0000-0000-0000-000000000001",
+  "user_id": "10000000-0000-0000-0000-000000000003",
+  "user_full_name": "Phạm Thị Dung",
+  "user_phone": "0901000003",
+  "org_id": "20000000-0000-0000-0000-000000000001",
+  "org_name": "Nông trại Thực nghiệm NEU",
+  "error_type": "bug",
+  "description": "Nút bấm Ghi nhật ký nhanh bị đơ không phản hồi khi chụp 3 ảnh liên tiếp trên Android",
+  "screenshot_url": "/uploads/error-reports/9a25f56gdffb278b6b47efee5cfb3654.jpg",
+  "status": "new",
+  "admin_response": null,
+  "submitted_at": "2026-10-29T10:15:00+07:00",
+  "updated_at": "2026-10-29T10:16:30+07:00"
+}
+```
+
+```http
+# 3. PATCH /error-reports/{report_id} - Admin cập nhật phản hồi và trạng thái
 PATCH /error-reports/b0000000-0000-0000-0000-000000000001
 Authorization: Bearer <token_admin>
 Content-Type: application/json
@@ -864,10 +1097,10 @@ Content-Type: application/json
   "user_full_name": "Phạm Thị Dung",
   "user_phone": "0901000003",
   "org_id": "20000000-0000-0000-0000-000000000001",
-  "org_name": "Nông trại Xanh Đà Lạt",
+  "org_name": "Nông trại Thực nghiệm NEU",
   "error_type": "bug",
   "description": "Nút bấm Ghi nhật ký nhanh bị đơ không phản hồi khi chụp 3 ảnh liên tiếp trên Android",
-  "screenshot_url": "https://cdn.agritrace.vn/reports/screenshot-android-01.png",
+  "screenshot_url": "/uploads/error-reports/9a25f56gdffb278b6b47efee5cfb3654.jpg",
   "status": "resolved",
   "admin_response": "Đã sửa lỗi tràn bộ nhớ nén ảnh trên phiên bản v1.0.4. Vui lòng cập nhật ứng dụng.",
   "submitted_at": "2026-10-29T10:15:00+07:00",
@@ -876,9 +1109,9 @@ Content-Type: application/json
 ```
 
 - **Các phản hồi lỗi ngoại lệ chuẩn hóa**:
-  - `400 Bad Request`: Thiếu thông tin nông trại liên kết hoặc xóa báo cáo khi trạng thái không phải `new`.
+  - `400 Bad Request`: Thiếu thông tin nông trại liên kết / xóa báo cáo khi trạng thái không phải `new` / file ảnh chụp màn hình sai định dạng (không phải `.jpg`, `.jpeg`, `.png`, `.webp`), vượt quá `5MB` hoặc file rỗng `0` byte.
   - `401 Unauthorized`: Chưa đăng nhập hoặc token không hợp lệ (`EX-05`).
-  - `403 Forbidden`: Người dùng không có quyền truy cập báo cáo của người khác hoặc không phải Admin khi phản hồi (`EX-06`).
+  - `403 Forbidden`: Người dùng không có quyền truy cập / đính kèm ảnh vào báo cáo của người khác hoặc không phải Admin khi phản hồi (`EX-06`).
   - `404 Not Found`: Không tìm thấy báo cáo sự cố (`EX-04`).
   - `422 Unprocessable Entity`: Sai định dạng UUID, độ dài mô tả < 5 ký tự hoặc enum trạng thái không hợp lệ.
 
