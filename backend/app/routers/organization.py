@@ -13,8 +13,11 @@ from app.schemas.organization import (
     OrganizationSummary,
     OrganizationDetail,
     OrganizationStatus,
+    VN2000BoundaryInput,
+    VN2000ConvertOut,
 )
 from app.routers.user import require_role, ensure_owns_org
+from app.utils.vn2000 import parse_central_meridian, vn2000_polygon_to_geojson
 
 router = APIRouter()
 
@@ -26,6 +29,30 @@ def list_my_organizations(
 ):
     """Danh sach nong trai ma Owner dang so huu (de FE hien thi dropdown chon)."""
     return crud_org.get_orgs_owned_by(db, current_user["user_id"])
+
+
+@router.post("/convert-vn2000", response_model=VN2000ConvertOut)
+def convert_organization_vn2000_boundary(
+    payload: VN2000BoundaryInput,
+    current_user: dict = Depends(get_current_user),
+):
+    """Chuyển đổi danh sách đỉnh ranh giới hệ tọa độ VN-2000 sang GeoJSON Polygon WGS84 (SRID 4326)."""
+    try:
+        lon_0 = parse_central_meridian(payload.central_meridian)
+        geojson = vn2000_polygon_to_geojson(
+            points=payload.points,
+            central_meridian=lon_0,
+            zone_width=payload.zone_width,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+
+    return VN2000ConvertOut(
+        boundary_geojson=geojson,
+        wgs84_vertices=geojson["coordinates"][0],
+        central_meridian=lon_0,
+        zone_width=payload.zone_width,
+    )
 
 
 @router.get("", response_model=list[OrganizationSummary])
@@ -110,12 +137,23 @@ def create_organization(
     else:
         target_owner_id = current_user["user_id"]
 
+    boundary_geojson = payload.boundary_geojson
+    if boundary_geojson is None and payload.boundary_vn2000 is not None:
+        try:
+            boundary_geojson = vn2000_polygon_to_geojson(
+                points=payload.boundary_vn2000.points,
+                central_meridian=payload.boundary_vn2000.central_meridian,
+                zone_width=payload.boundary_vn2000.zone_width,
+            )
+        except ValueError as exc:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(exc))
+
     org = crud_org.create_organization(
         db,
         name=payload.name,
         address=payload.address,
         owner_id=target_owner_id,
-        boundary_geojson=payload.boundary_geojson,
+        boundary_geojson=boundary_geojson,
     )
     stats = crud_org.get_org_stats(db, org["org_id"])
     org.update(stats)
@@ -137,6 +175,19 @@ def update_organization(
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Khong tim thay nong trai")
 
     data = payload.model_dump(exclude_unset=True)
+    if "boundary_vn2000" in data:
+        vn2000_input = payload.boundary_vn2000
+        data.pop("boundary_vn2000", None)
+        if data.get("boundary_geojson") is None and vn2000_input is not None:
+            try:
+                data["boundary_geojson"] = vn2000_polygon_to_geojson(
+                    points=vn2000_input.points,
+                    central_meridian=vn2000_input.central_meridian,
+                    zone_width=vn2000_input.zone_width,
+                )
+            except ValueError as exc:
+                raise HTTPException(status.HTTP_400_BAD_REQUEST, detail=str(exc))
+
     if not data:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Khong co du lieu cap nhat")
 
