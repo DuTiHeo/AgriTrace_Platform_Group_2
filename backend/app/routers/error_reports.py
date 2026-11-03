@@ -1,8 +1,10 @@
 # backend/app/routers/error_reports.py
+import os
+from pathlib import Path
 from typing import Optional
-from uuid import UUID
+from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
@@ -15,9 +17,23 @@ from app.schemas.error_reports import (
     ErrorReportOut,
     ErrorReportStatus,
     ErrorReportUpdate,
+    ErrorScreenshotUploadOut,
 )
 
 router = APIRouter()
+
+UPLOAD_ROOT = Path(os.getenv("UPLOAD_DIR", "uploads"))
+ERROR_REPORT_UPLOAD_DIR = UPLOAD_ROOT / "error-reports"
+MAX_SCREENSHOT_BYTES = 5 * 1024 * 1024
+ALLOWED_SCREENSHOT_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
+ALLOWED_SCREENSHOT_MIME_TYPES = {
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/webp",
+    "application/octet-stream",
+    "",
+}
 
 
 def _ensure_can_access_report(report: dict, current_user: dict, db: Session) -> None:
@@ -34,6 +50,42 @@ def _ensure_can_access_report(report: dict, current_user: dict, db: Session) -> 
         if report["user_id"] == current_user["user_id"]:
             return
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Bạn không có quyền truy cập báo cáo này")
+
+
+async def _save_error_screenshot(file: UploadFile) -> tuple[str, str, int]:
+    """Kiểm tra định dạng, kích thước và lưu file ảnh chụp màn hình vào /uploads/error-reports/."""
+    extension = Path(file.filename or "").suffix.lower()
+    if extension not in ALLOWED_SCREENSHOT_EXTENSIONS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Chỉ chấp nhận ảnh định dạng .jpg, .jpeg, .png hoặc .webp",
+        )
+
+    content_type = (file.content_type or "").lower()
+    if content_type not in ALLOWED_SCREENSHOT_MIME_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Định dạng MIME của ảnh không hợp lệ (chỉ hỗ trợ JPEG, PNG, WEBP)",
+        )
+
+    content = await file.read()
+    if len(content) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File ảnh tải lên không được rỗng",
+        )
+    if len(content) > MAX_SCREENSHOT_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Ảnh chụp màn hình không được vượt quá 5MB",
+        )
+
+    ERROR_REPORT_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    filename = f"{uuid4().hex}{extension}"
+    destination = ERROR_REPORT_UPLOAD_DIR / filename
+    destination.write_bytes(content)
+    screenshot_url = f"/uploads/error-reports/{filename}"
+    return screenshot_url, filename, len(content)
 
 
 @router.get("", response_model=list[ErrorReportOut])
@@ -82,6 +134,23 @@ def list_error_reports(
         scope_user_id=scope_user_id,
         limit=limit,
         offset=offset,
+    )
+
+
+@router.post("/upload-screenshot", response_model=ErrorScreenshotUploadOut, status_code=status.HTTP_201_CREATED)
+async def upload_error_screenshot(
+    file: UploadFile = File(..., description="File ảnh chụp màn hình sự cố (.jpg, .jpeg, .png, .webp <= 5MB)"),
+    current_user: dict = Depends(get_current_user),
+):
+    """
+    Tải lên ảnh chụp màn hình báo cáo lỗi trước khi gửi form POST /error-reports (UC-SH03).
+    Đặt trước route /{report_id} để không xung đột path parameter.
+    """
+    screenshot_url, filename, size_bytes = await _save_error_screenshot(file)
+    return ErrorScreenshotUploadOut(
+        screenshot_url=screenshot_url,
+        filename=filename,
+        size_bytes=size_bytes,
     )
 
 
@@ -152,6 +221,29 @@ def create_error_report(
     )
 
 
+@router.post("/{report_id}/screenshot", response_model=ErrorReportOut)
+async def attach_screenshot_to_error_report(
+    report_id: UUID,
+    file: UploadFile = File(..., description="File ảnh chụp màn hình sự cố (.jpg, .jpeg, .png, .webp <= 5MB)"),
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Đính kèm hoặc cập nhật trực tiếp ảnh chụp màn hình cho báo cáo lỗi đã tồn tại (UC-SH03)."""
+    report = crud_errors.get_error_report(db, report_id)
+    if not report:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy báo cáo sự cố")
+
+    _ensure_can_access_report(report, current_user, db)
+
+    screenshot_url, _, _ = await _save_error_screenshot(file)
+    updated = crud_errors.update_error_report(
+        db,
+        report_id,
+        screenshot_url=screenshot_url,
+    )
+    return updated
+
+
 @router.patch("/{report_id}", response_model=ErrorReportOut)
 def update_error_report(
     report_id: UUID,
@@ -170,6 +262,7 @@ def update_error_report(
         report_id,
         status=status_str,
         admin_response=payload.admin_response,
+        screenshot_url=payload.screenshot_url,
     )
     return updated
 

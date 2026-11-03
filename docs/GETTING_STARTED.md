@@ -128,13 +128,13 @@ cd frontend
 2. Cài đặt các gói phụ thuộc (nếu chưa cài):
 
 ```powershell
-npm.cmd ci
+npm install
 ```
 
 3. Khởi động Expo Server với cờ xóa cache `-c` (bắt buộc để hệ thống nhận IP LAN mới):
 
 ```powershell
-npm.cmd start -- --clear
+npx expo start -c
 ```
 
 ### Kết nối ứng dụng:
@@ -143,29 +143,35 @@ npm.cmd start -- --clear
 - **Trên điện thoại iOS (iPhone):** Mở ứng dụng Camera mặc định -> Quét mã QR -> Bấm thông báo vàng mở bằng Expo Go.
 - **Trên Trình duyệt Web** (nếu muốn xem nhanh trên máy): Nhấn phím `w` trong terminal.
 
-Để chạy cả web Owner và Admin trước, rồi chạy mobile và hiện mã QR trong cùng terminal tại `frontend/`:
-
-```powershell
-npm.cmd run dev
-```
-
-Nhấn `a` để mở máy ảo Android, `c` để hiện lại QR; nhấn `Ctrl+C` để dừng cả hai.
-
 ---
 
-## 7. KHỞI CHẠY CẢ HAI WEB OWNER VÀ ADMIN
+## 7. KHỞI CHẠY ỨNG DỤNG WEB CHỦ NÔNG TRẠI (OWNER WEB - PORT 5173)
 
-Tại thư mục `frontend/`, chạy một lệnh để mở cả hai web, kể cả khi Admin chưa có code:
+Ứng dụng Web dành riêng cho Chủ sở hữu nông trại (`owner`) nằm tại thư mục `frontend/owner/`, xây dựng trên công nghệ React 19 + Vite + TypeScript.
 
-```powershell
-npm run web
+### Cách 1: Khởi chạy từ thư mục `frontend/` (Khuyên dùng)
+Mở một cửa sổ Terminal mới tại thư mục `frontend/`:
+```bash
+# Cài đặt dependencies cho Owner Web (chỉ cần làm lần đầu)
+npm run owner:install
+
+# Khởi chạy Vite Dev Server
+npm run owner:dev
 ```
 
-- Owner: http://127.0.0.1:5173
-- Admin: http://127.0.0.1:5174/admin.html
+### Cách 2: Khởi chạy trực tiếp từ thư mục `frontend/owner/`
+```bash
+cd frontend/owner
 
-Lệnh này chỉ chạy hai web. Để chạy cả hai web và mobile có QR, dùng `npm run dev`.
-Nhấn `Ctrl+C` để dừng các server của lệnh đang chạy. Chỉ cài thư viện một lần tại `frontend` bằng `npm.cmd ci`.
+# Cài đặt thư viện theo package-lock.json
+npm ci
+
+# Khởi chạy
+npm run dev
+```
+
+### Cách 3 (Dành cho Windows):
+Click đúp tệp tin `frontend/owner/START_OWNER.cmd` để script tự động cài đặt và mở server.
 
 ### Đăng nhập và Trải nghiệm:
 - **Địa chỉ truy cập**: `http://localhost:5173`

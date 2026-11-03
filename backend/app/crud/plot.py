@@ -176,7 +176,7 @@ def create_plot(
     area: float | None = None,
     boundary_geojson: dict | None = None,
 ) -> dict:
-    """Tao moi lo dat. Neu khong truyen dien tich ma co GeoJSON, PostGIS se tu dong tinh dien tich (m2)."""
+    """Tao moi lo dat. Neu khong truyen dien tich ma co GeoJSON, PostGIS se tu dong tinh dien tich theo don vi ha."""
     boundary_str = json.dumps(boundary_geojson) if boundary_geojson else None
 
     if boundary_str:
@@ -195,11 +195,11 @@ def create_plot(
                 "boundary": boundary_str,
             }
         else:
-            # Tu dong tinh dien tich bang geography
+            # Tu dong tinh dien tich bang geography quy doi sang hecta (ha)
             sql = """
                 INSERT INTO plots (org_id, code, area, boundary_geojson)
                 VALUES (:org_id, :code,
-                        ST_Area(ST_SetSRID(ST_GeomFromGeoJSON(:boundary), 4326)::geography),
+                        ROUND((ST_Area(ST_SetSRID(ST_GeomFromGeoJSON(:boundary), 4326)::geography) / 10000.0)::numeric, 4)::double precision,
                         ST_SetSRID(ST_GeomFromGeoJSON(:boundary), 4326))
                 RETURNING plot_id, org_id, code, area, status,
                           ST_AsGeoJSON(boundary_geojson) AS boundary_geojson,
@@ -257,9 +257,11 @@ def update_plot(db: Session, plot_id: UUID, data: dict) -> dict:
         if bg is not None:
             set_clauses.append("boundary_geojson = ST_SetSRID(ST_GeomFromGeoJSON(:boundary), 4326)")
             params["boundary"] = json.dumps(bg)
-            # Neu khong truyen area rieng ma co boundary moi, cap nhat luon dien tich
+            # Neu khong truyen area rieng ma co boundary moi, cap nhat luon dien tich (ha)
             if "area" not in data:
-                set_clauses.append("area = ST_Area(ST_SetSRID(ST_GeomFromGeoJSON(:boundary), 4326)::geography)")
+                set_clauses.append(
+                    "area = ROUND((ST_Area(ST_SetSRID(ST_GeomFromGeoJSON(:boundary), 4326)::geography) / 10000.0)::numeric, 4)::double precision"
+                )
         else:
             set_clauses.append("boundary_geojson = NULL")
 

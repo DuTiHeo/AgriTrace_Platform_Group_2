@@ -142,8 +142,9 @@ def update_error_report(
     *,
     status: Optional[str] = None,
     admin_response: Optional[str] = None,
+    screenshot_url: Optional[str] = None,
 ) -> Optional[dict]:
-    """Cập nhật trạng thái xử lý và phản hồi của quản trị viên (UC-A03.2)."""
+    """Cập nhật trạng thái xử lý, phản hồi của quản trị viên hoặc ảnh chụp màn hình (UC-A03.2)."""
     updates = []
     params: dict[str, Any] = {"report_id": report_id}
 
@@ -153,6 +154,9 @@ def update_error_report(
     if admin_response is not None:
         updates.append("admin_response = :admin_response")
         params["admin_response"] = admin_response
+    if screenshot_url is not None:
+        updates.append("screenshot_url = :screenshot_url")
+        params["screenshot_url"] = screenshot_url
 
     if not updates:
         return get_error_report(db, report_id)

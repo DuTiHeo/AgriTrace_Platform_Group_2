@@ -51,6 +51,8 @@ app.add_middleware(
 
 UPLOAD_DIR = Path(os.getenv("UPLOAD_DIR", "uploads"))
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+(UPLOAD_DIR / "farming-logs").mkdir(parents=True, exist_ok=True)
+(UPLOAD_DIR / "error-reports").mkdir(parents=True, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])

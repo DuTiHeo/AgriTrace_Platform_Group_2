@@ -36,6 +36,14 @@ class ErrorReportUpdate(BaseModel):
     """Schema dành cho Admin cập nhật tiến độ xử lý và phản hồi (UC-A03.2)"""
     status: Optional[ErrorReportStatus] = Field(None, description="Trạng thái xử lý: new, processing, resolved, rejected")
     admin_response: Optional[str] = Field(None, description="Phản hồi/hướng dẫn từ quản trị viên")
+    screenshot_url: Optional[str] = Field(None, max_length=500, description="URL ảnh chụp màn hình minh hoạ lỗi")
+
+
+class ErrorScreenshotUploadOut(BaseModel):
+    """Phản hồi khi upload ảnh chụp màn hình báo cáo lỗi"""
+    screenshot_url: str
+    filename: str
+    size_bytes: int
 
 
 class ErrorReportOut(ErrorReportBase):
