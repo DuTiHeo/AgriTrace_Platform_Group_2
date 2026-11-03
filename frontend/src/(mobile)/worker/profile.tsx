@@ -29,6 +29,7 @@ export default function WorkerProfileScreen() {
   const [areasLoading, setAreasLoading] = useState(true);
   const [totalLogs, setTotalLogs] = useState<number | null>(null);
   const [logsError, setLogsError] = useState(false);
+  const [joinedAt, setJoinedAt] = useState<string | null>(user?.created_at ?? null);
   const [accountStatus, setAccountStatus] = useState<'loading' | 'active' | 'unknown'>('loading');
 
   useFocusEffect(useCallback(() => {
@@ -36,6 +37,7 @@ export default function WorkerProfileScreen() {
     setTotalLogs(null);
     setLogsError(false);
     setAccountStatus('loading');
+    setJoinedAt(user?.created_at ?? null);
     if (!accessToken) {
       setLogsError(true);
       setAccountStatus('unknown');
@@ -44,7 +46,7 @@ export default function WorkerProfileScreen() {
 
     // /auth/me succeeds only for active accounts; it does not expose attendance.
     void getMe(accessToken)
-      .then(() => { if (active) setAccountStatus('active'); })
+      .then(profile => { if (active) { setAccountStatus('active'); setJoinedAt(profile.created_at ?? null); } })
       .catch(() => { if (active) setAccountStatus('unknown'); });
 
     const userId = sessionUserId(accessToken);
@@ -59,7 +61,7 @@ export default function WorkerProfileScreen() {
         .catch(() => { if (active) setLogsError(true); });
     }
     return () => { active = false; };
-  }, [accessToken]));
+  }, [accessToken, user?.created_at]));
 
   useFocusEffect(useCallback(() => {
     let active = true;
@@ -161,7 +163,10 @@ export default function WorkerProfileScreen() {
 
           <Info
             label="Ngày gia nhập:"
-            value="Chưa có dữ liệu"
+            value={joinedAt && Number.isFinite(Date.parse(joinedAt))
+              ? new Date(joinedAt).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh', day: '2-digit', month: '2-digit', year: 'numeric' })
+              : accountStatus === 'loading' ? 'Đang tải…'
+                : accountStatus === 'unknown' ? 'Không tải được ngày gia nhập' : 'Chưa có dữ liệu'}
           />
 
           <Info

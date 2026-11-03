@@ -125,6 +125,9 @@ export function PersonalInfoScreen() {
               label="CCCD"
               value={information.national_id}
             />
+            <Field label="Ngày sinh" value={information.date_of_birth ? new Date(information.date_of_birth + 'T12:00:00').toLocaleDateString('vi-VN') : null} />
+            <Field label="Ngày tham gia" value={information.created_at ? new Date(information.created_at).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }) : null} />
+            <Field label="Trạng thái tài khoản" value={information.status === 'active' ? 'Đang hoạt động' : information.status === 'inactive' ? 'Đã khóa' : information.status ?? null} />
             <Field
               label="Địa chỉ"
               value={information.address}

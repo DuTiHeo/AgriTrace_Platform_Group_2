@@ -12,7 +12,8 @@ type AccountUtilities = {
   draft: {
     kind: string;
     text: string;
-    photo?: string
+    photo?: string;
+    uploadedPhotoUrl?: string;
   }
 };
 const initial = (): AccountUtilities => ({

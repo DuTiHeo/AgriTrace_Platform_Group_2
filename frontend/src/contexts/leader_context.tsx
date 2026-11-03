@@ -1,3 +1,4 @@
+import { sessionUserId } from '@/sevices/session_user';
 import { PartialAssignmentError, settleTaskRequests } from '@/sevices/task_batch';
 import { DEFAULT_WORK_START_TIME, DEFAULT_WORK_END_TIME } from '@/constants/work_hours';
 import { useReports } from './report_context';
@@ -147,7 +148,10 @@ function useLeaderState() {
         tools: value.tools,
         startTime: DEFAULT_WORK_START_TIME,
         endTime: DEFAULT_WORK_END_TIME,
-        assignmentId
+        assignmentId,
+        assignedById: user.user_id ?? sessionUserId(accessToken) ?? undefined,
+        assignedByRole: 'leader',
+        assignedByName: user.full_name,
       }),
     }));
     registerCreatedTasks(result.succeeded.map(item => item.value));

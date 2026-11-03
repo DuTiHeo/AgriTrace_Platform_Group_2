@@ -19,6 +19,7 @@ Tự sinh từ OpenAPI bằng `frontend/scripts/generate_web_api.py`. Mọi hàm
 | `webApi.user.updateRole` | PATCH | `/users/{user_id}/role` | Có |
 | `webApi.user.updateStatus` | PATCH | `/users/{user_id}/status` | Có |
 | `webApi.organization.listMyOrganizations` | GET | `/organizations/mine` | Có |
+| `webApi.organization.convertOrganizationVn2000Boundary` | POST | `/organizations/convert-vn2000` | Có |
 | `webApi.organization.listOrganizations` | GET | `/organizations` | Có |
 | `webApi.organization.createOrganization` | POST | `/organizations` | Có |
 | `webApi.organization.getOrganizationDetail` | GET | `/organizations/{org_id}` | Có |
@@ -35,6 +36,7 @@ Tự sinh từ OpenAPI bằng `frontend/scripts/generate_web_api.py`. Mọi hàm
 | `webApi.plot.listPlots` | GET | `/plots` | Có |
 | `webApi.plot.createPlot` | POST | `/plots` | Có |
 | `webApi.plot.locatePlotByGps` | GET | `/plots/locate` | Có |
+| `webApi.plot.convertPlotVn2000Boundary` | POST | `/plots/convert-vn2000` | Có |
 | `webApi.plot.getPlotDetail` | GET | `/plots/{plot_id}` | Có |
 | `webApi.plot.updatePlot` | PATCH | `/plots/{plot_id}` | Có |
 | `webApi.plot.deletePlot` | DELETE | `/plots/{plot_id}` | Có |
@@ -94,9 +96,11 @@ Tự sinh từ OpenAPI bằng `frontend/scripts/generate_web_api.py`. Mọi hàm
 | `webApi.reminderSchedules.updateReminderStatus` | PATCH | `/reminders/{reminder_id}/status` | Có |
 | `webApi.errorReports.listErrorReports` | GET | `/error-reports` | Có |
 | `webApi.errorReports.createErrorReport` | POST | `/error-reports` | Có |
+| `webApi.errorReports.uploadErrorScreenshot` | POST | `/error-reports/upload-screenshot` | Có |
 | `webApi.errorReports.getErrorReport` | GET | `/error-reports/{report_id}` | Có |
 | `webApi.errorReports.updateErrorReport` | PATCH | `/error-reports/{report_id}` | Có |
 | `webApi.errorReports.deleteErrorReport` | DELETE | `/error-reports/{report_id}` | Có |
+| `webApi.errorReports.attachScreenshotToErrorReport` | POST | `/error-reports/{report_id}/screenshot` | Có |
 | `webApi.systemLogs.listSystemLogs` | GET | `/system-logs` | Có |
 | `webApi.systemLogs.createSystemLog` | POST | `/system-logs` | Có |
 | `webApi.systemLogs.getSystemLog` | GET | `/system-logs/{log_id}` | Có |

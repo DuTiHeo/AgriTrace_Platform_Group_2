@@ -17,6 +17,8 @@ type AuthUser = {
   user_id: string;
   full_name: string;
   phone: string;
+  national_id?: string | null;
+  status?: string | null;
   date_of_birth: string | null;
   address: string | null;
   role: string;
@@ -43,6 +45,8 @@ function toOwnerAccount(user: AuthUser): OwnerAccount {
   return {
     id: user.user_id,
     fullName: user.full_name,
+    nationalId: user.national_id ?? "",
+    status: user.status ?? "",
     phone: user.phone,
     email: "",
     dateOfBirth: user.date_of_birth ?? "",
@@ -76,8 +80,7 @@ export const accountService = {
   async getAccount(): Promise<OwnerAccount> {
     const user = await this.getCurrentUser();
     toOwnerAccount(user);
-    const profile = await httpClient.get<AuthUser>(`/users/${user.user_id}`);
-    return toOwnerAccount(profile);
+    return toOwnerAccount(user);
   },
 
   async getCurrentUser(): Promise<AuthUser> {

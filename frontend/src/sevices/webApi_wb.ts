@@ -90,6 +90,11 @@ export const webApi = {
      */
     listMyOrganizations: (args: { signal?: AbortSignal; cacheTtl?: number } = {}): Promise<Array<Api.OrganizationSummary>> =>
       httpClient.get<Array<Api.OrganizationSummary>>(`/organizations/mine`, { authenticated: true, signal: args.signal, cacheTtl: args.cacheTtl }),
+    /** POST /organizations/convert-vn2000 — Convert Organization Vn2000 Boundary
+     * Chuyển đổi danh sách đỉnh ranh giới hệ tọa độ VN-2000 sang GeoJSON Polygon WGS84 (SRID 4326).
+     */
+    convertOrganizationVn2000Boundary: (args: { body: Api.VN2000BoundaryInput; signal?: AbortSignal; cacheTtl?: number }): Promise<Api.VN2000ConvertOut> =>
+      httpClient.post<Api.VN2000ConvertOut>(`/organizations/convert-vn2000`, args.body, { authenticated: true, signal: args.signal, cacheTtl: args.cacheTtl }),
     /** GET /organizations — List Organizations
      * Danh sach nong trai co phan quyen theo Role:
      * - Admin: xem toan bo hoac loc theo owner_id
@@ -178,6 +183,11 @@ export const webApi = {
      */
     locatePlotByGps: (args: { query: { "latitude": number; "longitude": number; "org_id"?: (string | null) }; signal?: AbortSignal; cacheTtl?: number }): Promise<Api.PlotLocateResponse> =>
       httpClient.get<Api.PlotLocateResponse>(`/plots/locate` + apiQuery(args.query), { authenticated: true, signal: args.signal, cacheTtl: args.cacheTtl }),
+    /** POST /plots/convert-vn2000 — Convert Plot Vn2000 Boundary
+     * Chuyển đổi danh sách đỉnh lô đất từ hệ tọa độ VN-2000 sang GeoJSON Polygon WGS84 (SRID 4326).
+     */
+    convertPlotVn2000Boundary: (args: { body: Api.VN2000BoundaryInput; signal?: AbortSignal; cacheTtl?: number }): Promise<Api.VN2000ConvertOut> =>
+      httpClient.post<Api.VN2000ConvertOut>(`/plots/convert-vn2000`, args.body, { authenticated: true, signal: args.signal, cacheTtl: args.cacheTtl }),
     /** GET /plots/{plot_id} — Get Plot Detail
      * Xem chi tiet 1 lo dat kem GeoJSON ranh gioi va thong tin mua vu hien tai.
      */
@@ -493,6 +503,12 @@ export const webApi = {
      */
     createErrorReport: (args: { query?: { "org_id"?: (string | null) }; body: Api.ErrorReportCreate; signal?: AbortSignal; cacheTtl?: number }): Promise<Api.ErrorReportOut> =>
       httpClient.post<Api.ErrorReportOut>(`/error-reports` + apiQuery(args.query), args.body, { authenticated: true, signal: args.signal, cacheTtl: args.cacheTtl }),
+    /** POST /error-reports/upload-screenshot — Upload Error Screenshot
+     * Tải lên ảnh chụp màn hình báo cáo lỗi trước khi gửi form POST /error-reports (UC-SH03).
+     * Đặt trước route /{report_id} để không xung đột path parameter.
+     */
+    uploadErrorScreenshot: (args: { body: Api.Body_upload_error_screenshot_error_reports_upload_screenshot_post; signal?: AbortSignal; cacheTtl?: number }): Promise<Api.ErrorScreenshotUploadOut> =>
+      httpClient.post<Api.ErrorScreenshotUploadOut>(`/error-reports/upload-screenshot`, multipartBody(args.body), { authenticated: true, signal: args.signal, cacheTtl: args.cacheTtl }),
     /** GET /error-reports/{report_id} — Get Error Report
      * Xem chi tiết 1 báo cáo sự cố (UC-A03.1 / UC-SH03).
      */
@@ -510,6 +526,11 @@ export const webApi = {
      */
     deleteErrorReport: (args: { path: { "report_id": string }; signal?: AbortSignal; cacheTtl?: number }): Promise<void> =>
       httpClient.delete<void>(`/error-reports/${encodeURIComponent(String(args.path["report_id"]))}`, { authenticated: true, signal: args.signal, cacheTtl: args.cacheTtl }),
+    /** POST /error-reports/{report_id}/screenshot — Attach Screenshot To Error Report
+     * Đính kèm hoặc cập nhật trực tiếp ảnh chụp màn hình cho báo cáo lỗi đã tồn tại (UC-SH03).
+     */
+    attachScreenshotToErrorReport: (args: { path: { "report_id": string }; body: Api.Body_attach_screenshot_to_error_report_error_reports__report_id__screenshot_post; signal?: AbortSignal; cacheTtl?: number }): Promise<Api.ErrorReportOut> =>
+      httpClient.post<Api.ErrorReportOut>(`/error-reports/${encodeURIComponent(String(args.path["report_id"]))}/screenshot`, multipartBody(args.body), { authenticated: true, signal: args.signal, cacheTtl: args.cacheTtl }),
   },
   systemLogs: {
     /** GET /system-logs — List System Logs

@@ -52,6 +52,7 @@ type DialogType =
   | null;
 
 type EditForm = {
+  notes: string;
   expectedHarvestDate: string;
 };
 
@@ -119,6 +120,7 @@ function SeasonDetailPage() {
 
   const [editForm, setEditForm] =
     useState<EditForm>({
+      notes: "",
       expectedHarvestDate: "",
     });
 
@@ -262,6 +264,7 @@ function SeasonDetailPage() {
     }
 
     setEditForm({
+      notes: season.notes,
       expectedHarvestDate:
         season.expectedHarvestDate,
     });
@@ -327,6 +330,7 @@ function SeasonDetailPage() {
         await seasonService.update(season.id, {
           expectedHarvestDate:
             editForm.expectedHarvestDate,
+          notes: editForm.notes,
         });
 
       setSeason(updatedSeason);
@@ -616,6 +620,7 @@ function SeasonDetailPage() {
           </div>
         </section>
 
+        <section className="season-detail-card card"><h2>Ghi chú mùa vụ</h2><p style={{ whiteSpace: 'pre-wrap' }}>{season.notes || 'Chưa có ghi chú mùa vụ.'}</p></section>
         <section className="season-detail-card season-cultivation-notes card">
           <div className="season-detail-section-heading">
             <div><h2>Ghi chú canh tác</h2><p>Ghi chú từ nhật ký của mùa vụ này.</p></div>
@@ -797,6 +802,9 @@ function SeasonDetailPage() {
                     }
                   />
                 </label>
+
+                <label><span>Ghi chú mùa vụ</span><textarea rows={4} disabled={saving} value={editForm.notes}
+                  onChange={event => setEditForm(current => ({ ...current, notes: event.target.value }))} /></label>
 
                 {actionError && (
                   <div className="form-error-block">

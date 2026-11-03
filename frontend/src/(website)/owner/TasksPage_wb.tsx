@@ -1,6 +1,8 @@
+import { groupTaskAssignments, type TaskGroup } from '../../features/owner/task_wb';
+import TaskDetails from '../../components/owner/TaskDetails_wb';
 import "../../styles/tasks_wb.css";
 import { ListActionConfirmation } from "../../components/owner/ListRowActions_wb";
-import { CalendarClock, CheckCheck, ClipboardList, Plus, Search, Undo2, UserRound, X } from "lucide-react";
+import { CalendarClock, CheckCheck, ClipboardList, Eye, Plus, Search, Undo2, UserRound, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useFarmContext } from "../../contexts/FarmContext_wb";
 import { getPersonnelList } from "../../sevices/personnelService_wb";
@@ -32,7 +34,8 @@ export default function TasksPage() {
   const [loading,setLoading] = useState(true), [error,setError] = useState("");
   const [search,setSearch] = useState(""), [status,setStatus] = useState<TaskStatus|"all">("all");
   const [createOpen,setCreateOpen] = useState(false), [draft,setDraft] = useState(() => emptyDraft(""));
-  const [recallTarget, setRecallTarget] = useState<Task | null>(null);
+  const [detailTarget, setDetailTarget] = useState<TaskGroup | null>(null);
+  const [recallTarget, setRecallTarget] = useState<TaskGroup | null>(null);
   const [saving,setSaving] = useState(false), [formError,setFormError] = useState(""), [notice,setNotice] = useState("");
   const requestId=useRef(0);
   const farmIds=useMemo(() => selectedFarmId === "all" ? farms.map(f=>f.id) : [selectedFarmId], [farms,selectedFarmId]);
@@ -63,36 +66,47 @@ export default function TasksPage() {
   const plots=data.plots.filter(p=>p.farmId===draft.farmId && p.status==="active");
   const teams=data.teams.filter(t=>t.farmId===draft.farmId);
   const members=data.personnel.filter(p=>p.teamId===draft.teamId && p.status==="active");
-  const filtered=data.tasks.filter(t=>{
+  const assignments = useMemo(() => groupTaskAssignments(data.tasks), [data.tasks]);
+  const filtered=assignments.filter(t=>{
     const keyword=search.trim().toLocaleLowerCase("vi");
     const plot=data.plots.find(p=>p.id===t.plotId), team=data.teams.find(g=>g.id===t.teamId);
-    return (status==="all" || t.status===status) && (!keyword || [t.content,t.assigneeName,plot?.name??"",team?.name??""].some(v=>v.toLocaleLowerCase("vi").includes(keyword)));
+    return (status==="all" || t.status===status) && (!keyword || [t.content,t.instructions??"",t.tools??"",...t.members.map(member => member.assigneeName),plot?.name??"",team?.name??""].some(v=>v.toLocaleLowerCase("vi").includes(keyword)));
   }).sort((a,b)=>Date.parse(b.createdAt)-Date.parse(a.createdAt));
   const openCreate=()=>{ setDraft(emptyDraft(selectedFarmId==="all" ? farms[0]?.id??"" : selectedFarmId)); setFormError(""); setCreateOpen(true); };
   async function create(e:FormEvent) {
     e.preventDefault();
+    if (saving) return;
     if (draft.dueAt < draft.startAt) { setFormError("Hạn hoàn thành không được trước ngày bắt đầu."); return; }
     setSaving(true); setFormError("");
     try { await taskService.create({ ...draft, startAt: `${draft.startAt}T08:00:00+07:00`, dueAt: `${draft.dueAt}T17:00:00+07:00` }); setCreateOpen(false); setNotice("Đã giao công việc."); await load(); }
     catch(e) { setFormError(e instanceof Error ? e.message : "Không thể giao công việc."); }
     finally { setSaving(false); }
   }
-  async function recallTask(task:Task) {
+  async function recallTask(task:TaskGroup) {
     setSaving(true); setNotice("");
     try {
-      await taskService.cancel(task.id, "");
-      setNotice("Đã thu hồi công việc."); await load();
+      const latest = await Promise.allSettled(task.members.map(member => taskService.getById(member.id)));
+      const failedIds = new Set(latest.flatMap((result, index) => result.status === 'rejected' ? [task.members[index].id] : []));
+      const active = latest.flatMap(result => result.status === 'fulfilled' && ['pending', 'in_progress', 'incomplete'].includes(result.value.status) ? [result.value] : []);
+      const results = await Promise.allSettled(active.map(member => taskService.cancel(member.id, '')));
+      results.forEach((result, index) => { if (result.status === 'rejected') failedIds.add(active[index].id); });
+      await load();
+      if (failedIds.size) {
+        setRecallTarget(current => current ? { ...current, members: current.members.filter(member => failedIds.has(member.id)) } : null);
+        throw new Error(`Chưa thu hồi được ${failedIds.size} người nhận. Vui lòng thử lại phần còn lại.`);
+      }
+      setNotice("Đã thu hồi công việc của những người nhận chưa hoàn thành.");
     } finally { setSaving(false); }
   }
   return <div className="page tasks-page">
-    <div className="page-heading tasks-heading"><div><h1>Công việc</h1><p>Giao việc theo vùng trồng, tổ và người nhận.</p></div>
+    <div className="page-heading tasks-heading"><div><h1>Công việc</h1><p>Theo dõi các công việc đã giao trong nông trại.</p></div>
       <button className="btn btn-primary" onClick={openCreate} disabled={loading || farms.length===0}><Plus size={18}/>Giao công việc</button>
     </div>
     <section className="task-summary-grid">
-      <article className="task-summary card"><ClipboardList size={20}/><span>Tổng công việc</span><strong>{data.tasks.filter(t=>t.status!=="cancelled").length}</strong></article>
-      <article className="task-summary task-summary-active card"><CalendarClock size={20}/><span>Đang thực hiện</span><strong>{data.tasks.filter(t=>t.status==="in_progress").length}</strong></article>
-      <article className="task-summary task-summary-incomplete card"><X size={20}/><span>Chưa hoàn thành</span><strong>{data.tasks.filter(t=>t.status==="incomplete").length}</strong></article>
-      <article className="task-summary task-summary-completed card"><CheckCheck size={20}/><span>Đã hoàn thành</span><strong>{data.tasks.filter(t=>t.status==="completed").length}</strong></article>
+      <article className="task-summary card"><ClipboardList size={20}/><span>Tổng công việc</span><strong>{assignments.filter(t=>t.status!=="cancelled").length}</strong></article>
+      <article className="task-summary task-summary-active card"><CalendarClock size={20}/><span>Đang thực hiện</span><strong>{assignments.filter(t=>t.status==="in_progress").length}</strong></article>
+      <article className="task-summary task-summary-incomplete card"><X size={20}/><span>Chưa hoàn thành</span><strong>{assignments.filter(t=>t.status==="incomplete").length}</strong></article>
+      <article className="task-summary task-summary-completed card"><CheckCheck size={20}/><span>Đã hoàn thành</span><strong>{assignments.filter(t=>t.status==="completed").length}</strong></article>
     </section>
     {notice && <div className="task-notice" role="status">{notice}<button aria-label="Đóng thông báo" onClick={()=>setNotice("")}><X size={17}/></button></div>}
     {error && <div className="form-error" role="alert">{error} <button onClick={()=>void load()}>Thử lại</button></div>}
@@ -105,11 +119,12 @@ export default function TasksPage() {
         return <article className="task-row-card" key={task.id}><div className="task-row-main">
           <div className="task-row-title"><h2>{task.content}</h2><span className={`task-status task-status-${task.status}`}>{labels[task.status]}</span></div>
           <div className="task-context-line"><span>{data.plots.find(p=>p.id===task.plotId)?.name??"Vùng trồng"}</span><span>{data.teams.find(t=>t.id===task.teamId)?.name??"Tổ không còn tồn tại"}</span></div>
-          <div className="task-assignment-line"><span><UserRound size={15}/>{task.assigneeName} {person ? `· ${person.role==="leader" ? "Tổ trưởng" : "Công nhân"}` : ""}</span><span><CalendarClock size={15}/>Hạn {formatTime(task.dueAt)}</span></div>
-        </div>{["pending", "in_progress", "incomplete"].includes(task.status) && <div className="task-row-actions"><button className="btn btn-secondary" disabled={saving} onClick={()=>setRecallTarget(task)}><Undo2 size={16}/>Thu hồi</button></div>}</article>;
+          <div className="task-assignment-line"><span><UserRound size={15}/>{task.members.length > 1 ? `${task.members.length} người nhận · ${task.members.slice(0, 3).map(member => member.assigneeName).join(", ") + (task.members.length > 3 ? ` và ${task.members.length - 3} người khác` : "")}` : task.assigneeName} {task.members.length === 1 && person ? `· ${person.role==="leader" ? "Tổ trưởng" : "Công nhân"}` : ""}</span><span><CalendarClock size={15}/>Hạn {formatTime(task.dueAt)}</span></div>
+        </div><div className="task-row-actions"><button className="btn btn-secondary task-view-button" type="button" aria-label={`Xem chi tiết ${task.content}`} title="Xem chi tiết công việc" onClick={() => setDetailTarget(task)}><Eye size={18} /></button>{["pending", "in_progress", "incomplete"].includes(task.status) && <button className="btn btn-secondary" disabled={saving} onClick={()=>setRecallTarget(task)}><Undo2 size={16}/>Thu hồi</button>}</div></article>;
       })}</div> : <div className="task-empty-state"><ClipboardList size={34}/><strong>Chưa có công việc phù hợp</strong></div>}
     </section>
-    {recallTarget && <ListActionConfirmation action="status" name={recallTarget.content} statusLabel="Thu hồi công việc" description="Bạn có chắc muốn thu hồi công việc đã giao? Công việc sẽ chuyển sang trạng thái đã thu hồi." onClose={()=>setRecallTarget(null)} onConfirm={()=>recallTask(recallTarget)} />}
+    {detailTarget && <TaskDetails task={detailTarget} tasks={detailTarget.members} farmName={farms.find(farm => farm.id === detailTarget.farmId)?.name ?? 'Nông trại'} plotName={data.plots.find(plot => plot.id === detailTarget.plotId)?.name ?? 'Vùng trồng'} teamName={data.teams.find(team => team.id === detailTarget.teamId)?.name ?? 'Tổ không còn tồn tại'} assigneeRole={data.personnel.find(person => person.id === detailTarget.assigneeId)?.role} onClose={() => setDetailTarget(null)} />}
+    {recallTarget && <ListActionConfirmation action="status" name={recallTarget.content} statusLabel="Thu hồi công việc" description="Thu hồi công việc của tất cả người nhận chưa hoàn thành trong lần giao này? Các phần đã hoàn thành được giữ nguyên." onClose={()=>setRecallTarget(null)} onConfirm={()=>recallTask(recallTarget)} />}
     {createOpen && <div className="modal-backdrop"><section className="app-modal task-create-modal" role="dialog" aria-modal="true" aria-labelledby="task-create-title">
       <header className="app-modal-header"><h2 id="task-create-title">Giao công việc</h2><button aria-label="Đóng" disabled={saving} onClick={()=>setCreateOpen(false)}><X size={20}/></button></header>
       <form className="task-create-form" onSubmit={create}>

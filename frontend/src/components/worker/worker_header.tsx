@@ -1,19 +1,13 @@
-import { useAccountUtilities } from '@/contexts/account_utilities_context';
-import { useWorkerNotifications } from '@/hooks/use_worker_notifications';
-import { type Href, router } from 'expo-router';
-import { Keyboard, Pressable, Text, TouchableWithoutFeedback, View } from 'react-native';
-import { SymbolView } from 'expo-symbols';
+import { Keyboard, Text, TouchableWithoutFeedback, View } from 'react-native';
+import { NotificationBell } from '@/components/common/notification_bell';
 import { useAuth } from '@/contexts/auth_context';
 import { PersonalAvatarButton } from '@/components/common/personal_avatar_button';
 import { sharedStyles as s } from '@/styles/role_styles';
-import { colors } from '@/styles/theme';
 
 export function WorkerHeader({ showGreeting = true }: {
   showGreeting?: boolean
 }) {
   const { user } = useAuth();
-  const { showBadge } = useAccountUtilities();
-  const { unread } = useWorkerNotifications();
 
   return <TouchableWithoutFeedback
     onPress={Keyboard.dismiss}
@@ -31,32 +25,7 @@ export function WorkerHeader({ showGreeting = true }: {
           {user?.full_name ?? 'Công nhân'}
         </Text>
       </View>
-      <Pressable
-        accessibilityLabel="Thông báo"
-        hitSlop={8}
-        style={s.bell}
-        onPress={() => {
-          Keyboard.dismiss();
-          router.push('/worker/notifications' as Href);
-        }}
-      >
-        <SymbolView
-          name={{
-            ios: 'bell',
-            android: 'notifications',
-            web: 'notifications'
-          }}
-          size={23}
-          tintColor={colors.text}
-        />
-        <>
-          {showBadge && unread > 0 && <View style={s.badge}>
-            <Text style={s.badgeText}>
-              {unread}
-            </Text>
-          </View>}
-        </>
-      </Pressable>
+      <NotificationBell role="worker" />
     </View>
   </TouchableWithoutFeedback>;
 }

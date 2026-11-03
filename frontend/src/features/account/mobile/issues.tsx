@@ -1,3 +1,8 @@
+import * as ImagePicker from 'expo-image-picker';
+import { RemovePhotoButton } from '@/components/common/remove_photo_button';
+import { prepareLogPhoto } from '@/sevices/log_media';
+import { uploadErrorPhoto } from '@/sevices/error_report_media';
+import { photoUrl } from '@/sevices/farming_log.service';
 import type { ComponentRef } from 'react';
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
@@ -64,7 +69,7 @@ export default function IssuesScreen() {
     setMessage('');
     if (!accessToken) { setMessage('Vui lòng đăng nhập lại.'); return; }
     let payload;
-    try { payload = buildErrorReportPayload(draft); }
+    try { payload = buildErrorReportPayload({ ...draft, photo: undefined }); }
     catch (error) {
       setMessage(error instanceof Error ? error.message : 'Thông tin báo lỗi chưa hợp lệ.');
       if (draft.text.trim().length < 5) descriptionRef.current?.focus();
@@ -72,7 +77,14 @@ export default function IssuesScreen() {
     }
     pending.current = true; setBusy(true);
     try {
-      const result = await createErrorReport(accessToken, payload);
+      let screenshot = draft.uploadedPhotoUrl;
+      if (draft.photo && !screenshot) {
+        const uploaded = await uploadErrorPhoto(accessToken, draft.photo);
+        if (session.current !== accessToken) return;
+        screenshot = uploaded.screenshot_url;
+        setDraft({ ...draft, uploadedPhotoUrl: screenshot });
+      }
+      const result = await createErrorReport(accessToken, { ...payload, ...(screenshot ? { screenshot_url: screenshot } : {}) });
       if (session.current !== accessToken) return;
       // Invalidate a list request that started before this report was submitted.
       ++sequence.current; setLoading(false);
@@ -87,6 +99,22 @@ export default function IssuesScreen() {
       pending.current = false;
       if (session.current === accessToken) setBusy(false);
     }
+  }
+
+  async function choosePhoto() {
+    if (pending.current || draft.photo) return;
+    Keyboard.dismiss(); pending.current = true; setBusy(true); setMessage('');
+    try {
+      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!permission.granted) throw new Error('Vui lòng cho phép truy cập thư viện ảnh để tải ảnh báo lỗi.');
+      const picked = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsMultipleSelection: false, quality: 0.8 });
+      if (!picked.canceled && picked.assets[0]) {
+        const uri = await prepareLogPhoto(picked.assets[0].uri);
+        if (session.current === accessToken) setDraft({ ...draft, photo: uri, uploadedPhotoUrl: undefined });
+      }
+    } catch (cause) {
+      if (session.current === accessToken) setMessage(cause instanceof Error ? cause.message : 'Không mở được thư viện ảnh.');
+    } finally { pending.current = false; if (session.current === accessToken) setBusy(false); }
   }
 
   function photo(uri: string) {
@@ -106,10 +134,12 @@ export default function IssuesScreen() {
       <Input ref={descriptionRef} label="Mô tả sự cố *" placeholder="Bạn đang làm gì khi lỗi xảy ra?"
         multiline maxLength={3000} editable={!busy} value={draft.text}
         onChangeText={text => { setDraft({ ...draft, text }); setMessage(''); }} />
-      <Input label="Đường dẫn ảnh minh họa" placeholder="https://…" value={draft.photo ?? ''}
-        maxLength={500} autoCapitalize="none" keyboardType="url" editable={!busy}
-        onChangeText={photo => { setDraft({ ...draft, photo }); setMessage(''); }} />
-      <Text style={s.muted}>API hiện hỗ trợ URL ảnh; chưa hỗ trợ tải ảnh từ điện thoại.</Text>
+      <Button secondary title="Tải ảnh lên" disabled={busy || !!draft.photo} onPress={choosePhoto} />
+      <Text style={s.muted}>Tối đa 1 ảnh, không quá 5 MB.</Text>
+      {!!draft.photo && <View style={{ width: 128, height: 128 }}>
+        {photo(draft.photo)}
+        <RemovePhotoButton disabled={busy} onPress={() => setDraft({ ...draft, photo: undefined, uploadedPhotoUrl: undefined })} />
+      </View>}
       {!!message && <Text accessibilityRole="alert" style={s.muted}>{message}</Text>}
       <Button title={busy ? 'Đang gửi…' : 'Gửi báo lỗi'} disabled={busy || !accessToken} onPress={submit} />
     </Card>
@@ -121,7 +151,7 @@ export default function IssuesScreen() {
       <Text style={s.section}>{errorReportKinds.find(kind => kind.value === report.error_type)?.label ?? report.error_type ?? 'Khác'}</Text>
       <Text style={s.muted}>{report.description}</Text>
       <Text style={s.muted}>{new Date(report.submitted_at).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}</Text>
-      {!!report.screenshot_url && photo(report.screenshot_url)}
+      {!!report.screenshot_url && photo(photoUrl(report.screenshot_url))}
       {!!report.admin_response && <View style={{ gap: 6 }}><Text style={s.label}>Phản hồi từ quản trị viên</Text><Text style={s.muted}>{report.admin_response}</Text></View>}
     </Card>)}
     {loading && <ActivityIndicator color={colors.primary} />}

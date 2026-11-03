@@ -1,3 +1,4 @@
+import { convertVN2000 } from '../../sevices/vn2000Service_wb';
 import GeographicMap from "./GeographicMap_wb";
 import "../../styles/farm_form_wb.css";
 import {
@@ -7,7 +8,7 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type {
   ChangeEvent,
   ReactNode,
@@ -107,6 +108,28 @@ function FarmBoundaryEditor({
   const [pointX, setPointX] = useState("");
   const [pointY, setPointY] = useState("");
   const [pointNote, setPointNote] = useState("");
+  const [zone, setZone] = useState<3 | 6>(3);
+  const [converting, setConverting] = useState(false);
+  const [conversionError, setConversionError] = useState('');
+  const conversion = useRef<AbortController | null>(null);
+  useEffect(() => () => conversion.current?.abort(), []);
+  const convertBoundary = async () => {
+    if (converting) return;
+    const request = new AbortController(); conversion.current = request;
+    setConverting(true); setConversionError('');
+    try {
+      const result = await convertVN2000('organizations', {
+        points: activeBoundary.points.map(point => ({ x: point.x, y: point.y })),
+        central_meridian: activeBoundary.projection.replace(/^VN-2000 · Kinh tuyến trục\s*/, ''), zone_width: zone,
+      }, request.signal);
+      if (request.signal.aborted) return;
+      const points = result.points.map((point, index) => ({ id: `M${index + 1}`, x: point.latitude, y: point.longitude, note: activeBoundary.points[index]?.note ?? `Điểm GPS ${index + 1}` }));
+      onChange({ ...createEmptyBoundary('map'), points, ...calculateGeometry(points, 'map') });
+    } catch (cause) {
+      if (!request.signal.aborted) setConversionError(cause instanceof Error ? cause.message : 'Không chuyển được tọa độ.');
+    } finally { if (!request.signal.aborted) setConverting(false); }
+  };
+
 
   const updatePoints = (points: BoundaryPoint[]) => {
     const geometry = calculateGeometry(
@@ -118,10 +141,12 @@ function FarmBoundaryEditor({
       ...activeBoundary,
       points,
       ...geometry,
+      isValid: activeBoundary.method === "map" && geometry.isValid,
     });
   };
 
   const changeMethod = (method: BoundaryMethod) => {
+    setConversionError("");
     onChange(createEmptyBoundary(method));
     setPointX("");
     setPointY("");
@@ -129,6 +154,8 @@ function FarmBoundaryEditor({
   };
 
   const addCoordinatePoint = () => {
+    if (!pointX.trim() || !pointY.trim()) { setConversionError("Vui lòng nhập đủ tọa độ X và Y."); return; }
+    setConversionError("");
     const x = Number(pointX);
     const y = Number(pointY);
 
@@ -251,7 +278,8 @@ function FarmBoundaryEditor({
   };
 
   return (
-    <div className="boundary-editor">
+    <fieldset className="boundary-editor" disabled={converting} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
+      {conversionError && <p className="form-error" role="alert">{conversionError}</p>}
       <div className="boundary-methods">
         <button
           className={
@@ -288,35 +316,16 @@ function FarmBoundaryEditor({
 
       {activeBoundary.method === "vn2000" ? (
         <>
-          <p role="status">Tọa độ VN-2000 cần được chuyển sang WGS84 trước khi lưu. Hãy dùng GPS hoặc nhập GeoJSON WGS84 để lưu lên hệ thống.</p>
+          <p role="status">Nhập tọa độ VN-2000, chọn đúng kinh tuyến trục và múi chiếu, sau đó chuyển tọa độ để xem ranh giới trên bản đồ.</p>
           <div className="boundary-toolbar">
             <label>
               <span>Hệ tọa độ</span>
 
-              <select
-                value={activeBoundary.projection}
-                onChange={(event) =>
-                  onChange({
-                    ...activeBoundary,
-                    projection: event.target.value,
-                  })
-                }
-              >
-                <option>
-                  VN-2000 · Kinh tuyến trục 108°30'
-                </option>
-                <option>
-                  VN-2000 · Kinh tuyến trục 107°45'
-                </option>
-                <option>
-                  VN-2000 · Kinh tuyến trục 108°00'
-                </option>
-                <option>
-                  VN-2000 · Kinh tuyến trục 105°45'
-                </option>
-              </select>
+              <input value={activeBoundary.projection.replace(/^VN-2000 · Kinh tuyến trục\s*/, '')}
+                onChange={event => onChange({ ...activeBoundary, projection: `VN-2000 · Kinh tuyến trục ${event.target.value}` })} placeholder="108°30'" />
             </label>
 
+            <label><span>Múi chiếu</span><select value={zone} onChange={event => setZone(Number(event.target.value) as 3 | 6)}><option value={3}>3 độ</option><option value={6}>6 độ</option></select></label>
             <label className="file-upload-button">
               <FileUp size={17} />
               Tải tệp TXT, CSV hoặc KML
@@ -330,6 +339,7 @@ function FarmBoundaryEditor({
             </label>
           </div>
 
+          <button type="button" className="btn btn-secondary" disabled={converting || activeBoundary.points.length < 3} onClick={() => void convertBoundary()}>{converting ? 'Đang chuyển tọa độ…' : 'Chuyển tọa độ và xem trên bản đồ'}</button>
           <div className="coordinate-form">
             <label>
               <span>Tọa độ X (Bắc)</span>
@@ -400,7 +410,9 @@ function FarmBoundaryEditor({
         }
       >
         <strong>
-          {activeBoundary.isValid
+          {activeBoundary.method === "vn2000" && activeBoundary.points.length >= 3
+            ? "Cần chuyển tọa độ sang WGS84"
+            : activeBoundary.isValid
             ? "Ranh giới hợp lệ"
             : "Cần ít nhất 3 điểm để tạo ranh giới"}
         </strong>
@@ -480,7 +492,7 @@ function FarmBoundaryEditor({
         </>
       )}
 
-    </div>
+    </fieldset>
   );
 }
 

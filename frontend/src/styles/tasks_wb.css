@@ -479,3 +479,47 @@
 
 
 }
+
+.tasks-page .task-row-actions { display: flex; flex-direction: row; align-items: center; flex-wrap: nowrap; gap: 8px; flex-shrink: 0; }
+.tasks-page .task-view-button { width: 42px; min-width: 42px; padding: 0; }
+.task-row-title h2 { overflow-wrap: anywhere; }
+.task-scope-note { margin: 0; color: var(--agri-muted-strong); font-size: 13px; }
+.task-detail-modal { width: min(760px, calc(100vw - 32px)); max-height: 90vh; padding: 0; border: 1px solid var(--agri-border); border-radius: 5px; color: var(--agri-text); background: var(--agri-surface); }
+.task-detail-modal::backdrop { background: var(--agri-backdrop); backdrop-filter: blur(var(--agri-backdrop-blur)); }
+.task-detail-body { padding: 24px; overflow-y: auto; }
+.task-detail-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 20px; }
+.task-detail-heading h3, .task-detail-body p { white-space: pre-wrap; overflow-wrap: anywhere; }
+.task-detail-grid { margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid var(--agri-border); border-left: 1px solid var(--agri-border); }
+.task-detail-grid > div { min-width: 0; padding: 14px; border-right: 1px solid var(--agri-border); border-bottom: 1px solid var(--agri-border); }
+.task-detail-grid dt { margin-bottom: 6px; color: var(--agri-muted-strong); font-size: 13px; }
+.task-detail-grid dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+.task-detail-notes { margin-top: 20px; }
+.task-detail-notes dd { min-height: 48px; white-space: pre-wrap; font-weight: 400; line-height: 1.6; }
+.task-detail-body section { margin-top: 20px; }
+.task-detail-body section h3 { margin-bottom: 8px; font-size: 15px; }
+@media (max-width: 560px) { .task-detail-grid { grid-template-columns: 1fr; } .task-detail-heading { flex-direction: column; } }
+
+.tasks-page .task-row-actions .btn { width: auto; flex: 0 0 auto; }
+.tasks-page .task-row-actions .task-view-button { width: 42px; }
+
+/* Dialogs need explicit auto margins because the global reset removes UA centering. */
+dialog.task-detail-modal { position: fixed; inset: 0; margin: auto; height: fit-content; width: min(780px, calc(100vw - 32px)); max-height: calc(100dvh - 40px); overflow: hidden; }
+dialog.task-detail-modal[open] { display: flex; flex-direction: column; }
+.task-detail-modal > .app-modal-header, .task-detail-modal > .app-modal-footer { flex-shrink: 0; }
+.task-detail-modal .task-detail-body { min-height: 0; overflow-y: auto; padding: 24px; }
+.task-detail-modal .task-detail-heading { align-items: center; padding: 18px; background: var(--agri-header); border: 1px solid var(--agri-border); border-radius: 5px; }
+.task-detail-modal .task-detail-heading h3 { font-size: 18px; line-height: 1.5; margin: 0; }
+.task-detail-schedule { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 18px 0 0; }
+.task-detail-schedule > div { min-width: 0; padding: 14px; border: 1px solid var(--agri-border); background: var(--agri-header); border-radius: 5px; }
+.task-detail-schedule dt { margin-bottom: 8px; font-size: 13px; color: var(--agri-muted-strong); }
+.task-detail-schedule dd { margin: 0; color: var(--agri-title); font-weight: 600; font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+@media (max-width: 640px) {
+  dialog.task-detail-modal { max-height: calc(100dvh - 24px); width: calc(100vw - 24px); }
+  .task-detail-modal .task-detail-body { padding: 16px; }
+  .task-detail-schedule { grid-template-columns: 1fr; }
+}
+
+.task-recipient-list { margin-top: 12px; max-height: 260px; overflow-y: auto; border: 1px solid var(--agri-border); }
+.task-recipient-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 14px; }
+.task-recipient-row + .task-recipient-row { border-top: 1px solid var(--agri-border); }
+.task-assignment-line > span { min-width: 0; overflow-wrap: anywhere; }

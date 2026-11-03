@@ -48,6 +48,7 @@ export type Season = {
   status: string;
   org_id: string;
   assigned_team_names?: string[]
+  notes?: string | null;
 };
 export type TeamMember = {
   user_id: string;
@@ -123,46 +124,7 @@ export type CreateLog = {
   content?: string;
   gps: GPSPoint
 };
-export type TaskContent = {
-  title: string;
-  instructions?: string;
-  startTime?: string;
-  endTime?: string;
-  tools?: string;
-  started?: boolean;
-  assignmentId?: string
-};
-
-const TASK_CONTENT_PREFIX = 'AGRITRACE_TASK_V1:';
-
-export function encodeTaskContent(value: TaskContent) {
-  return `${TASK_CONTENT_PREFIX}${JSON.stringify(value)}`;
-}
-
-export function decodeTaskContent(content: string): TaskContent {
-  if (!content.startsWith(TASK_CONTENT_PREFIX))
-    return {
-      title: content,
-      started: true
-    };
-
-  try {
-    const value = JSON.parse(content.slice(TASK_CONTENT_PREFIX.length)) as Partial<TaskContent>;
-
-    return typeof value.title === 'string' ? {
-      ...value,
-      title: value.title
-    } : {
-      title: content,
-      started: true
-    };
-  } catch {
-    return {
-      title: content,
-      started: true
-    };
-  }
-}
+export { encodeTaskContent, decodeTaskContent, type TaskContent } from '@/utils/task_content';
 
 export const listLogs = (token: string, seasonId?: string) => request<FarmingLog[]>(token, `/farming-logs${seasonId ? `?season_id=${encodeURIComponent(seasonId)}` : ''}`);
 export const getLog = (token: string, id: string) => request<FarmingLogDetail>(token, `/farming-logs/${encodeURIComponent(id)}`);

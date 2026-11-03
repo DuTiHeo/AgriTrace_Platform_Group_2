@@ -115,9 +115,11 @@ export const sharedStyles = StyleSheet.create({
   },
 
   bell: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 44,
+    height: 44,
+    borderRadius: radius.control,
+    borderWidth: 1,
+    borderColor: colors.border,
     backgroundColor: colors.surface,
     alignItems: 'center',
     justifyContent: 'center'
@@ -125,19 +127,24 @@ export const sharedStyles = StyleSheet.create({
 
   badge: {
     position: 'absolute',
-    right: -2,
-    top: -3,
-    backgroundColor: '#DE655E',
-    borderRadius: 10,
-    minWidth: 17,
-    alignItems: 'center'
+    right: -6,
+    top: -5,
+    backgroundColor: colors.danger,
+    borderRadius: radius.chip,
+    borderWidth: 2,
+    borderColor: colors.surface,
+    minWidth: 19,
+    height: 19,
+    paddingHorizontal: 3,
+    alignItems: 'center',
+    justifyContent: 'center'
   },
 
   badgeText: {
     color: colors.surface,
-    fontSize: 10,
+    fontSize: 9,
+    lineHeight: 11,
     fontWeight: '800',
-    padding: 2
   },
 
 

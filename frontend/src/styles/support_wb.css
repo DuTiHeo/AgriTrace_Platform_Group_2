@@ -48,3 +48,12 @@
 .support-empty span { font-size: 11px; }
 @media (max-width: 960px) { .support-layout { grid-template-columns: 1fr; } }
 @media (max-width: 560px) { .support-history-heading { align-items: stretch; flex-direction: column; } .support-history-heading select, .support-form-card .btn { width: 100%; } }
+
+.support-content-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; align-items: stretch; }
+.support-content-row .support-description { min-width: 0; }
+.support-form-only .support-content-row textarea { flex: 1; min-height: 300px; }
+.support-content-row .support-image-section { min-width: 0; gap: 10px; }
+.support-image-label { color: var(--agri-text); font-size: 12px; font-weight: 700; }
+.support-content-row .support-image-preview { grid-template-columns: 1fr; flex: 1; min-height: 238px; }
+.support-content-row .support-image-preview figure { height: 100%; min-height: 210px; }
+@media (max-width: 800px) { .support-content-row { grid-template-columns: 1fr; } .support-form-only .support-content-row textarea { min-height: 180px; } }

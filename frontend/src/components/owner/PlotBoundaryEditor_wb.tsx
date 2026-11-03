@@ -1,3 +1,4 @@
+import VN2000Import from './VN2000Import_wb';
 import GeographicMap from "./GeographicMap_wb";
 import "../../styles/plot_form_wb.css";
 import {
@@ -216,6 +217,7 @@ function PlotBoundaryEditor({
 
   return (
     <div className="boundary-editor">
+      <VN2000Import disabled={disabled} onConverted={next => { const applied = commitPoints(next); if (applied) setEditingIndex(null); return applied; }} />
       <div className="boundary-toolbar">
         <div className="boundary-coordinate-inputs">
           <label>

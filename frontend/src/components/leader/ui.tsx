@@ -1,5 +1,5 @@
 import { type ComponentRef, useState, type ReactNode, type RefObject, type PropsWithChildren } from 'react';
-import { useAccountUtilities } from '@/contexts/account_utilities_context';
+import { NotificationBell } from '@/components/common/notification_bell';
 import { PersonalAvatarButton } from '@/components/common/personal_avatar_button';
 import { sharedStyles as s } from '@/styles/role_styles';
 import { Button } from '@/components/common/role_ui';
@@ -18,9 +18,7 @@ import {
 } from 'react-native';
 import type { ScrollViewProps } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { SymbolView } from 'expo-symbols';
 import { useAuth } from '@/contexts/auth_context';
-import { useNotifications } from '@/contexts/notification_context';
 export { sharedStyles as s } from '@/styles/role_styles';
 export { Avatar, Button, Card, Section, Input, Chip, Status, Empty, Row } from '@/components/common/role_ui';
 
@@ -58,8 +56,6 @@ export function Screen({
   onBack?: () => void;
 }>) {
   const { user } = useAuth();
-  const { showBadge } = useAccountUtilities();
-  const { unread } = useNotifications();
 
   return (
     <SafeAreaView
@@ -119,32 +115,7 @@ export function Screen({
                   </Text>
                 </View>
 
-                <Pressable
-                  accessibilityLabel="Thông báo"
-                  style={s.bell}
-                  onPress={() => {
-                    Keyboard.dismiss();
-                    go('notifications');
-                  }}
-                >
-                  <SymbolView
-                    name={{
-                      ios: 'bell',
-                      android: 'notifications',
-                      web: 'notifications'
-                    }}
-                    size={23}
-                    tintColor="#35573C"
-                  />
-
-                  {showBadge && unread > 0 && (
-                    <View style={s.badge}>
-                      <Text style={s.badgeText}>
-                        {unread}
-                      </Text>
-                    </View>
-                  )}
-                </Pressable>
+                <NotificationBell role="leader" />
               </>
             )}
           </View>

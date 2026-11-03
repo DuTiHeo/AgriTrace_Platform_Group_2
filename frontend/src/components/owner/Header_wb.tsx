@@ -3,20 +3,19 @@ import {
   Menu,
   Sprout,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useFarmContext } from "../../contexts/FarmContext_wb";
 import { accountService } from "../../sevices/accountService_wb";
-import { notificationService } from "../../sevices/notificationService_wb";
 
 type HeaderProps = {
   onMenuClick: () => void;
+  unreadCount: number;
 };
 
-function Header({ onMenuClick }: HeaderProps) {
+function Header({ onMenuClick, unreadCount }: HeaderProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const [unreadCount, setUnreadCount] = useState(0);
   const [accountName, setAccountName] = useState("Chủ nông trại");
 
   const {
@@ -28,37 +27,6 @@ function Header({ onMenuClick }: HeaderProps) {
 
   const showFarmSelector =
     !location.pathname.startsWith("/farms");
-
-  const loadUnreadCount = useCallback(async () => {
-    try {
-      setUnreadCount(await notificationService.getUnreadCount());
-    } catch {
-      setUnreadCount(0);
-    }
-  }, []);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => void loadUnreadCount(), 0);
-    const interval = window.setInterval(() => { if (!document.hidden) void loadUnreadCount(); }, 60000);
-    const events = [
-      "notifications-updated",
-      "tasks-updated",
-      "farming-logs-updated",
-      "seasons-updated",
-      "harvest-batches-updated",
-    ];
-    events.forEach((eventName) =>
-      window.addEventListener(eventName, loadUnreadCount),
-    );
-
-    return () => {
-      window.clearTimeout(timer);
-      window.clearInterval(interval);
-      events.forEach((eventName) =>
-        window.removeEventListener(eventName, loadUnreadCount),
-      );
-    };
-  }, [loadUnreadCount]);
 
   useEffect(() => {
     let active = true;
@@ -141,7 +109,7 @@ function Header({ onMenuClick }: HeaderProps) {
           aria-label={`Thông báo${unreadCount ? `, ${unreadCount} chưa đọc` : ""}`}
           onClick={() => navigate("/notifications")}
         >
-          <Bell size={20} />
+          <Bell size={23} aria-hidden="true" />
           {unreadCount > 0 && (
             <span className="notification-count">
               {unreadCount > 99 ? "99+" : unreadCount}

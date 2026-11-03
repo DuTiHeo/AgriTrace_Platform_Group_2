@@ -114,12 +114,12 @@ export function groupLeaderTasks(tasks: ScheduledTask[]) {
       continue;
     }
 
-    const allDone = current.status === 'done' && task.status === 'done';
+    const anyDone = current.status === 'done' || task.status === 'done';
     let groupDisplayStatus: TaskDisplayStatus;
-    if (allDone) {
-      groupDisplayStatus = [current.displayStatus, task.displayStatus].includes('completed_late')
-        ? 'completed_late'
-        : 'completed';
+    if (anyDone) {
+      groupDisplayStatus = [current.displayStatus, task.displayStatus].includes('completed')
+        ? 'completed'
+        : 'completed_late';
     } else {
       const statuses = [current.displayStatus, task.displayStatus];
       if (statuses.includes('incomplete')) {
@@ -148,7 +148,7 @@ export function groupLeaderTasks(tasks: ScheduledTask[]) {
       updatedAt: !current.updatedAt ? task.updatedAt : !task.updatedAt ? current.updatedAt
         : new Date(task.updatedAt) > new Date(current.updatedAt) ? task.updatedAt : current.updatedAt,
       workerName: null,
-      status: allDone ? 'done' : 'doing',
+      status: anyDone ? 'done' : 'doing',
       displayStatus: groupDisplayStatus,
     });
   }

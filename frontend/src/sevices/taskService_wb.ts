@@ -1,3 +1,6 @@
+import { decodeTaskContent, encodeTaskContent } from '../utils/task_content';
+import { getTaskTypeLabel } from '../constants/task_types';
+import { accountService } from './accountService_wb';
 import { getPersonnelByTeam } from "./personnelService_wb";
 import { plotService } from "./plotService_wb";
 import { getTeamById } from "./teamService_wb";
@@ -24,6 +27,7 @@ type TaskDto = {
 
 function mapTask(dto: TaskDto): Task {
   const createdAt = dto.created_at ?? "";
+  const content = decodeTaskContent(dto.content);
   return {
     id: dto.task_id,
     farmId: dto.org_id ?? "",
@@ -33,10 +37,13 @@ function mapTask(dto: TaskDto): Task {
     assigneeId: dto.worker_id,
     assigneeName: dto.worker_name ?? "",
     assigneeRole: null,
-    assignedById: "",
-    assignedByName: "Chưa ghi nhận",
-    assignedByRole: null,
-    content: dto.content,
+    assignedById: content.assignedById ?? "",
+    assignedByName: content.assignedByName ?? "Chưa xác định",
+    assignedByRole: content.assignedByRole === 'owner' || content.assignedByRole === 'leader' || content.assignedByRole === 'admin' ? content.assignedByRole : null,
+    content: getTaskTypeLabel(content.title),
+    instructions: content.instructions ?? '',
+    tools: content.tools ?? '',
+    assignmentId: content.assignmentId,
     startAt: dto.start_at ?? "",
     dueAt: dto.due_at ?? "",
     status: dto.status,
@@ -82,11 +89,14 @@ export const taskService = {
     if (!assignee) throw new Error("Người nhận không còn hoạt động trong tổ.");
     if (!input.content.trim()) throw new Error("Vui lòng nhập nội dung công việc.");
 
+    const actor = await accountService.getCurrentUser();
+    if (actor.role !== 'owner') throw new Error('Trang giao việc này dành cho chủ nông trại.');
     const created = await httpClient.post<TaskDto>("/tasks", {
       team_id: input.teamId,
       worker_id: input.assigneeId,
       plot_id: plotId,
-      content: input.content.trim(),
+      content: encodeTaskContent({ title: input.content.trim(), startTime: '08:00', endTime: '17:00',
+        assignedById: actor.user_id, assignedByRole: 'owner', assignedByName: actor.full_name }),
       start_at: toApiDateTime(input.startAt),
       due_at: toApiDateTime(input.dueAt),
     });
@@ -99,7 +109,10 @@ export const taskService = {
     if (input.teamId !== undefined) payload.team_id = input.teamId;
     if (input.assigneeId !== undefined) payload.worker_id = input.assigneeId;
     if (input.plotId !== undefined) payload.plot_id = input.plotId;
-    if (input.content !== undefined) payload.content = input.content.trim();
+    if (input.content !== undefined) {
+      const current = await httpClient.get<TaskDto>(`/tasks/${encodeURIComponent(id)}`);
+      payload.content = encodeTaskContent({ ...decodeTaskContent(current.content), title: input.content.trim() });
+    }
     if (input.startAt !== undefined) payload.start_at = toApiDateTime(input.startAt);
     if (input.dueAt !== undefined) payload.due_at = toApiDateTime(input.dueAt);
     const updated = await httpClient.patch<TaskDto>(`/tasks/${id}`, payload);

@@ -54,6 +54,7 @@ type SeasonDto = {
   expected_harvest_date: string | null;
   actual_harvest_date: string | null;
   status: string;
+  notes?: string | null;
   org_id: string;
   assigned_team_names?: string[];
   teams?: Array<{
@@ -101,7 +102,7 @@ function mapSeason(dto: SeasonDto): Season {
     expectedHarvestDate: dto.expected_harvest_date ?? "",
     actualHarvestDate: dto.actual_harvest_date,
     status: mapSeasonStatus(dto.status),
-    notes: "",
+    notes: dto.notes ?? "",
     linkedData: {
       tasks: null,
       cultivationLogs: dto.farming_logs_count ?? 0,
@@ -207,6 +208,7 @@ export const seasonService = {
       planting_date: input.sowingDate,
       expected_harvest_date: input.expectedHarvestDate,
       assigned_team_ids: [],
+      notes: input.notes.trim() || null,
     });
     window.dispatchEvent(new Event("seasons-updated"));
     window.dispatchEvent(new Event("plots-updated"));
@@ -217,6 +219,7 @@ export const seasonService = {
     const payload: Record<string, unknown> = {};
     if (input.expectedHarvestDate !== undefined) payload.expected_harvest_date = input.expectedHarvestDate;
     if (input.actualHarvestDate !== undefined) payload.actual_harvest_date = input.actualHarvestDate;
+    if (input.notes !== undefined) payload.notes = input.notes.trim() || null;
     if (input.status !== undefined) payload.status = toApiSeasonStatus(input.status);
     const updated = await httpClient.patch<SeasonDto>(`/seasons/${id}`, payload);
     window.dispatchEvent(new Event("seasons-updated"));

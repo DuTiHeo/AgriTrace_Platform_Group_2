@@ -348,7 +348,7 @@ function CreateSeasonPage() {
         sowingDate: formData.sowingDate,
         expectedHarvestDate:
           formData.expectedHarvestDate,
-        notes: "",
+        notes: notes.trim(),
       });
 
       navigate(`/seasons/${season.id}`, {
@@ -521,13 +521,12 @@ function CreateSeasonPage() {
             <label className="season-form-field season-create-notes">
               <span>Ghi chú</span>
               <textarea
-                disabled
+                disabled={submitting}
                 value={notes}
                 onChange={(event) => setNotes(event.target.value)}
                 placeholder="Nhập ghi chú cho mùa vụ..."
                 rows={5}
               />
-              <small className="season-form-note">Chức năng lưu ghi chú mùa vụ chưa được hỗ trợ.</small>
             </label>
 
             <div className="season-form-heading season-form-time-heading">

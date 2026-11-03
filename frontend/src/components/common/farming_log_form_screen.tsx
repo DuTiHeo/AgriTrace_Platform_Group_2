@@ -493,6 +493,10 @@ export function FarmingLogFormScreen() {
                   )}
                   {fieldError('area')}
                 </View>
+                {!!activeSeasons.find(season => season.season_id === draft.seasonId)?.notes?.trim() && <View>
+                  <Text style={styles.label}>Ghi chú mùa vụ</Text>
+                  <Text style={shared.muted}>{activeSeasons.find(season => season.season_id === draft.seasonId)?.notes}</Text>
+                </View>}
                 <View
                   style={styles.noteField}
                   onLayout={event => {

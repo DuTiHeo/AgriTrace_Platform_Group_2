@@ -6,7 +6,7 @@ export type ErrorReportCategory = 'interface' | 'data' | 'performance' | 'bug' |
 export type CreateErrorReport = {
   error_type?: string | null;
   description: string;
-  /** Backend accepts a URL, not a local photo URI or multipart upload. */
+  /** URL returned by the dedicated screenshot upload endpoint. */
   screenshot_url?: string | null;
 };
 
@@ -56,11 +56,15 @@ export function buildErrorReportPayload(draft: { kind: string; text: string; pho
   const description = draft.text.trim();
   if (description.length < 5) throw new Error('Mô tả sự cố cần ít nhất 5 ký tự.');
   const screenshot = draft.photo?.trim();
-  if (screenshot && (screenshot.length > 500 || !/^https?:\/\/[^\s]+$/i.test(screenshot)))
-    throw new Error('Ảnh minh họa cần là URL http/https, tối đa 500 ký tự. Ảnh trên điện thoại chưa được hỗ trợ tải lên.');
+  if (screenshot && (screenshot.length > 500 || !(/^https?:\/\/[^\s]+$/i.test(screenshot) || /^\/uploads\/error-reports\/[A-Za-z0-9._-]+$/.test(screenshot))))
+    throw new Error('Ảnh minh họa chưa được tải lên máy chủ hoặc đường dẫn không hợp lệ.');
   return {
     error_type: errorReportKinds.find(kind => kind.label === draft.kind)?.value ?? 'other',
     description,
     ...(screenshot ? { screenshot_url: screenshot } : {}),
   };
 }
+
+export type ErrorScreenshotUpload = { screenshot_url: string; filename: string; size_bytes: number };
+export const uploadErrorScreenshot = (token: string, body: FormData, fetcher: typeof fetch = fetch) =>
+  apiRequest<ErrorScreenshotUpload>(token, '/error-reports/upload-screenshot', { method: 'POST', body }, 60000, fetcher);

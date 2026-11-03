@@ -3,7 +3,7 @@ import { router, useFocusEffect, type Href } from "expo-router";
 import { Keyboard, Pressable, Text, View } from "react-native";
 import { useAuth } from "@/contexts/auth_context";
 import { useLeader } from "@/contexts/leader_context";
-import { logout } from "@/sevices/auth.sevice";
+import { getMe, logout, type UserInformation } from "@/sevices/auth.sevice";
 import { Avatar, Button, Card, go, Row, Screen, Section, s } from "@/components/leader/ui";
 import { Feedback } from "@/components/leader/feedback";
 import { listMyTasks, listAssignedPlots } from '@/sevices/farming_log.service';
@@ -11,6 +11,14 @@ import { listMyTasks, listAssignedPlots } from '@/sevices/farming_log.service';
 export default function ProfileScreen() {
   const { user, accessToken, clearAuth } = useAuth();
   const { members, diaries } = useLeader();
+  const [profile, setProfile] = useState<UserInformation | null>(null);
+  useFocusEffect(useCallback(() => {
+    let active = true;
+    setProfile(null);
+    if (accessToken) void getMe(accessToken).then(value => { if (active) setProfile(value); }).catch(() => { if (active) setProfile(null); });
+    return () => { active = false; };
+  }, [accessToken]));
+
   const [busy, setBusy] = useState(false),
     [error, setError] = useState('');
   const [management, setManagement] = useState<{
@@ -108,7 +116,7 @@ export default function ProfileScreen() {
               ]}
             >
               <Text style={s.chipText}>
-                Đang làm việc
+                {(profile?.status ?? user?.status) === 'active' ? 'Đang hoạt động' : profile?.status ?? user?.status ?? 'Chưa có dữ liệu'}
               </Text>
             </View>
           </View>
@@ -132,6 +140,7 @@ export default function ProfileScreen() {
           }
         />
 
+        <Row label="Ngày tham gia" value={(profile?.created_at ?? user?.created_at) ? new Date((profile?.created_at ?? user?.created_at)!).toLocaleDateString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }) : 'Chưa có dữ liệu'} />
         <Row
           label="Thành viên tổ"
           value={`${members.length} nhân sự`}

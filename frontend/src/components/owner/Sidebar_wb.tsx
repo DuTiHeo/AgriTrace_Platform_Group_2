@@ -24,6 +24,7 @@ import { accountService } from "../../sevices/accountService_wb";
 type SidebarProps = {
   open: boolean;
   onClose: () => void;
+  unreadCount: number;
 };
 
 const menuItems = [
@@ -80,7 +81,7 @@ const menuItems = [
   },
 ];
 
-function Sidebar({ open, onClose }: SidebarProps) {
+function Sidebar({ open, onClose, unreadCount }: SidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const [logoutOpen, setLogoutOpen] = useState(false);
@@ -144,6 +145,7 @@ function Sidebar({ open, onClose }: SidebarProps) {
               <NavLink
                 key={item.path}
                 to={item.path}
+                aria-label={item.path === "/notifications" && unreadCount > 0 ? `Thông báo, ${unreadCount} chưa đọc` : undefined}
                 end={item.path === "/"}
                 className={({ isActive }) =>
                   `sidebar-link ${
@@ -159,6 +161,11 @@ function Sidebar({ open, onClose }: SidebarProps) {
                   strokeWidth={1.9}
                 />
                 <span>{item.label}</span>
+                {item.path === "/notifications" && unreadCount > 0 && (
+                  <span className="sidebar-unread-count" aria-hidden="true">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
               </NavLink>
             );
           })}

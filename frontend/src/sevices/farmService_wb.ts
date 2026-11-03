@@ -59,7 +59,7 @@ function toFarmBoundary(geometry?: OrganizationDto["boundary_geojson"]): FarmBou
 function toGeoJson(boundary: FarmBoundary | null) {
     if (!boundary) return null;
     if (boundary.method !== "map") {
-      throw new Error("API hiện chỉ nhận ranh giới WGS84. Hãy chọn vẽ bản đồ hoặc nhập GeoJSON WGS84.");
+      throw new Error("Hãy chuyển tọa độ VN-2000 sang WGS84 bằng nút chuyển tọa độ trước khi lưu.");
     }
     if (!boundary.isValid || boundary.points.length < 3) {
       throw new Error("Ranh giới cần tối thiểu 3 điểm hợp lệ.");

@@ -2,7 +2,7 @@
 
 ## Web Owner / Admin
 
-`webApi_wb.ts` khai báo đầy đủ **97 thao tác thuộc 17 nhóm** trong OpenAPI backend
+`webApi_wb.ts` khai báo đầy đủ **101 thao tác thuộc 17 nhóm** trong OpenAPI backend
 hiện tại. Đây là lớp gọi HTTP có kiểu dữ liệu, không phải dữ liệu giả. Import
 không tự gửi request; chỉ gọi hàm khi màn hình cần dữ liệu hoặc người dùng thao tác.
 
@@ -80,9 +80,16 @@ Giữ tên thư mục `sevices` theo cấu trúc hiện có của app.
 Quyền truy cập do backend kiểm tra. Những hàm dành riêng Admin/Owner (phản hồi
 báo cáo lỗi, phát hành/xóa nhắc nhở và `/system-logs`) không được bổ sung vào app.
 
-`screenshot_url` của báo cáo lỗi là URL ảnh đã có trên máy chủ; không truyền URI
-ảnh cục bộ của điện thoại. Backend hiện chưa cung cấp endpoint upload ảnh riêng
-cho báo cáo sự cố. Không dùng endpoint ảnh nhật ký thay cho ảnh báo cáo lỗi.
+`screenshot_url` là URL do POST `/error-reports/upload-screenshot` trả về. Mobile
+chuyển ảnh sang JPEG, kiểm tra tối đa 5 MB rồi gửi multipart trường `file`; Owner
+nhận JPG/PNG/WEBP tối đa 5 MB. Mỗi báo cáo tối đa 1 ảnh theo hợp đồng backend.
+Tải ảnh thành công trước khi gửi form, giữ URL đã tải nếu tạo báo cáo thất bại
+để thử lại. Không dùng API ảnh nhật ký để lưu ảnh báo lỗi.
+
+API mới còn bổ sung hồ sơ `/auth/me` (ngày sinh, ngày tham gia, trạng thái),
+`notes` khi tạo/sửa/đọc mùa vụ và chuyển VN-2000 qua
+`/organizations/convert-vn2000`, `/plots/convert-vn2000`. Owner chuyển sang WGS84
+và kiểm tra ranh giới trước khi lưu; diện tích vùng trồng từ backend dùng ha.
 
 Hàm danh sách thông báo/báo cáo trả về một trang theo `limit`/`offset` của backend,
 không tự tải tất cả các trang. Bộ lọc giữ nguyên tên trường trong API. Ngày nhắc

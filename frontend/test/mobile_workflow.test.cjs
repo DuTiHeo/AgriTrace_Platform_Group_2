@@ -14,6 +14,7 @@ function load(relative, mocks = {}, extra = '') {
 }
 const dates = load('src/utils/task_dates.ts');
 const service = load('src/sevices/farming_log.service.ts', {
+  '@/utils/task_content': load('src/utils/task_content.ts'),
   '@/constants/api': { API_BASE_URL: 'https://test.invalid' },
   'expo/fetch': { fetch: async () => { throw new Error('No real HTTP allowed'); } },
   './api_client': { apiRequest: async () => [], apiJson: (method, body) => ({ method, body: JSON.stringify(body) }), apiQuery: () => '' },
@@ -127,6 +128,14 @@ test('Leader groups only identical assignment payloads and preserves per-worker 
   assert.equal(grouped[0].assigneeStatuses['worker-1'].status, 'pending');
   assert.equal(grouped[0].assigneeStatuses['worker-2'].status, 'in_progress');
   assert.equal(groupLeaderTasks([first, { ...second, due: '2099-11-06' }]).length, 2);
+  const completed = mapTask({ ...base, task_id: 'task-3', worker_id: 'worker-3', status: 'completed' });
+  for (const members of [[first, second, completed], [completed, second, first]]) {
+    const [assignment] = groupLeaderTasks(members);
+    assert.equal(assignment.status, 'done');
+    assert.equal(assignment.assigneeStatuses['worker-1'].status, 'pending');
+    assert.equal(assignment.assigneeStatuses['worker-2'].status, 'in_progress');
+    assert.equal(assignment.assigneeStatuses['worker-3'].status, 'completed');
+  }
 });
 test('mobile error reports send API categories, description and remote screenshot without client identity', async () => {
   const calls = [];
@@ -149,6 +158,6 @@ test('mobile error reports send API categories, description and remote screensho
 test('error report rejects local photo URIs and short descriptions before sending', () => {
   const api = load('src/sevices/error_report.service.ts', { './api_client': {} });
   assert.throws(() => api.buildErrorReportPayload({ kind: 'Khác', text: 'abc' }), /5 ký tự/);
-  assert.throws(() => api.buildErrorReportPayload({ kind: 'Khác', text: 'Không mở được', photo: 'file:///phone/error.jpg' }), /URL/);
+  assert.throws(() => api.buildErrorReportPayload({ kind: 'Khác', text: 'Không mở được', photo: 'file:///phone/error.jpg' }), /đường dẫn không hợp lệ/);
   assert.equal('screenshot_url' in api.buildErrorReportPayload({ kind: 'Khác', text: 'Không mở được' }), false);
 });

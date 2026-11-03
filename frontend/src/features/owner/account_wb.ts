@@ -1,5 +1,7 @@
 export type OwnerAccount = {
   id: string;
+  nationalId?: string;
+  status?: string;
   fullName: string;
   phone: string;
   email: string;
