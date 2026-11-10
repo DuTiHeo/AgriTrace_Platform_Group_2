@@ -353,10 +353,7 @@ function PlotsPage() {
                       <ListRowActions to={`/plots/${plot.id}`} name={plot.name} statusLabel={plot.status === "active" ? "Ngừng sử dụng" : "Hoạt động lại"} resume={plot.status !== "active"}
                         statusDescription={plot.status === "active" ? "Vùng trồng sẽ chuyển sang ngừng sử dụng." : "Vùng trồng sẽ được đưa vào sử dụng trở lại."}
                         onStatus={async () => { await plotService.setStatus(plot.id, plot.status === "active" ? "inactive" : "active"); }}
-                        onDelete={async () => {
-                          if (!await plotService.canDelete(plot.id)) throw new Error("Không thể xóa vùng trồng đang có mùa vụ hoạt động.");
-                          await plotService.delete(plot.id);
-                        }} />
+                        />
                     </td>
                   </tr>
                 ))}

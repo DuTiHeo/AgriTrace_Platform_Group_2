@@ -128,16 +128,17 @@ export const accountService = {
     window.dispatchEvent(new Event("account-updated"));
   },
 
-  async login(phone: string, password: string): Promise<OwnerAccount> {
+  async login(phone: string, password: string): Promise<AuthUser> {
     const token = await httpClient.post<{ access_token: string }>(
       "/auth/login",
       { phone: phone.trim(), password },
       { authenticated: false },
     );
     httpClient.setAccessToken(token.access_token, false);
-    let account: OwnerAccount;
+    let account: AuthUser;
     try {
-      account = await this.getAccount();
+      account = await this.getCurrentUser();
+      if (account.role !== "admin" && account.role !== "owner") toOwnerAccount(account);
     } catch (error) {
       httpClient.clearAccessToken();
       throw error;

@@ -18,43 +18,10 @@
   flex-wrap: wrap;
 }
 
-.plot-delete-button,
-.plot-confirm-delete {
-  display: inline-flex;
-  min-height: 40px;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 9px 15px;
-  color: var(--agri-danger-text);
-  font: inherit;
-  font-weight: 700;
-  background: var(--agri-white);
-  border: 1px solid var(--agri-danger-border-soft);
-  border-radius: var(--agri-radius-control);
-  cursor: pointer;
-}
 
-.plot-delete-button:hover:not(:disabled) {
-  background: var(--agri-danger-soft);
-  border-color: var(--agri-danger);
-}
 
-.plot-confirm-delete {
-  color: var(--agri-white);
-  background: var(--agri-danger);
-  border-color: var(--agri-danger);
-}
 
-.plot-confirm-delete:hover:not(:disabled) {
-  background: var(--agri-danger-text);
-  border-color: var(--agri-danger-text);
-}
 
-.plot-confirm-delete:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
 
 .plot-detail-hero {
   display: flex;
@@ -440,8 +407,7 @@
     grid-template-columns: 1fr;
   }
 
-  .plot-detail-actions .btn,
-  .plot-delete-button {
+  .plot-detail-actions .btn {
     width: 100%;
   }
 
@@ -475,9 +441,6 @@
     grid-column: 2;
   }
 
-  .plot-confirm-delete {
-    width: 100%;
-  }
 
 
 }

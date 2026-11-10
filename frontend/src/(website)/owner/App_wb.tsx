@@ -1,8 +1,6 @@
-import { Navigate, Route, Routes, useLocation } from "react-router-dom";
-import { lazy, Suspense, useSyncExternalStore, type ReactNode } from "react";
+import { Route, Routes } from "react-router-dom";
+import { lazy } from "react";
 import AppLayout from "./AppLayout_wb";
-import { accountService } from "../../sevices/accountService_wb";
-import { httpClient } from "../../sevices/httpClient_wb";
 import { FarmProvider } from "../../contexts/FarmContext_wb";
 
 const AccountPage = lazy(() => import("../../features/account/website/AccountPage_wb"));
@@ -19,8 +17,6 @@ const FarmingLogDetailPage = lazy(() => import("./FarmingLogDetailPage_wb"));
 const FarmingLogsPage = lazy(() => import("./FarmingLogsPage_wb"));
 const HarvestDetailPage = lazy(() => import("./HarvestDetailPage_wb"));
 const HarvestsPage = lazy(() => import("./HarvestsPage_wb"));
-const LoginPage = lazy(() => import("../../features/auth/website/LoginPage_wb"));
-const ForgotPasswordPage = lazy(() => import("../../features/auth/website/ForgotPasswordPage_wb"));
 const NotFoundPage = lazy(() => import("./NotFoundPage_wb"));
 const NotificationsPage = lazy(() => import("./NotificationsPage_wb"));
 const PersonnelDetailPage = lazy(() => import("./PersonnelDetailPage_wb"));
@@ -33,35 +29,11 @@ const TeamDetailPage = lazy(() => import("./TeamDetailPage_wb"));
 const TeamsPage = lazy(() => import("./TeamsPage_wb"));
 const TasksPage = lazy(() => import("./TasksPage_wb"));
 const SupportPage = lazy(() => import("./SupportPage_wb"));
-const TraceabilityPage = lazy(() => import("./TraceabilityPage_wb"));
 
-function ProtectedAppLayout() {
-  const location = useLocation();
-  const authenticated = useSyncExternalStore(httpClient.subscribeAuth, accountService.isAuthenticated);
-
-  if (!authenticated) {
-    return (
-      <Navigate
-        to="/login"
-        replace
-        state={{ from: `${location.pathname}${location.search}` }}
-      />
-    );
-  }
-
-  return <FarmProvider><AppLayout /></FarmProvider>;
-}
-
-function PublicOnlyRoute({ children }: { children: ReactNode }) {
-  const authenticated = useSyncExternalStore(httpClient.subscribeAuth, accountService.isAuthenticated);
-  return authenticated ? <Navigate to="/" replace /> : children;
-}
-
-function App() {
+export default function App() {
   return (
-    <Suspense fallback={<div className="route-loading">Đang tải trang...</div>}>
-      <Routes>
-      <Route element={<ProtectedAppLayout />}>
+    <Routes>
+      <Route element={<FarmProvider><AppLayout /></FarmProvider>}>
         <Route index element={<DashboardPage />} />
 
         <Route path="tasks" element={<TasksPage />} />
@@ -141,13 +113,6 @@ function App() {
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Route>
-
-      <Route path="trace/:batchCode" element={<TraceabilityPage />} />
-      <Route path="login" element={<PublicOnlyRoute><LoginPage /></PublicOnlyRoute>} />
-      <Route path="forgot-password" element={<PublicOnlyRoute><ForgotPasswordPage /></PublicOnlyRoute>} />
-      </Routes>
-    </Suspense>
+    </Routes>
   );
 }
-
-export default App;

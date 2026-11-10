@@ -21,9 +21,14 @@ function LoginPage() {
     setError("");
 
     try {
-      await accountService.login(login, password);
+      const user = await accountService.login(login, password);
       const state = location.state as LoginLocationState | null;
-      navigate(state?.from || "/", { replace: true });
+      const from = state?.from;
+      const adminPath = from && /^\/admin(?:\/|\?|$)/.test(from);
+      const destination = user.role === "admin"
+        ? (adminPath ? from : "/admin")
+        : (!adminPath && from ? from : "/");
+      navigate(destination, { replace: true });
     } catch (loginError) {
       setError(
         loginError instanceof Error

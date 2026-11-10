@@ -14,7 +14,9 @@
 .geographic-map-legend span { display: inline-flex; align-items: center; gap: 8px; }
 .geographic-map-legend i { display: inline-block; width: 28px; }
 .map-key-farm { border-top: 3px dashed var(--agri-info-text); }
+.map-key-reference { opacity: 0.65; border-top-width: 2px; }
 .map-key-plot { height: 12px; background: var(--agri-primary-soft); border: 2px solid var(--agri-primary); }
 .gps-editor-help { margin: 12px 0; font-size: 14px; color: var(--agri-muted-strong); line-height: 1.6; }
 .geographic-map .leaflet-container { font-family: inherit; }
+.geographic-map .leaflet-overlay-pane path.leaflet-interactive:focus { outline: none; }
 @media (max-width: 640px) { .geographic-map-canvas { height: 330px; } }

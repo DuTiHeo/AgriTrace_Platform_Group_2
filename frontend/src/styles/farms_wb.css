@@ -259,11 +259,6 @@
   color: var(--green-800);
 }
 
-.table-actions .danger-action:hover:not(:disabled) {
-  border-color: var(--agri-danger-border-soft);
-  background: var(--agri-danger-soft);
-  color: var(--red-700);
-}
 
 .farm-empty {
   display: flex;

@@ -12,7 +12,6 @@ import {
   RefreshCw,
   Save,
   Sprout,
-  Trash2,
   UserPlus,
   Users,
   X,
@@ -27,7 +26,6 @@ import {
 import type { FormEvent } from "react";
 import {
   Link,
-  useNavigate,
   useParams,
 } from "react-router-dom";
 import { useFarmContext } from "../../contexts/FarmContext_wb";
@@ -47,8 +45,6 @@ import type {
 type DialogType =
   | "edit"
   | "status"
-  | "delete"
-  | "delete-blocked"
   | null;
 
 type EditForm = {
@@ -94,7 +90,6 @@ function formatNoteDate(value: string) {
 
 function SeasonDetailPage() {
   const { seasonId } = useParams();
-  const navigate = useNavigate();
   const { farms } = useFarmContext();
 
   const [season, setSeason] =
@@ -234,21 +229,6 @@ function SeasonDetailPage() {
     season.status !== "completed" &&
     season.status !== "cancelled";
 
-  const hasLinkedData =
-    season !== null &&
-    ((season.linkedData.tasks ?? 0) > 0 ||
-      season.linkedData.cultivationLogs > 0 ||
-      season.linkedData.harvestLots > 0);
-
-  const isOpenSeason =
-    season !== null &&
-    (season.status === "planned" ||
-      season.status === "active" ||
-      season.status === "ready");
-
-  const deleteBlocked =
-    isOpenSeason || hasLinkedData;
-
   const closeDialog = () => {
     if (saving) {
       return;
@@ -284,16 +264,6 @@ function SeasonDetailPage() {
     );
     setActionError("");
     setDialog("status");
-  };
-
-  const openDeleteDialog = () => {
-    setActionError("");
-
-    setDialog(
-      deleteBlocked
-        ? "delete-blocked"
-        : "delete",
-    );
   };
 
   const handleSaveEdit = async (
@@ -377,28 +347,6 @@ function SeasonDetailPage() {
         error instanceof Error
           ? error.message
           : "Không thể cập nhật trạng thái.",
-      );
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!season) {
-      return;
-    }
-
-    setSaving(true);
-    setActionError("");
-
-    try {
-      await seasonService.delete(season.id);
-      navigate("/seasons", { replace: true });
-    } catch (error) {
-      setActionError(
-        error instanceof Error
-          ? error.message
-          : "Không thể xóa mùa vụ.",
       );
     } finally {
       setSaving(false);
@@ -500,14 +448,6 @@ function SeasonDetailPage() {
             </button>
           )}
 
-          <button
-            className="season-delete-button"
-            type="button"
-            onClick={openDeleteDialog}
-          >
-            <Trash2 size={17} />
-            Xóa
-          </button>
         </div>
       </div>
 
@@ -766,10 +706,6 @@ function SeasonDetailPage() {
                   "Chỉnh sửa mùa vụ"}
                 {dialog === "status" &&
                   "Cập nhật trạng thái"}
-                {dialog === "delete" &&
-                  "Xóa mùa vụ?"}
-                {dialog === "delete-blocked" &&
-                  "Không thể xóa mùa vụ"}
               </h2>
 
               <button
@@ -907,80 +843,6 @@ function SeasonDetailPage() {
                     {saving
                       ? "Đang xử lý..."
                       : "Xác nhận"}
-                  </button>
-                </div>
-              </>
-            )}
-
-            {dialog === "delete-blocked" && (
-              <>
-                <div className="app-modal-body">
-                  <div className="blocked-delete-message">
-                    <Clock3 size={22} />
-
-                    <div>
-                      <strong>
-                        Mùa vụ chưa thể xóa
-                      </strong>
-
-                      <p>
-                        {isOpenSeason &&
-                          "Cần kết thúc hoặc hủy mùa vụ trước. "}
-
-                        {hasLinkedData &&
-                          `Mùa vụ đang có ${season.linkedData.cultivationLogs} nhật ký và ${season.linkedData.harvestLots} lô thu hoạch liên quan.`}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="app-modal-footer">
-                  <button
-                    className="btn btn-primary"
-                    type="button"
-                    onClick={closeDialog}
-                  >
-                    Đã hiểu
-                  </button>
-                </div>
-              </>
-            )}
-
-            {dialog === "delete" && (
-              <>
-                <div className="app-modal-body">
-                  <p>
-                    Mùa vụ <strong>{season.name}</strong>{" "}
-                    sẽ bị xóa vĩnh viễn. Hành động này không
-                    thể hoàn tác.
-                  </p>
-
-                  {actionError && (
-                    <div className="form-error-block">
-                      {actionError}
-                    </div>
-                  )}
-                </div>
-
-                <div className="app-modal-footer">
-                  <button
-                    className="btn btn-secondary"
-                    type="button"
-                    onClick={closeDialog}
-                  >
-                    Hủy
-                  </button>
-
-                  <button
-                    className="season-confirm-delete"
-                    type="button"
-                    disabled={saving}
-                    onClick={handleDelete}
-                  >
-                    <Trash2 size={17} />
-                    {saving
-                      ? "Đang xóa..."
-                      : "Xóa mùa vụ"}
                   </button>
                 </div>
               </>

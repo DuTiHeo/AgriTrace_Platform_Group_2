@@ -9,7 +9,6 @@ import {
   Plus,
   Search,
   Sprout,
-  Trash2,
   X,
 } from "lucide-react";
 import {
@@ -29,7 +28,7 @@ import type {
 } from "../../features/owner/farm_wb";
 
 type StatusFilter = "all" | FarmStatus;
-type FarmAction = "suspend" | "activate" | "delete";
+type FarmAction = "suspend" | "activate";
 
 type PendingAction = {
   type: FarmAction;
@@ -91,18 +90,6 @@ function FarmsPage() {
 
     const { farm, type } = pendingAction;
 
-    if (type === "delete") {
-      const result = await farmService.delete(farm.id);
-      setNotice(result.message);
-
-      if (result.success) {
-        await loadFarms();
-      }
-
-      closeConfirmModal();
-      return;
-    }
-
     const nextStatus: FarmStatus =
       type === "suspend" ? "suspended" : "active";
 
@@ -144,20 +131,11 @@ function FarmsPage() {
       };
     }
 
-    if (pendingAction.type === "activate") {
-      return {
+    return {
         title: "Hoạt động lại nông trại?",
         description:
           "Nông trại sẽ được chuyển về trạng thái hoạt động nếu đã có ranh giới hợp lệ.",
         confirmText: "Hoạt động lại",
-      };
-    }
-
-    return {
-      title: "Xóa nông trại?",
-      description:
-        "Chỉ nông trại chưa có dữ liệu liên kết mới được phép xóa.",
-      confirmText: "Xóa nông trại",
     };
   };
 
@@ -336,20 +314,6 @@ function FarmsPage() {
                           </button>
                         )}
 
-                        <button
-                          className="danger-action"
-                          type="button"
-                          aria-label={`Xóa ${farm.name}`}
-                          title="Xóa"
-                          onClick={() =>
-                            setPendingAction({
-                              type: "delete",
-                              farm,
-                            })
-                          }
-                        >
-                          <Trash2 size={16} />
-                        </button>
                       </div>
                     </td>
                   </tr>
@@ -382,11 +346,7 @@ function FarmsPage() {
             onMouseDown={(event) => event.stopPropagation()}
           >
             <div
-              className={
-                pendingAction.type === "delete"
-                  ? "confirm-icon confirm-icon-danger"
-                  : "confirm-icon confirm-icon-warning"
-              }
+              className="confirm-icon confirm-icon-warning"
             >
               <AlertTriangle size={24} />
             </div>
@@ -411,11 +371,7 @@ function FarmsPage() {
               </button>
 
               <button
-                className={
-                  pendingAction.type === "delete"
-                    ? "btn btn-danger"
-                    : "btn btn-primary"
-                }
+                className="btn btn-primary"
                 type="button"
                 onClick={() => void confirmAction()}
               >

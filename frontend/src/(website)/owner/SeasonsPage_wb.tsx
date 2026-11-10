@@ -466,10 +466,7 @@ function SeasonsPage() {
                             if (status !== "active" && status !== "ready" && status !== "completed") return;
                             await seasonService.changeStatus(season.id, status, status === "completed" ? date : undefined);
                           }}
-                          onDelete={async () => {
-                            if (!await seasonService.canDelete(season.id)) throw new Error("Chỉ có thể xóa mùa vụ đã hoàn thành và chưa có nhật ký hoặc lô thu hoạch liên kết.");
-                            await seasonService.delete(season.id);
-                          }} />
+                        />
                       </td>
                     </tr>
                   );

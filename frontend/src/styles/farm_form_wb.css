@@ -220,25 +220,8 @@
   padding-top: 24px;
 }
 
-.farm-create-boundary-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 18px;
-}
 
-.farm-create-boundary-heading h2 {
-  color: var(--green-900);
-  font-size: 17px;
-}
 
-.farm-create-boundary-heading p {
-  margin-top: 4px;
-  color: var(--gray-500);
-  font-size: 13px;
-}
 
 .farm-create-summary {
   display: grid;

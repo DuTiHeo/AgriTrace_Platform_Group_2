@@ -49,7 +49,7 @@ async function start() {
     if (stopping) return;
     console.log(`\nWeb ${name} đã chạy:`);
     web.printUrls();
-    if (name === 'Admin') console.log('Mở đường dẫn /admin.html để xem trang Admin.');
+    if (name === 'Admin') console.log('Mở đường dẫn /admin để xem trang Admin.');
   }
 
   if (process.argv.includes('--web-only')) return;

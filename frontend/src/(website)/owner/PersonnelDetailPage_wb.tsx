@@ -733,7 +733,7 @@ function PersonnelDetailPage() {
 
       {openModal === "edit" && (
         <div
-          className="personnel-modal-backdrop"
+          className="personnel-modal-backdrop" onClick={event => { if (!saving && event.target === event.currentTarget) closeModal(); }}
           role="presentation"
         >
           <form
@@ -912,7 +912,7 @@ function PersonnelDetailPage() {
 
       {openModal === "assignment" && (
         <div
-          className="personnel-modal-backdrop"
+          className="personnel-modal-backdrop" onClick={event => { if (!saving && event.target === event.currentTarget) closeModal(); }}
           role="presentation"
         >
           <form
@@ -1079,7 +1079,7 @@ function PersonnelDetailPage() {
 
       {openModal === "lock" && (
         <div
-          className="personnel-modal-backdrop"
+          className="personnel-modal-backdrop" onClick={event => { if (!saving && event.target === event.currentTarget) closeModal(); }}
           role="presentation"
         >
           <form

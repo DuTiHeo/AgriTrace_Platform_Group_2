@@ -83,11 +83,6 @@
   color: var(--agri-primary-text);
 }
 
-.list-row-actions > .list-row-delete:hover {
-  border-color: var(--agri-danger-border-soft);
-  background: var(--agri-danger-soft);
-  color: var(--agri-danger-text);
-}
 
 /* Status labels share the boundary column's shape; each domain owns its colors. */
 .app-shell .app-content :is(
@@ -464,11 +459,6 @@ html body :is(dialog, [role="dialog"][aria-modal="true"]) {
 }
 .app-content :is(.farm-table, .plots-table, .seasons-table, .personnel-table, .harvest-table) :is(th, td):last-child { padding-left: 10px; padding-right: 10px; }
 .app-content :is(.list-row-actions, .table-actions) > :is(a, button) { flex: 0 0 34px; }
-.app-content :is(.list-row-actions > .list-row-delete, .table-actions > .danger-action) {
-  color: color-mix(in srgb, var(--agri-danger-text) 72%, var(--agri-muted-strong));
-  border-color: var(--agri-danger-border-soft);
-  background: color-mix(in srgb, var(--agri-danger-soft) 35%, var(--agri-surface));
-}
 .app-content :is(.farm-table, .plots-table, .seasons-table, .personnel-table, .harvest-table) :is(.status-badge, .boundary-status, .season-status, .harvest-status, .personnel-status) {
   max-width: 100%;
   white-space: normal;

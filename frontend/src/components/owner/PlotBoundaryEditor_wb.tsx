@@ -1,4 +1,4 @@
-import VN2000Import from './VN2000Import_wb';
+import { parseBoundaryFile } from "../../utils/parseBoundaryFile_wb";
 import GeographicMap from "./GeographicMap_wb";
 import "../../styles/plot_form_wb.css";
 import {
@@ -19,78 +19,22 @@ import type {
 } from "react";
 import type { BoundaryPoint } from "../../features/owner/plot_wb";
 import type { Farm } from "../../features/owner/farm_wb";
-import { calculatePlotArea, getFarmPolygon, plotBoundaryError } from "../../utils/geometry_wb";
+import { calculatePlotArea, existingPlotPointError, getFarmPolygon, plotBoundaryError } from "../../utils/geometry_wb";
 
 type PlotBoundaryEditorProps = {
   points: BoundaryPoint[];
   summary?: ReactNode;
   farm?: Farm | null;
+  referencePlots?: { id: string; name: string; boundary: BoundaryPoint[] }[];
   disabled?: boolean;
   onChange: (points: BoundaryPoint[]) => void;
 };
-
-function parseBoundaryFile(content: string) {
-  try {
-    const parsed = JSON.parse(content) as Array<{
-      latitude?: number;
-      longitude?: number;
-      lat?: number;
-      lng?: number;
-    }>;
-
-    if (Array.isArray(parsed)) {
-      const jsonPoints = parsed
-        .map((item) => ({
-          latitude: Number(item.latitude ?? item.lat),
-          longitude: Number(item.longitude ?? item.lng),
-        }))
-        .filter(
-          (point) =>
-            Number.isFinite(point.latitude) &&
-            Number.isFinite(point.longitude),
-        );
-
-      if (jsonPoints.length >= 3) {
-        return jsonPoints;
-      }
-    }
-  } catch {
-    // Tiếp tục thử đọc theo định dạng CSV.
-  }
-
-  const csvPoints = content
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => {
-      const values = line
-        .split(/[,;\t]/)
-        .map((value) => value.trim());
-
-      return {
-        latitude: Number(values[0]),
-        longitude: Number(values[1]),
-      };
-    })
-    .filter(
-      (point) =>
-        Number.isFinite(point.latitude) &&
-        Number.isFinite(point.longitude),
-    );
-
-  if (csvPoints.length < 3) {
-    throw new Error(
-      "Tệp ranh giới phải có ít nhất 3 tọa độ hợp lệ.",
-    );
-  }
-
-  return csvPoints;
-}
 
 function PlotBoundaryEditor({
   summary,
   points,
   farm,
+  referencePlots = [],
   disabled = false,
   onChange,
 }: PlotBoundaryEditorProps) {
@@ -102,10 +46,11 @@ function PlotBoundaryEditor({
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [addPointRequest, setAddPointRequest] = useState(0);
   const farmPolygon = getFarmPolygon(farm);
-  const boundaryIssue = plotBoundaryError(points, farm);
+  const checkBoundary = (next: BoundaryPoint[]) => plotBoundaryError(next, farm) || existingPlotPointError(next, referencePlots);
+  const boundaryIssue = checkBoundary(points);
   const commitPoints = (next: BoundaryPoint[], validate = true) => {
     if (disabled) return false;
-    const issue = validate ? plotBoundaryError(next, farm) : "";
+    const issue = validate ? checkBoundary(next) : "";
     setError(issue);
     if (issue) return false;
     onChange(next);
@@ -145,7 +90,7 @@ function PlotBoundaryEditor({
       }
     }
     const point = candidates.map(p => ({ latitude: Number(p.latitude.toFixed(6)), longitude: Number(p.longitude.toFixed(6)) }))
-      .find(p => !plotBoundaryError([...points, p], farm));
+      .find(p => !checkBoundary([...points, p]));
     if (point) commitPoints([...points, point]);
     else setError(plotBoundaryError(points, farm) || "Chưa tìm được chỗ đặt mốc mới hợp lệ. Hãy kéo chỉnh các mốc hiện có hoặc nhấp trực tiếp trong ranh giới nông trại.");
   };
@@ -217,7 +162,6 @@ function PlotBoundaryEditor({
 
   return (
     <div className="boundary-editor">
-      <VN2000Import disabled={disabled} onConverted={next => { const applied = commitPoints(next); if (applied) setEditingIndex(null); return applied; }} />
       <div className="boundary-toolbar">
         <div className="boundary-coordinate-inputs">
           <label>
@@ -308,7 +252,12 @@ function PlotBoundaryEditor({
       <GeographicMap
         label="Bản đồ thiết lập ranh giới vùng trồng"
         points={points}
-        regions={farmPolygon.length ? [{ id: farm!.id, kind: "farm", label: `Ranh giới ${farm!.name}`, points: farmPolygon.map((point, i) => ({ ...point, label: `NT ${i + 1}` })) }] : []}
+        regions={[
+          ...(farmPolygon.length ? [{ id: farm!.id, kind: "farm" as const, label: `Ranh giới ${farm!.name}`, points: farmPolygon.map((point, i) => ({ ...point, label: `NT ${i + 1}` })) }] : []),
+          ...referencePlots.filter(plot => plot.boundary.length >= 3).map(plot => ({
+            id: plot.id, label: plot.name, points: plot.boundary, reference: true,
+          })),
+        ]}
         onAddPoint={disabled ? undefined : handleMapPoint}
         onAutoAddPoint={disabled ? undefined : handleAutoAddPoint}
         onMovePoint={disabled ? undefined : movePoint}

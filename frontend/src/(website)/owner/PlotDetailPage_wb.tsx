@@ -6,16 +6,13 @@ import "../../styles/plot_detail_wb.css";
 import {
   Building2,
   CalendarDays,
-  CheckCircle2,
   Edit3,
-  Lock,
   MapPinned,
   PauseCircle,
   PlayCircle,
   Ruler,
   Save,
   Sprout,
-  Trash2,
   X,
 } from "lucide-react";
 import {
@@ -27,7 +24,6 @@ import {
 } from "react";
 import type { FormEvent } from "react";
 import {
-  useNavigate,
   useParams,
 } from "react-router-dom";
 import PlotBoundaryEditor from "../../components/owner/PlotBoundaryEditor_wb";
@@ -43,8 +39,6 @@ type DialogType =
   | "edit"
   | "boundary"
   | "status"
-  | "delete"
-  | "delete-blocked"
   | null;
 
 type EditForm = {
@@ -71,7 +65,6 @@ function PlotBoundaryPreview({
 
 function PlotDetailPage() {
   const { plotId } = useParams();
-  const navigate = useNavigate();
   const { farms } = useFarmContext();
 
   const [plot, setPlot] = useState<Plot | null>(null);
@@ -125,12 +118,6 @@ function PlotDetailPage() {
         ?.name ?? "Không xác định",
     [farms, plot?.farmId],
   );
-
-  const hasLinkedData =
-    plot !== null &&
-    (plot.linkedData.seasons > 0 ||
-      plot.linkedData.tasks > 0 ||
-      plot.linkedData.cultivationLogs > 0);
 
   const openEditDialog = () => {
     if (!plot) {
@@ -272,36 +259,6 @@ function PlotDetailPage() {
     }
   };
 
-  const openDeleteDialog = () => {
-    setActionError("");
-
-    setDialog(
-      hasLinkedData ? "delete-blocked" : "delete",
-    );
-  };
-
-  const handleDelete = async () => {
-    if (!plot) {
-      return;
-    }
-
-    setSaving(true);
-    setActionError("");
-
-    try {
-      await plotService.delete(plot.id);
-      navigate("/plots", { replace: true });
-    } catch (error) {
-      setActionError(
-        error instanceof Error
-          ? error.message
-          : "Không thể xóa vùng trồng.",
-      );
-    } finally {
-      setSaving(false);
-    }
-  };
-
   if (pageLoadError) return <div className="page" role="alert">{pageLoadError} <button type="button" onClick={() => void loadPlot()}>Thử lại</button></div>;
 
   if (loading) {
@@ -360,14 +317,6 @@ function PlotDetailPage() {
               : "Hoạt động lại"}
           </button>
 
-          <button
-            className="plot-delete-button"
-            type="button"
-            onClick={openDeleteDialog}
-          >
-            <Trash2 size={17} />
-            Xóa
-          </button>
         </div>
       </div>
 
@@ -531,10 +480,6 @@ function PlotDetailPage() {
                     (plot.status === "active"
                       ? "Ngừng sử dụng vùng trồng?"
                       : "Hoạt động lại vùng trồng?")}
-                  {dialog === "delete" &&
-                    "Xóa vùng trồng?"}
-                  {dialog === "delete-blocked" &&
-                    "Không thể xóa vùng trồng"}
                 </h2>
               </div>
 
@@ -718,78 +663,6 @@ function PlotDetailPage() {
                       : plot.status === "active"
                         ? "Ngừng sử dụng"
                         : "Hoạt động lại"}
-                  </button>
-                </div>
-              </>
-            )}
-
-            {dialog === "delete-blocked" && (
-              <>
-                <div className="app-modal-body">
-                  <div className="blocked-delete-message">
-                    <Lock size={22} />
-
-                    <div>
-                      <strong>
-                        Vùng trồng đang có dữ liệu liên kết
-                      </strong>
-
-                      <p>
-                        {plot.linkedData.seasons} mùa vụ,{" "}
-                        {plot.linkedData.tasks} công việc và{" "}
-                        {plot.linkedData.cultivationLogs} nhật
-                        ký canh tác.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="app-modal-footer">
-                  <button
-                    className="btn btn-primary"
-                    type="button"
-                    onClick={closeDialog}
-                  >
-                    <CheckCircle2 size={17} />
-                    Đã hiểu
-                  </button>
-                </div>
-              </>
-            )}
-
-            {dialog === "delete" && (
-              <>
-                <div className="app-modal-body">
-                  <p>
-                    Vùng trồng <strong>{plot.name}</strong>{" "}
-                    sẽ bị xóa vĩnh viễn. Hành động này không
-                    thể hoàn tác.
-                  </p>
-
-                  {actionError && (
-                    <div className="form-error-block">
-                      {actionError}
-                    </div>
-                  )}
-                </div>
-
-                <div className="app-modal-footer">
-                  <button
-                    className="btn btn-secondary"
-                    type="button"
-                    onClick={closeDialog}
-                  >
-                    Hủy
-                  </button>
-
-                  <button
-                    className="plot-confirm-delete"
-                    type="button"
-                    disabled={saving}
-                    onClick={handleDelete}
-                  >
-                    <Trash2 size={17} />
-                    {saving ? "Đang xóa..." : "Xóa vùng trồng"}
                   </button>
                 </div>
               </>

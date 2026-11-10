@@ -1,6 +1,9 @@
 import type { Farm, FarmBoundary, FarmFormData, FarmOwner, FarmStatus } from "../features/owner/farm_wb";
 import { accountService } from "./accountService_wb";
 import { ApiError, httpClient } from "./httpClient_wb";
+import { conflictingFarm, getFarmPolygon, plotBoundaryError } from "../utils/geometry_wb";
+import { plotService } from "./plotService_wb";
+import { convertVN2000 } from "./vn2000Service_wb";
 
 type OrganizationDto = {
     org_id: string;
@@ -56,21 +59,40 @@ function toFarmBoundary(geometry?: OrganizationDto["boundary_geojson"]): FarmBou
     };
   }
 
-function toGeoJson(boundary: FarmBoundary | null) {
-    if (!boundary) return null;
-    if (boundary.method !== "map") {
-      throw new Error("Hãy chuyển tọa độ VN-2000 sang WGS84 bằng nút chuyển tọa độ trước khi lưu.");
-    }
+function boundaryPayload(boundary: FarmBoundary | null) {
+    if (!boundary) return { boundary_geojson: null };
     if (!boundary.isValid || boundary.points.length < 3) {
       throw new Error("Ranh giới cần tối thiểu 3 điểm hợp lệ.");
+    }
+
+    if (boundary.method === "vn2000") {
+      return {
+        boundary_vn2000: {
+          points: boundary.points.map(({ x, y }) => ({ x, y })),
+          central_meridian: boundary.projection.replace(/^VN-2000 · Kinh tuyến trục\s*/, ""),
+          zone_width: 3 as const,
+        },
+      };
     }
 
     const ring = boundary.points.map((point) => [point.y, point.x]);
     const first = ring[0];
     const last = ring[ring.length - 1];
     if (first[0] !== last[0] || first[1] !== last[1]) ring.push(first);
-    return { type: "Polygon", coordinates: [ring] };
+    return { boundary_geojson: { type: "Polygon", coordinates: [ring] } };
   }
+
+async function resolveBoundaryGeometry(boundary: FarmBoundary | null) {
+  const payload = boundaryPayload(boundary);
+  return payload.boundary_vn2000
+    ? (await convertVN2000("organizations", payload.boundary_vn2000)).boundary_geojson
+    : payload.boundary_geojson;
+}
+
+function ensureNoFarmConflict(boundary: FarmBoundary | null, farms: Farm[], farmId?: string) {
+  const conflict = conflictingFarm(getFarmPolygon({ boundary }), farms, farmId);
+  if (conflict) throw new Error(`Ranh giới không được chạm hoặc lấn vào nông trại ${conflict.name}.`);
+}
 
 function composeAddress(data: Pick<FarmFormData, "address" | "district" | "province">) {
     const parts = [data.address.trim(), data.district.trim(), data.province.trim()]
@@ -160,10 +182,12 @@ export const farmService = {
     },
 
     async create(data: FarmFormData): Promise<Farm> {
+      const geometry = await resolveBoundaryGeometry(data.boundary);
+      if (geometry) ensureNoFarmConflict(toFarmBoundary(geometry), await this.getAll());
       const organization = await httpClient.post<OrganizationDto>("/organizations", {
         name: data.name.trim(),
         address: composeAddress(data),
-        boundary_geojson: toGeoJson(data.boundary),
+        boundary_geojson: geometry,
       });
       const owner = await getOwner();
       window.dispatchEvent(new Event("farms-updated"));
@@ -182,7 +206,15 @@ export const farmService = {
           province: data.province ?? current.province,
         });
       }
-      if (data.boundary !== undefined) payload.boundary_geojson = toGeoJson(data.boundary);
+      if (data.boundary !== undefined) {
+        const geometry = await resolveBoundaryGeometry(data.boundary);
+        const farm = { boundary: toFarmBoundary(geometry) };
+        if (geometry) ensureNoFarmConflict(farm.boundary, await this.getAll(), id);
+        const plots = await plotService.getMapBoundaries(id);
+        const outside = plots.find(plot => plot.boundary.length >= 3 && plotBoundaryError(plot.boundary, farm, true));
+        if (outside) throw new Error(`Ranh giới nông trại phải bao trọn vùng trồng ${outside.name}.`);
+        payload.boundary_geojson = geometry;
+      }
       if (data.status !== undefined) payload.status = data.status;
 
       try {

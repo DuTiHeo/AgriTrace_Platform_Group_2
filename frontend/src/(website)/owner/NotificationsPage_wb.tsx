@@ -10,6 +10,8 @@ type Notice = { id: string; type: string | null; category: NotificationCategory;
 const icons = { task: ClipboardCheck, farming_log: NotebookPen, season: Leaf, harvest: PackageCheck, system: Info };
 const typeLabels: Record<NotificationApiType, string> = { task_assigned: "Giao công việc", log_note: "Ghi chú nhật ký", reminder: "Nhắc nhở mùa vụ", error_report: "Báo lỗi hệ thống", error_report_response: "Phản hồi báo lỗi" };
 
+const ownerTabs = ["all", "reminder", "error_report_response"] as const;
+
 export default function NotificationsPage() {
   const [notices, setNotices] = useState<Notice[]>([]);
   const [category, setCategory] = useState<NotificationApiType | "all">("all");
@@ -72,7 +74,7 @@ export default function NotificationsPage() {
     {loading && <div className="page-loading">Đang tải thông báo...</div>}{error && <div className="page-error" role="alert">{error} <button type="button" onClick={() => void load()}>Thử lại</button></div>}
     <section className="card notice-inbox" aria-label="Hộp thông báo">
       <div className="notice-controls">
-      <div className="notice-categories" aria-label="Lọc loại thông báo">{(["all", ...Object.keys(typeLabels)] as const).map(key => { const value = key as NotificationApiType | "all"; return <button type="button" key={value} aria-pressed={category === value} className={category === value ? "is-active" : ""} onClick={() => { setSelectedId(null); setCategory(value); }}>{value === "all" ? "Tất cả" : typeLabels[value]}</button>; })}</div>
+      <div className="notice-categories" aria-label="Lọc loại thông báo">{ownerTabs.map(value => { return <button type="button" key={value} aria-pressed={category === value} className={category === value ? "is-active" : ""} onClick={() => { setSelectedId(null); setCategory(value); }}>{value === "all" ? "Tất cả" : typeLabels[value]}</button>; })}</div>
         <button className={`notice-unread-filter ${unreadOnly ? "is-active" : ""}`} type="button" aria-pressed={unreadOnly} onClick={() => setUnreadOnly(!unreadOnly)}><SlidersHorizontal size={17} aria-hidden="true" />Chỉ chưa đọc <span>{unread}</span></button>
       </div>
       <div className={`notice-content ${selected ? "has-detail" : ""}`}>

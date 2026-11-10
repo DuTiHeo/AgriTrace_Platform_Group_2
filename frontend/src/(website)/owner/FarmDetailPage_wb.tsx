@@ -1,7 +1,7 @@
 import BackButton from "../../components/owner/BackButton_wb";
 import "../../styles/boundary_detail_wb.css";
 import CreationReview from "../../components/owner/CreationReview_wb";
-import GeographicMap from "../../components/owner/GeographicMap_wb";
+import FarmBoundaryMap from "../../components/owner/FarmBoundaryMap_wb";
 import FarmBoundaryEditModal from "../../components/owner/FarmBoundaryEditModal_wb";
 import "../../styles/farms_wb.css";
 import "../../styles/farm_detail_wb.css";
@@ -12,7 +12,6 @@ import {
   PauseCircle,
   Pencil,
   PlayCircle,
-  Trash2,
   X,
 } from "lucide-react";
 import {
@@ -23,7 +22,6 @@ import type {
   FormEvent,
 } from "react";
 import {
-  useNavigate,
   useParams,
 } from "react-router-dom";
 import { farmService } from "../../sevices/farmService_wb";
@@ -38,7 +36,6 @@ import type {
 type DetailAction =
   | "suspend"
   | "activate"
-  | "delete"
   | null;
 
 const formatDate = (value: string) =>
@@ -48,7 +45,6 @@ const formatDate = (value: string) =>
 
 function FarmDetailPage() {
   const { farmId } = useParams();
-  const navigate = useNavigate();
 
   const [farm, setFarm] = useState<Farm | null>(null);
   const [pageLoadError, setPageLoadError] = useState("");
@@ -146,19 +142,6 @@ function FarmDetailPage() {
       return;
     }
 
-    if (pendingAction === "delete") {
-      const result = await farmService.delete(farm.id);
-
-      if (result.success) {
-        navigate("/farms");
-        return;
-      }
-
-      setNotice(result.message);
-      setPendingAction(null);
-      return;
-    }
-
     const updatedFarm =
       await farmService.changeStatus(
         farm.id,
@@ -212,18 +195,11 @@ function FarmDetailPage() {
             "Dữ liệu hiện có vẫn được bảo lưu nguyên vẹn.",
           button: "Tạm ngưng",
         }
-      : pendingAction === "activate"
-        ? {
+      : {
             title: "Hoạt động lại nông trại?",
             description:
               "Nông trại sẽ được kích hoạt nếu đã có ranh giới.",
             button: "Hoạt động lại",
-          }
-        : {
-            title: "Xóa nông trại?",
-            description:
-              "Nông trại có dữ liệu liên kết sẽ không thể xóa.",
-            button: "Xóa nông trại",
           };
 
   return (
@@ -286,15 +262,6 @@ function FarmDetailPage() {
             </button>
           )}
 
-          <button
-            className="detail-delete-button"
-            type="button"
-            aria-label="Xóa nông trại"
-            title="Xóa nông trại"
-            onClick={() => setPendingAction("delete")}
-          >
-            <Trash2 size={18} />
-          </button>
         </div>
       </div>
 
@@ -395,7 +362,10 @@ function FarmDetailPage() {
 
               <div className="boundary-detail-layout">
               {farm.boundary.method === "map" ? (
-                <GeographicMap label="Ranh giới nông trại" pointsKind="farm" points={farm.boundary.points.map(point => ({ latitude: point.x, longitude: point.y }))} />
+                <FarmBoundaryMap farmId={farm.id} label="Ranh giới nông trại" regions={[{
+                  id: farm.id, kind: "farm", label: farm.name,
+                  points: farm.boundary.points.map(point => ({ latitude: point.x, longitude: point.y })),
+                }]} />
               ) : (
                 <p>Tọa độ VN-2000 cần được chuyển sang WGS84 để hiển thị đúng vị trí trên bản đồ.</p>
               )}
@@ -604,11 +574,7 @@ function FarmDetailPage() {
             }
           >
             <div
-              className={
-                pendingAction === "delete"
-                  ? "confirm-icon confirm-icon-danger"
-                  : "confirm-icon confirm-icon-warning"
-              }
+              className="confirm-icon confirm-icon-warning"
             >
               <AlertTriangle size={24} />
             </div>
@@ -631,11 +597,7 @@ function FarmDetailPage() {
               </button>
 
               <button
-                className={
-                  pendingAction === "delete"
-                    ? "btn btn-danger"
-                    : "btn btn-primary"
-                }
+                className="btn btn-primary"
                 type="button"
                 onClick={() => void confirmAction()}
               >

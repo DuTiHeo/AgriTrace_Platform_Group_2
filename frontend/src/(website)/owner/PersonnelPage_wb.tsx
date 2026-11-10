@@ -512,7 +512,7 @@ function PersonnelPage() {
                           <ListRowActions to={`/personnel/${person.id}`} name={person.fullName} statusLabel={person.status === "active" ? "Khóa tài khoản" : "Mở khóa tài khoản"} resume={person.status !== "active"}
                             statusDescription={person.status === "active" ? "Nhân sự sẽ không thể đăng nhập sau khi tài khoản bị khóa." : "Nhân sự có thể đăng nhập trở lại sau khi mở khóa."}
                             onStatus={async () => { if (person.status === "active") await lockPersonnel(person.id); else await unlockPersonnel(person.id); }}
-                            hideDelete />
+                        />
                         </td>
                       </tr>
                     );

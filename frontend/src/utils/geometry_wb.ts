@@ -17,7 +17,7 @@ export function isValidGps(p: BoundaryPoint) {
     && Math.abs(p.latitude) <= 90 && Math.abs(p.longitude) <= 180;
 }
 
-export function getFarmPolygon(farm?: Farm | null): BoundaryPoint[] {
+export function getFarmPolygon(farm?: Pick<Farm, "boundary"> | null): BoundaryPoint[] {
   if (farm?.boundary?.method !== "map") return [];
   const points = farm.boundary.points.map(p => ({ latitude: p.x, longitude: p.y }));
   if (points.length > 1 && points[0].latitude === points.at(-1)!.latitude
@@ -41,6 +41,26 @@ export function pointInPolygon(p: BoundaryPoint, polygon: BoundaryPoint[]) {
         / (b.latitude - a.latitude) + a.longitude) inside = !inside;
   }
   return inside;
+}
+
+function segmentsIntersect(a: BoundaryPoint, b: BoundaryPoint, c: BoundaryPoint, d: BoundaryPoint) {
+  return (cross(a, b, c) * cross(a, b, d) < 0 && cross(c, d, a) * cross(c, d, b) < 0)
+    || onSegment(a, c, d) || onSegment(b, c, d) || onSegment(c, a, b) || onSegment(d, a, b);
+}
+
+export function conflictingFarm(points: BoundaryPoint[], farms: Farm[], farmId?: string) {
+  if (!points.length) return undefined;
+  return farms.find(farm => {
+    if (farm.id === farmId) return false;
+    const polygon = getFarmPolygon(farm);
+    if (!polygon.length) return false;
+    if (points.some(point => pointInPolygon(point, polygon))) return true;
+    if (points.length >= 3 && polygon.some(point => pointInPolygon(point, points))) return true;
+    if (points.length < 2) return false;
+    return points.some((point, index) => polygon.some((vertex, edge) =>
+      segmentsIntersect(point, points[(index + 1) % points.length], vertex, polygon[(edge + 1) % polygon.length])
+    ));
+  });
 }
 
 // Split each edge at every boundary intersection, then check each interval.
@@ -74,7 +94,7 @@ function segmentInside(a: BoundaryPoint, b: BoundaryPoint, polygon: BoundaryPoin
   });
 }
 
-export function plotBoundaryError(points: BoundaryPoint[], farm?: Farm | null, complete = false) {
+export function plotBoundaryError(points: BoundaryPoint[], farm?: Pick<Farm, "boundary"> | null, complete = false) {
   const polygon = getFarmPolygon(farm);
   if (!polygon.length) return "Nông trại chưa có ranh giới GPS WGS84 hợp lệ. Hãy thiết lập ranh giới nông trại trước khi tạo vùng trồng.";
   if (!points.every(isValidGps)) return "Tọa độ GPS không hợp lệ.";
@@ -95,8 +115,7 @@ export function plotBoundaryError(points: BoundaryPoint[], farm?: Farm | null, c
     for (let j = i + 2; j < edgeCount; j++) {
       if (i === 0 && j === points.length - 1) continue;
       const c = points[j], d = points[(j + 1) % points.length];
-      if ((cross(a, b, c) * cross(a, b, d) < 0 && cross(c, d, a) * cross(c, d, b) < 0)
-        || onSegment(a, c, d) || onSegment(b, c, d) || onSegment(c, a, b) || onSegment(d, a, b))
+      if (segmentsIntersect(a, b, c, d))
         return "Các cạnh ranh giới không được tự cắt nhau. Hãy đổi vị trí mốc GPS.";
     }
   }
@@ -126,4 +145,10 @@ export function calculatePlotArea(points: BoundaryPoint[]) {
   }
 
   return Number((Math.abs(doubledArea) / 2 / 10000).toFixed(2));
+}
+
+export function existingPlotPointError(points: BoundaryPoint[], plots: { name: string; boundary: BoundaryPoint[] }[]) {
+  const conflict = plots.find(plot => plot.boundary.length >= 3 &&
+    points.some(point => pointInPolygon(point, plot.boundary)));
+  return conflict ? `Điểm GPS không được nằm trên hoặc trong vùng trồng ${conflict.name}.` : "";
 }

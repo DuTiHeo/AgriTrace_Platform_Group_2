@@ -1,4 +1,5 @@
-import { AlertTriangle, ArrowLeftRight, Eye, PauseCircle, PlayCircle, Trash2 } from "lucide-react";
+import { isDialogBackdropClick } from "../../utils/dialogBackdrop_wb";
+import { AlertTriangle, ArrowLeftRight, Eye, PauseCircle, PlayCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
@@ -13,10 +14,7 @@ type Props = {
   onStatus?: (status: string, date: string) => void | Promise<void>;
   statusOptions?: Array<{ value: string; label: string }>;
   currentStatus?: string;
-  deleteUnavailable?: string;
-  hideDelete?: boolean;
   statusDescription?: string;
-  onDelete?: () => void | Promise<void>;
 };
 
 type Action = "view" | "status" | "delete";
@@ -52,7 +50,7 @@ export function ListActionConfirmation({ action, name, statusLabel, onClose, onC
     }
   };
   return createPortal(
-    <dialog ref={dialog} className="list-action-dialog" aria-labelledby="list-action-title" onCancel={(event) => { event.preventDefault(); if (!busy) onClose(); }} onClick={(event) => { if (event.target === event.currentTarget && !busy) onClose(); }}>
+    <dialog ref={dialog} className="list-action-dialog" aria-labelledby="list-action-title" onCancel={(event) => { event.preventDefault(); if (!busy) onClose(); }} onClick={(event) => { if (!busy && isDialogBackdropClick(event)) onClose(); }}>
       <form onSubmit={(event) => { event.preventDefault(); void confirm(); }}>
         <div className={`list-action-symbol ${action === "delete" ? "is-danger" : ""}`}><AlertTriangle size={24} /></div>
         <h2 id="list-action-title">{title}</h2>
@@ -76,18 +74,17 @@ export function DetailViewLink({ to, name, children, className }: { to: string; 
   return <Link to={to} className={className} title="Xem chi tiết" aria-label={`Xem chi tiết ${name}`}>{children}</Link>;
 }
 
-export default function ListRowActions({ to, name, statusLabel, resume = false, statusIcon = "toggle", onStatus, onDelete, deleteUnavailable, hideDelete = false, statusDescription, statusOptions, currentStatus }: Props) {
-  const [action, setAction] = useState<"status" | "delete" | null>(null);
+export default function ListRowActions({ to, name, statusLabel, resume = false, statusIcon = "toggle", onStatus, statusDescription, statusOptions, currentStatus }: Props) {
+  const [statusOpen, setStatusOpen] = useState(false);
   const StatusIcon = statusIcon === "change" ? ArrowLeftRight : resume ? PlayCircle : PauseCircle;
   return <>
     <div className="list-row-actions" role="group" aria-label={`Thao tác với ${name}`}>
       <DetailViewLink to={to} name={name}><Eye size={16} /></DetailViewLink>
-      <button type="button" title={statusLabel} aria-label={`${statusLabel}: ${name}`} onClick={() => setAction("status")}><StatusIcon size={16} /></button>
-      {!hideDelete && <button className="list-row-delete" type="button" title="Xóa" aria-label={`Xóa ${name}`} onClick={() => setAction("delete")}><Trash2 size={16} /></button>}
+      <button type="button" title={statusLabel} aria-label={`${statusLabel}: ${name}`} onClick={() => setStatusOpen(true)}><StatusIcon size={16} /></button>
     </div>
-    {action && <ListActionConfirmation action={action} name={name} statusLabel={statusLabel} onClose={() => setAction(null)}
-      unavailable={action === "delete" ? deleteUnavailable ?? (!onDelete ? "Không thể xóa mục này." : undefined) : !onStatus ? "Chưa thể thay đổi trạng thái mục này." : undefined}
-      description={action === "status" ? statusDescription : undefined} statusOptions={statusOptions} currentStatus={currentStatus}
-      onConfirm={async (status, date) => { if (action === "status") await onStatus?.(status, date); else await onDelete?.(); }} />}
+    {statusOpen && <ListActionConfirmation action="status" name={name} statusLabel={statusLabel} onClose={() => setStatusOpen(false)}
+      unavailable={!onStatus ? "Chưa thể thay đổi trạng thái mục này." : undefined}
+      description={statusDescription} statusOptions={statusOptions} currentStatus={currentStatus}
+      onConfirm={async (status, date) => { await onStatus?.(status, date); }} />}
   </>;
 }

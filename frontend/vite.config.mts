@@ -8,12 +8,11 @@ const frontendRoot = fileURLToPath(new URL('.', import.meta.url))
 export default defineConfig(({ mode }) => {
   const app = mode === 'admin' ? 'admin' : 'owner'
   const websiteRoot = path.join(frontendRoot, 'src', '(website)')
-  const webRoot = app === 'admin' ? path.join(websiteRoot, 'admin') : websiteRoot
   const env = loadEnv(mode, frontendRoot, 'VITE_')
   const apiTarget = env.VITE_API_PROXY_TARGET ?? 'http://localhost:8000'
 
   return {
-    root: webRoot,
+    root: websiteRoot,
     publicDir: path.join(frontendRoot, 'assets'),
     envDir: frontendRoot,
     cacheDir: path.join(frontendRoot, 'node_modules', '.vite', app),
@@ -22,7 +21,6 @@ export default defineConfig(({ mode }) => {
     build: {
       outDir: path.join(frontendRoot, 'dist', app),
       emptyOutDir: true,
-      ...(app === 'admin' ? { rolldownOptions: { input: path.join(webRoot, 'admin.html') } } : {}),
     },
     server: {
       host: '127.0.0.1',

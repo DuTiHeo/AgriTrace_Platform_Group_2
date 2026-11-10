@@ -4,15 +4,16 @@ import "leaflet/dist/leaflet.css";
 import "../../styles/geographic_map_wb.css";
 
 type Point = { latitude: number; longitude: number; label?: string };
-type Region = { id: string; label: string; points: Point[]; href?: string; kind?: "farm" };
+export type MapRegion = { id: string; label: string; points: Point[]; href?: string; kind?: "farm"; reference?: boolean };
 type Props = {
   points?: Point[];
   pointsKind?: "farm" | "plot";
-  regions?: Region[];
+  regions?: MapRegion[];
   onAddPoint?: (point: Point) => void;
   onAutoAddPoint?: (point: Point) => void;
   onMovePoint?: (index: number, point: Point) => boolean;
   addPointRequest?: number;
+  fitReferenceFarms?: boolean;
   label: string;
 };
 
@@ -22,7 +23,7 @@ const validPoint = (point: Point) => Number.isFinite(point.latitude)
   && Number.isFinite(point.longitude) && Math.abs(point.latitude) <= 90
   && Math.abs(point.longitude) <= 180;
 
-export default function GeographicMap({ points = [], pointsKind = "plot", regions = [], onAddPoint, onAutoAddPoint, onMovePoint, addPointRequest = 0, label }: Props) {
+export default function GeographicMap({ points = [], pointsKind = "plot", regions = [], onAddPoint, onAutoAddPoint, onMovePoint, addPointRequest = 0, fitReferenceFarms = false, label }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const layersRef = useRef<L.FeatureGroup | null>(null);
@@ -71,24 +72,28 @@ export default function GeographicMap({ points = [], pointsKind = "plot", region
     const tokens = getComputedStyle(container.current!);
     const primary = tokens.getPropertyValue("--agri-primary").trim() || "currentColor";
     const farmColor = tokens.getPropertyValue("--agri-info-text").trim() || primary;
-    const draw = (items: Point[], text?: string, href?: string, editable = false, farm = false) => {
+    const draw = (items: Point[], text?: string, href?: string, editable = false, farm = false, reference = false) => {
       const color = farm ? farmColor : primary;
       const validItems = items.map((point, index) => ({ point, index })).filter(item => validPoint(item.point));
       const coordinates: L.LatLngTuple[] = validItems.map(({point}) => [point.latitude, point.longitude]);
       if (!coordinates.length) return;
+      const interactive = !editable;
       const shape = coordinates.length >= 3
-        ? L.polygon(coordinates, { color, fillOpacity: farm ? 0.06 : 0.25, weight: farm ? 3 : 2, dashArray: farm ? "10 6" : undefined, interactive: !editable })
-        : L.polyline(coordinates, { color, interactive: !editable });
+        ? L.polygon(coordinates, { color, opacity: reference ? 0.65 : 1, fillOpacity: reference ? 0.12 : farm ? 0.06 : 0.25, weight: reference ? 2 : farm ? 3 : 2, dashArray: farm ? "10 6" : undefined, interactive })
+        : L.polyline(coordinates, { color, interactive });
       shape.addTo(group);
-      if (text) {
-        const content = document.createElement(href ? "a" : "span");
-        content.textContent = text;
-        if (content instanceof HTMLAnchorElement && href) content.href = href;
-        shape.bindPopup(content);
+      if (text && interactive) {
+        if (!reference || !addPointRef.current) {
+          const content = document.createElement(href ? "a" : "span");
+          content.textContent = text;
+          if (content instanceof HTMLAnchorElement && href) content.href = href;
+          shape.bindPopup(content);
+        }
         const tooltip = document.createElement("span");
         tooltip.textContent = text;
         shape.bindTooltip(tooltip);
       }
+      if (reference) return;
       coordinates.forEach((coordinate, position) => {
         const { point, index } = validItems[position];
         const name = point.label || `GPS ${index + 1}`;
@@ -121,19 +126,30 @@ export default function GeographicMap({ points = [], pointsKind = "plot", region
         }
       });
     };
-    regions.forEach(region => draw(region.points, region.label, region.href, false, region.kind === "farm"));
+    regions.forEach(region => draw(region.points, region.label, region.href, false, region.kind === "farm", region.reference));
     draw(points, undefined, undefined, !!onMovePoint, pointsKind === "farm");
-    const region = regions[0];
+    const region = regions.find(item => !item.reference);
     if (region && (onMovePoint || region.kind === "farm") && focusedRegionRef.current !== region.id && region.points.some(validPoint)) {
       mapRef.current?.fitBounds(L.latLngBounds([...region.points, ...points].filter(validPoint).map(p => [p.latitude, p.longitude] as L.LatLngTuple)), { padding: [45, 45], maxZoom: 18 });
       focusedRegionRef.current = region.id;
+    } else if (fitReferenceFarms && !focusedRegionRef.current && !points.length) {
+      const farmPoints = regions
+        .filter(item => item.reference && item.kind === "farm")
+        .flatMap(item => item.points)
+        .filter(validPoint);
+      if (farmPoints.length) {
+        mapRef.current?.fitBounds(farmPoints.map(point => [point.latitude, point.longitude]), { padding: [45, 45], maxZoom: 17 });
+        focusedRegionRef.current = "reference-farms";
+      }
     }
-  }, [points, pointsKind, regions, onMovePoint]);
+  }, [points, pointsKind, regions, onMovePoint, fitReferenceFarms]);
 
   return <div className="geographic-map">
     {(points.length > 0 || regions.length > 0) && <div className="geographic-map-legend" aria-label="Chú giải bản đồ">
-      {(regions.some(region => region.kind === "farm") || (pointsKind === "farm" && points.length > 0)) && <span><i className="map-key-farm" />Ranh giới nông trại</span>}
-      {(regions.some(region => region.kind !== "farm") || (pointsKind === "plot" && points.length > 0)) && <span><i className="map-key-plot" />Ranh giới vùng trồng</span>}
+      {(regions.some(region => region.kind === "farm" && !region.reference) || (pointsKind === "farm" && points.length > 0)) && <span><i className="map-key-farm" />Ranh giới nông trại</span>}
+      {regions.some(region => region.kind === "farm" && region.reference) && <span><i className="map-key-farm map-key-reference" />Nông trại khác</span>}
+      {(regions.some(region => region.kind !== "farm" && !region.reference) || (pointsKind === "plot" && points.length > 0)) && <span><i className="map-key-plot" />Ranh giới vùng trồng</span>}
+      {regions.some(region => region.kind !== "farm" && region.reference) && <span><i className="map-key-plot map-key-reference" />Vùng trồng hiện có</span>}
     </div>}
     <div className="geographic-map-canvas" ref={container} role="region" aria-label={label} />
     <p className="geographic-map-status" ref={statusRef} role="status" />

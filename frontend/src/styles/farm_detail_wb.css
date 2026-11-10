@@ -63,22 +63,7 @@
   gap: 9px;
 }
 
-.detail-delete-button {
-  display: inline-flex;
-  width: 40px;
-  height: 40px;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--agri-danger-border-soft);
-  border-radius: var(--agri-radius-control);
-  background: var(--agri-danger-soft);
-  color: var(--red-700);
-}
 
-.detail-delete-button:hover:not(:disabled) {
-  border-color: var(--red-700);
-  background: var(--red-100);
-}
 
 .farm-detail-grid {
   display: grid;
@@ -452,8 +437,7 @@
     flex-direction: column;
   }
 
-  .farm-detail-actions .btn,
-  .detail-delete-button {
+  .farm-detail-actions .btn {
     width: 100%;
   }
 

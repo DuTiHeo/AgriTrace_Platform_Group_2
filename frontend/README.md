@@ -8,9 +8,9 @@ frontend/
 ├── src/
 │   ├── (mobile)/           # Giao diện role và điều hướng Expo
 │   ├── (website)/
-│   │   ├── index.html      # HTML gốc của web, gọi owner/main_wb.tsx
+│   │   ├── index.html      # HTML gốc của web, gọi main_wb.tsx dùng chung
 │   │   ├── owner/          # Màn hình Owner, App, main và AppLayout của web
-│   │   └── admin/          # Hiện chỉ có admin.html trống
+│   │   └── admin/          # Các trang React của Admin, dùng chung đăng nhập web
 │   ├── features/           # Chức năng theo role và auth/account
 │   │   ├── auth/           # mobile/ và website/: màn hình xác thực
 │   │   ├── account/        # mobile/ và website/: màn hình tài khoản
@@ -51,7 +51,7 @@ npm.cmd ci
 | `npm.cmd run android` | Chạy Android native bằng Expo |
 | `npm.cmd run ios` | Chạy iOS native trên macOS |
 | `npm.cmd run mobile:web` | Xem giao diện Expo trong trình duyệt |
-| `npm run web` | Chạy cả web Owner (5173) và Admin (5174/admin.html), kể cả khi Admin còn trống |
+| `npm run web` | Chạy web (5173) và cổng Admin riêng (5174/admin). Đăng nhập web bằng tài khoản Admin để vào /admin. |
 
 `npm start` vẫn chạy Expo. Các lệnh `owner:dev`, `owner:build`, `owner:lint`
 được giữ để tương thích. Có thể nhấp đúp `frontend/START_OWNER.cmd` để chạy Owner.

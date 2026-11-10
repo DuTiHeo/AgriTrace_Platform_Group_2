@@ -1,3 +1,4 @@
+import { MapPinned } from "lucide-react";
 import BackButton from "../../components/owner/BackButton_wb";
 import CreationReview from "../../components/owner/CreationReview_wb";
 import "../../styles/farms_wb.css";
@@ -272,11 +273,12 @@ function CreateFarmPage() {
 
         {step === 2 && (
           <>
-            <section aria-labelledby="farm-boundary-title">
-              <div className="farm-create-boundary-heading">
+            <section className="plot-form-card" aria-labelledby="farm-boundary-title">
+              <div className="plot-form-section-heading">
+                <div className="plot-form-section-icon"><MapPinned size={20} /></div>
                 <div>
-                  <h2 id="farm-boundary-title">Ranh giới nông trại</h2>
-                  <p>Vẽ ranh giới GPS trực tiếp trên bản đồ. Có thể bổ sung sau.</p>
+                  <h2 id="farm-boundary-title">Ranh giới và diện tích</h2>
+                  <p>Thêm điểm tọa độ hoặc nhập tệp để vẽ ranh giới nông trại.</p>
                 </div>
               </div>
               <FarmBoundaryEditor

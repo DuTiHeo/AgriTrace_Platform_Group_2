@@ -1,3 +1,4 @@
+import { isDialogBackdropClick } from "../../utils/dialogBackdrop_wb";
 import { Save, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import FarmBoundaryEditor from "./FarmBoundaryEditor_wb";
@@ -36,7 +37,7 @@ export default function FarmBoundaryEditModal({ farm, onClose, onSaved }: {
   };
 
   return (
-    <dialog ref={dialog} className="farm-boundary-dialog" aria-labelledby="farm-boundary-edit-title"
+    <dialog onClick={event => { if (!saving && isDialogBackdropClick(event)) onClose(); }} ref={dialog} className="farm-boundary-dialog" aria-labelledby="farm-boundary-edit-title"
       onCancel={(event) => { event.preventDefault(); if (!saving) onClose(); }}
     >
       <div className="detail-modal-heading">
@@ -45,7 +46,7 @@ export default function FarmBoundaryEditModal({ farm, onClose, onSaved }: {
       </div>
       <div className="farm-boundary-dialog-body">
         <div inert={saving}>
-          <FarmBoundaryEditor boundary={boundary} onChange={(value) => { setBoundary(value); setError(""); }}
+          <FarmBoundaryEditor farmId={farm.id} boundary={boundary} onChange={(value) => { setBoundary(value); setError(""); }}
             summary={<div className="farm-boundary-area" aria-live="polite"><span>Diện tích từ ranh giới</span><strong>{boundary?.isValid ? `${boundary.area.toLocaleString("vi-VN")} ha` : "Chưa xác định"}</strong></div>}
           />
         </div>

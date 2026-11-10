@@ -1,3 +1,4 @@
+import { isDialogBackdropClick } from "../../utils/dialogBackdrop_wb";
 import { assignmentStatus } from '../../features/owner/task_wb';
 import { useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
@@ -34,7 +35,7 @@ export default function TaskDetails({ task, tasks, farmName, plotName, teamName,
     ['Nông trại', farmName], ['Vùng trồng', plotName], ['Tổ phụ trách', teamName],
     ['Người nhận', members.length > 1 ? `${members.length} người` : `${detail.assigneeName || 'Chưa ghi nhận'}${assigneeRole ? ` · ${assigneeRole === 'leader' ? 'Tổ trưởng' : 'Công nhân'}` : ''}`],
   ];
-  return <dialog ref={dialog} className="app-modal task-detail-modal" aria-labelledby="task-detail-title" onCancel={event => { event.preventDefault(); onClose(); }}>
+  return <dialog onClick={event => { if (isDialogBackdropClick(event)) onClose(); }} ref={dialog} className="app-modal task-detail-modal" aria-labelledby="task-detail-title" onCancel={event => { event.preventDefault(); onClose(); }}>
     <header className="app-modal-header"><h2 id="task-detail-title">Chi tiết công việc đã giao</h2><button type="button" aria-label="Đóng chi tiết công việc" onClick={onClose}><X size={20} /></button></header>
     <div className="task-detail-body">
       {loading && <p role="status">Đang cập nhật thông tin...</p>}

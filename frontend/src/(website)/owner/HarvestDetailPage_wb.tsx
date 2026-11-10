@@ -1,3 +1,4 @@
+import { isDialogBackdropClick } from "../../utils/dialogBackdrop_wb";
 import BackButton from "../../components/owner/BackButton_wb";
 import { ListActionConfirmation } from "../../components/owner/ListRowActions_wb";
 import { QRCodeCanvas } from "qrcode.react";
@@ -239,7 +240,7 @@ function HarvestDetailPage() {
 
       {cancelOpen && <ListActionConfirmation action="delete" title="Hủy lô thu hoạch?" confirmLabel="Xác nhận hủy lô" name={batch.code} statusLabel="Hủy lô thu hoạch" description="Bạn có chắc muốn hủy lô thu hoạch này? Dữ liệu vẫn được giữ để truy xuất lịch sử." onClose={() => setCancelOpen(false)} onConfirm={cancelBatch} />}
 
-      {editing && <dialog ref={editDialog} className="harvest-edit-dialog" aria-labelledby="harvest-edit-title" onCancel={event => { event.preventDefault(); if (!busy) setEditing(false); }}>
+      {editing && <dialog onClick={event => { if (!busy && isDialogBackdropClick(event)) setEditing(false); }} ref={editDialog} className="harvest-edit-dialog" aria-labelledby="harvest-edit-title" onCancel={event => { event.preventDefault(); if (!busy) setEditing(false); }}>
         <form onSubmit={saveBatch}>
           <header className="harvest-edit-heading"><div><h2 id="harvest-edit-title">Chỉnh sửa lô thu hoạch</h2><p>{batch.code} · {farm?.name}</p></div><button type="button" aria-label="Đóng" disabled={busy} onClick={() => setEditing(false)}><X size={20} /></button></header>
           <div className="harvest-edit-content">

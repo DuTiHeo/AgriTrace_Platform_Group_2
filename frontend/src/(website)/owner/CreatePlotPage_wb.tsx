@@ -21,7 +21,7 @@ import PlotBoundaryEditor from "../../components/owner/PlotBoundaryEditor_wb";
 import { useFarmContext } from "../../contexts/FarmContext_wb";
 import { plotService } from "../../sevices/plotService_wb";
 import type { BoundaryPoint } from "../../features/owner/plot_wb";
-import { calculatePlotArea, plotBoundaryError } from "../../utils/geometry_wb";
+import { calculatePlotArea, existingPlotPointError, plotBoundaryError } from "../../utils/geometry_wb";
 
 type FormData = {
   farmId: string;
@@ -87,6 +87,23 @@ function CreatePlotPage() {
     [farms, formData.farmId],
   );
 
+  const farmId = selectedFormFarm?.id;
+  const [plotReferences, setPlotReferences] = useState<{
+    farmId: string;
+    plots?: Awaited<ReturnType<typeof plotService.getMapBoundaries>>;
+    error?: string;
+  }>();
+  useEffect(() => {
+    if (!farmId) return;
+    let active = true;
+    void plotService.getMapBoundaries(farmId).then(
+      plots => { if (active) setPlotReferences({ farmId, plots }); },
+      () => { if (active) setPlotReferences({ farmId, error: "Không tải được ranh giới các vùng trồng hiện có." }); },
+    );
+    return () => { active = false; };
+  }, [farmId]);
+  const references = plotReferences?.farmId === farmId ? plotReferences : undefined;
+
   const calculatedArea = useMemo(
     () => calculatePlotArea(formData.boundary),
     [formData.boundary],
@@ -149,7 +166,9 @@ function CreatePlotPage() {
     const nextErrors: FormErrors = {};
     const area = Number(formData.area);
 
-    const boundaryError = plotBoundaryError(formData.boundary, selectedFormFarm, true);
+    const boundaryError = references?.plots
+      ? plotBoundaryError(formData.boundary, selectedFormFarm, true) || existingPlotPointError(formData.boundary, references.plots)
+      : references?.error ?? "Đang tải ranh giới các vùng trồng hiện có.";
     if (boundaryError) nextErrors.boundary = boundaryError;
 
     if (!Number.isFinite(area) || area <= 0) {
@@ -352,9 +371,12 @@ function CreatePlotPage() {
               </div>
             </div>
 
+            {references?.error && <p className="form-error-block" role="alert">{references.error}</p>}
             <PlotBoundaryEditor
               key={formData.farmId}
               farm={selectedFormFarm}
+              referencePlots={references?.plots}
+              disabled={!references?.plots}
               points={formData.boundary}
               onChange={handleBoundaryChange}
               summary={

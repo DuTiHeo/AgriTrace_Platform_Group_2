@@ -13,27 +13,16 @@ type HeaderProps = {
   unreadCount: number;
 };
 
-function Header({ onMenuClick, unreadCount }: HeaderProps) {
-  const location = useLocation();
+export function WebHeader({ onMenuClick, unreadCount = 0, admin = false, selector }: Omit<HeaderProps, "unreadCount"> & { unreadCount?: number; admin?: boolean; selector?: React.ReactNode }) {
   const navigate = useNavigate();
-  const [accountName, setAccountName] = useState("Chủ nông trại");
-
-  const {
-    farms,
-    selectedFarmId,
-    loadingFarms,
-    selectFarm,
-  } = useFarmContext();
-
-  const showFarmSelector =
-    !location.pathname.startsWith("/farms");
+  const role = admin ? "Quản trị viên" : "Chủ nông trại";
+  const [accountName, setAccountName] = useState(role);
 
   useEffect(() => {
     let active = true;
     const loadAccount = () => {
-      void accountService
-        .getAccount()
-        .then((account) => { if (active) setAccountName(account.fullName); })
+      void accountService.getCurrentUser()
+        .then((account) => { if (active) setAccountName(account.full_name); })
         .catch(() => { if (active) setAccountName("Không thể tải tài khoản"); });
     };
     const timer = window.setTimeout(loadAccount, 0);
@@ -71,7 +60,45 @@ function Header({ onMenuClick, unreadCount }: HeaderProps) {
         </div>
       </div>
 
-      {showFarmSelector && (
+      {selector}
+
+      <div className="header-actions">
+        {!admin && (        <button
+          className="header-icon-button"
+          type="button"
+          aria-label={`Thông báo${unreadCount ? `, ${unreadCount} chưa đọc` : ""}`}
+          onClick={() => navigate("/notifications")}
+        >
+          <Bell size={23} aria-hidden="true" />
+          {unreadCount > 0 && (
+            <span className="notification-count">
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
+          )}
+        </button>)}
+
+        <button
+          className="header-user"
+          type="button"
+          onClick={() => navigate(admin ? "/admin/account" : "/account")}
+        >
+          <span className="header-avatar">{accountInitials || "HH"}</span>
+
+          <span className="header-user-info">
+            <strong>{accountName}</strong>
+            <small>{role}</small>
+          </span>
+        </button>
+      </div>
+    </header>
+  );
+}
+
+export default function Header(props: HeaderProps) {
+  const { pathname } = useLocation();
+  const { farms, selectedFarmId, loadingFarms, selectFarm } = useFarmContext();
+  const showFarmSelector = !pathname.startsWith("/farms");
+      const selector = showFarmSelector ? (
         <label className="header-farm-selector">
           <Sprout size={18} />
 
@@ -100,38 +127,7 @@ function Header({ onMenuClick, unreadCount }: HeaderProps) {
             ))}
           </select>
         </label>
-      )}
+      ) : null;
 
-      <div className="header-actions">
-        <button
-          className="header-icon-button"
-          type="button"
-          aria-label={`Thông báo${unreadCount ? `, ${unreadCount} chưa đọc` : ""}`}
-          onClick={() => navigate("/notifications")}
-        >
-          <Bell size={23} aria-hidden="true" />
-          {unreadCount > 0 && (
-            <span className="notification-count">
-              {unreadCount > 99 ? "99+" : unreadCount}
-            </span>
-          )}
-        </button>
-
-        <button
-          className="header-user"
-          type="button"
-          onClick={() => navigate("/account")}
-        >
-          <span className="header-avatar">{accountInitials || "HH"}</span>
-
-          <span className="header-user-info">
-            <strong>{accountName}</strong>
-            <small>Chủ nông trại</small>
-          </span>
-        </button>
-      </div>
-    </header>
-  );
+  return <WebHeader {...props} selector={selector} />;
 }
-
-export default Header;

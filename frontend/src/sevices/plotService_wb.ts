@@ -66,6 +66,20 @@ async function getPlotDetail(id: string) {
 }
 
 export const plotService = {
+  async getMapBoundaries(farmId?: string): Promise<Array<Pick<Plot, "id" | "farmId" | "name" | "boundary">>> {
+    const query = farmId ? `?org_id=${encodeURIComponent(farmId)}` : "";
+    const plots = await httpClient.get<PlotDto[]>(`/plots${query}`);
+    return Promise.all(plots.map(async ({ plot_id }) => {
+      const detail = await getPlotDetail(plot_id);
+      return {
+        id: detail.plot_id,
+        farmId: detail.org_id,
+        name: detail.code,
+        boundary: mapPlotBoundary(detail.boundary_geojson),
+      };
+    }));
+  },
+
   async getOverview(farmId?: string): Promise<Array<Pick<Plot, "id" | "name" | "status" | "area">>> {
     const params = new URLSearchParams();
     if (farmId && farmId !== "all") params.set("org_id", farmId);

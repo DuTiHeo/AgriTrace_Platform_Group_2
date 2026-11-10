@@ -760,7 +760,7 @@ function TeamDetailPage() {
       </section>
 
       {openModal === "edit" && (
-        <div className="personnel-modal-backdrop">
+        <div className="personnel-modal-backdrop" onClick={event => { if (!saving && event.target === event.currentTarget) closeModal(); }}>
           <form
             className="personnel-modal personnel-modal-small card"
             role="dialog"
@@ -840,7 +840,7 @@ function TeamDetailPage() {
       )}
 
       {openModal === "add-member" && (
-        <div className="personnel-modal-backdrop">
+        <div className="personnel-modal-backdrop" onClick={event => { if (!saving && event.target === event.currentTarget) closeModal(); }}>
           <form
             className="personnel-modal card"
             role="dialog"
@@ -982,7 +982,7 @@ function TeamDetailPage() {
       )}
 
       {openModal === "leader" && (
-        <div className="personnel-modal-backdrop">
+        <div className="personnel-modal-backdrop" onClick={event => { if (!saving && event.target === event.currentTarget) closeModal(); }}>
           <form
             className="personnel-modal card"
             role="dialog"
@@ -1114,7 +1114,7 @@ function TeamDetailPage() {
 
       {openModal === "remove-member" &&
         selectedPersonnel && (
-          <div className="personnel-modal-backdrop">
+          <div className="personnel-modal-backdrop" onClick={event => { if (!saving && event.target === event.currentTarget) closeModal(); }}>
             <div
               className="personnel-modal personnel-modal-small card"
               role="dialog"
