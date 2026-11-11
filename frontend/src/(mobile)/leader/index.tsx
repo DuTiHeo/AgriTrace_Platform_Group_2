@@ -1,7 +1,7 @@
 import { getTaskTypeLabel } from '@/constants/task_types';
 import { useLocalSearchParams, router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { AppState, Pressable, ScrollView, Text, View } from "react-native";
+import { AppState, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useLeader } from "@/contexts/leader_context";
 import { useWorkSchedule } from '@/contexts/work_schedule_context';
 import { colors } from '@/styles/theme';
@@ -9,7 +9,7 @@ import { useAuth } from '@/contexts/auth_context';
 import { localToday } from '@/contexts/notification_context';
 import { listLogs, type FarmingLog } from '@/sevices/farming_log.service';
 import { inJournalPeriod } from '@/sevices/journal_filter';
-import { Avatar, Button, Card, Chip, dateText, go, Screen, Section, s, Status } from "@/components/leader/ui";
+import { Avatar, Button, Card, dateText, go, Screen, Section, s, Status } from "@/components/leader/ui";
 
 export default function HomeScreen() {
   const { taskId } = useLocalSearchParams<{ taskId?: string }>();
@@ -220,87 +220,80 @@ export default function HomeScreen() {
         </Text>
       </Pressable>
 
-      <Section title="Công việc được giao cho bạn" />
+      <View style={styles.taskSection}>
+        <View style={styles.taskHeading}>
+          <Text style={styles.taskName}>Công việc được giao cho bạn</Text>
+          <Text style={[s.chip, s.chipText]}>{ownerTasks.length} nhiệm vụ</Text>
+        </View>
 
-      {!!error && (
-        <Text
-          accessibilityRole="alert"
-          style={{ color: colors.danger }}
-        >
-          {error}
-        </Text>
-      )}
+        {!!error && (
+          <Text accessibilityRole="alert" style={{ color: colors.danger }}>
+            {error}
+          </Text>
+        )}
 
-      {ownerTasks.map(t => (
-        <Card key={t.id}>
-          <View style={s.row}>
-            <Chip text="TỪ CHỦ NÔNG TRẠI" />
+        {!error && !ownerTasks.length && (
+          <Text style={s.muted}>Chưa có công việc được giao.</Text>
+        )}
 
-            <View style={{ flex: 1 }} />
+        {ownerTasks.map(task => {
+          const status = task.started && task.displayStatus === 'pending'
+            ? 'in_progress'
+            : task.displayStatus;
 
-            {t.status === 'done'
-              ? (
-                  <Status status={t.displayStatus} />
-                )
-              : t.started
-                ? (
-                    <Text
-                      style={[
-                        s.chip,
-                        s.chipText,
-                        {
-                          color: colors.warning,
-                          backgroundColor: colors.warningSoft
+          return (
+            <Card key={task.id}>
+              <View style={s.row}>
+                <Text style={styles.taskName}>{getTaskTypeLabel(task.title)}</Text>
+                {status === 'pending' ? (
+                  <Text style={[s.chip, s.chipText, styles.received]}>Đã nhận</Text>
+                ) : (
+                  <Status status={status} />
+                )}
+              </View>
+
+              <Text style={s.muted}>{task.area} · Hạn: {dateText(task.due)}</Text>
+
+              <View style={styles.actions}>
+                {task.status !== 'done' && (
+                  <Pressable
+                    accessibilityRole="button"
+                    style={styles.primaryAction}
+                    onPress={() => {
+                      if (!task.started) {
+                        void startTask(task.id);
+                        return;
+                      }
+
+                      router.push({
+                        pathname: '/leader/capture',
+                        params: {
+                          taskId: task.id,
+                          plotId: task.plotId,
+                          taskTitle: task.title,
+                          area: task.area
                         }
-                      ]}
-                    >
-                      Đang làm
+                      });
+                    }}
+                  >
+                    <Text style={styles.actionText}>
+                      {task.started ? 'Gửi nhật ký hoàn thành' : 'Bắt đầu'}
                     </Text>
-                  )
-                : null}
-          </View>
+                  </Pressable>
+                )}
 
-          <Text style={s.section}>
-            {getTaskTypeLabel(t.title)}
-          </Text>
-
-          <Text style={s.muted}>
-            {t.area} · Hạn {dateText(t.due)}
-          </Text>
-
-          <Text
-            style={{
-              color: '#667C6D',
-              fontSize: 13,
-              lineHeight: 20
-            }}
-          >
-            {t.instructions}
-          </Text>
-
-          {t.status !== 'done' && (
-            <Button
-              title={t.started ? 'Gửi nhật ký hoàn thành' : 'Bắt đầu'}
-              onPress={() => {
-                if (!t.started) {
-                  void startTask(t.id);
-                  return;
-                }
-
-                router.push({
-                  pathname: '/leader/capture',
-                  params: {
-                    taskId: t.id,
-                    plotId: t.plotId,
-                    taskTitle: t.title,
-                    area: t.area
-                  }
-                });
-              }}
-            />
-          )}
-        </Card>
-      ))}
+                <Pressable
+                  accessibilityRole="button"
+                  style={[s.button, s.secondary]}
+                  onPress={() => router.navigate({ pathname: '/leader/task_detail', params: { id: task.id } })}
+                >
+                  <Text style={s.link}>Chi tiết</Text>
+                </Pressable>
+              </View>
+            </Card>
+          );
+        })}
+      </View>
 
       <Section
         title="Công nhân đang hoạt động"
@@ -350,3 +343,12 @@ export default function HomeScreen() {
     </Screen>
   );
 }
+const styles = StyleSheet.create({
+  taskSection: { gap: 12 },
+  taskHeading: { ...s.row, justifyContent: 'space-between', paddingBottom: 10 },
+  taskName: { ...s.section, flex: 1 },
+  received: { color: colors.muted, backgroundColor: '#EFF2F0' },
+  actions: { ...s.row, flexWrap: 'wrap' },
+  primaryAction: { ...s.button, flex: 1 },
+  actionText: { ...s.buttonText, textAlign: 'center' }
+});

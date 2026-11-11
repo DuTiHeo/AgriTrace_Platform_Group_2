@@ -1,3 +1,4 @@
+import { useWebPolling } from "../../hooks/use_web_polling_wb";
 import ListRowActions from "../../components/owner/ListRowActions_wb";
 import "../../styles/seasons_wb.css";
 import {
@@ -95,10 +96,12 @@ function SeasonsPage() {
   const [error, setError] = useState("");
 
   const loadRequest = useRef(0);
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (background = false) => {
     const request = ++loadRequest.current;
-    setLoading(true);
-    setError("");
+    if (!background) {
+      setLoading(true);
+      setError("");
+    }
 
     try {
       const [seasonData, plotData] =
@@ -121,12 +124,14 @@ function SeasonsPage() {
         setPlotFilter("all");
       }
     } catch {
+      if (background) return;
       if (request !== loadRequest.current) return;
       setError("Không thể tải danh sách mùa vụ.");
     } finally {
       if (request === loadRequest.current) setLoading(false);
     }
   }, [plotFilter, selectedFarmId]);
+  useWebPolling(loadData, !loading);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void loadData(), 0);

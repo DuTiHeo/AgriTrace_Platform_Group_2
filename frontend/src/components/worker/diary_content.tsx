@@ -1,4 +1,5 @@
 import { sharedStyles as shared } from '@/styles/role_styles';
+import { colors } from '@/styles/theme';
 import { StyleSheet, Text, View } from 'react-native';
 import { ReportPhotos as SharedReportPhotos } from '@/components/common/report_photos';
 import { type WorkReport } from '@/contexts/report_context';
@@ -16,26 +17,20 @@ export function ReportComments({ comments = [] }: {
   const remarks = [...comments]
     .sort((a, b) => Date.parse(b.time) - Date.parse(a.time));
 
-  return <View style={[
-    s.comment,
-    {
-      gap: 10
-    }
-  ]}>
-    <Text style={s.section}>Nhận xét và đánh giá</Text>
+  return <View style={s.comments}>
+    <Text style={[s.section, s.commentsHeading]}>Nhận xét và đánh giá</Text>
     {remarks.length ? remarks.map(comment => <View
       key={comment.id}
-      style={{
-        gap: 5,
-        paddingTop: 4
-      }}
+      style={s.comment}
     >
-      <Text style={s.label}>
-        {comment.author}
-      </Text>
-      <Text style={s.muted}>
-        {noticeTime(comment.time)}
-      </Text>
+      <View style={s.commentHeader}>
+        <Text style={[s.link, s.commentAuthor]}>
+          {comment.author}
+        </Text>
+        <Text style={[s.muted, s.commentTime]}>
+          {noticeTime(comment.time)}
+        </Text>
+      </View>
       <Text style={s.text}>
         {comment.text}
       </Text>
@@ -79,10 +74,29 @@ export const s = StyleSheet.create({
   input: {
     ...shared.input
   },
+  comments: {
+    backgroundColor: colors.surface,
+    paddingVertical: 12
+  },
+  commentsHeading: {
+    marginBottom: 12
+  },
+  commentHeader: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 8
+  },
+  commentAuthor: {
+    flex: 1
+  },
+  commentTime: {
+    maxWidth: '55%',
+    textAlign: 'right'
+  },
   comment: {
     ...shared.secondary,
     padding: 12,
-    borderRadius: 0,
+    marginBottom: 12,
     gap: 5
   },
   linkButton: {

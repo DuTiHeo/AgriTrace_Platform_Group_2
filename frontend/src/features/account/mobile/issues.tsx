@@ -8,7 +8,7 @@ import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { ActivityIndicator, Image, Keyboard, Pressable, Text, TextInput, View } from 'react-native';
 import { AccountScreen } from '@/components/common/account_screen';
-import { Button, Card, Chip, Empty, Input, Section } from '@/components/common/role_ui';
+import { Button, Card, Empty, Input, Section } from '@/components/common/role_ui';
 import { FullScreenImageViewer } from '@/components/common/full_screen_image_viewer';
 import { useAccountUtilities } from '@/contexts/account_utilities_context';
 import { useAuth } from '@/contexts/auth_context';
@@ -17,7 +17,13 @@ import { colors } from '@/styles/theme';
 import { buildErrorReportPayload, createErrorReport, listErrorReports, errorReportKinds, type ErrorReport } from '@/sevices/error_report.service';
 
 const PAGE_SIZE = 50;
-const statuses = { new: 'Đã gửi', processing: 'Đang xử lý', resolved: 'Đã xử lý', rejected: 'Từ chối' };
+const statuses = { new: 'Đã gửi', processing: 'Đã tiếp nhận', resolved: 'Đã xử lý', rejected: 'Từ chối' };
+const statusColors = {
+  new: { color: '#1D4ED8', backgroundColor: '#EFF6FF' },
+  processing: { color: '#805211', backgroundColor: colors.warningSoft },
+  resolved: { color: colors.title, backgroundColor: colors.successSoft },
+  rejected: { color: '#B42318', backgroundColor: colors.dangerSoft }
+};
 
 export default function IssuesScreen() {
   const { draft, setDraft } = useAccountUtilities();
@@ -117,9 +123,9 @@ export default function IssuesScreen() {
     } finally { pending.current = false; if (session.current === accessToken) setBusy(false); }
   }
 
-  function photo(uri: string) {
+  function photo(uri: string, fullWidth = false) {
     return <Pressable accessibilityRole="button" accessibilityLabel="Xem ảnh báo lỗi" onPress={() => setSelectedPhoto(uri)}>
-      <Image source={{ uri }} style={s.photo} />
+      <Image source={{ uri }} style={fullWidth ? [s.photo, { width: '100%', height: 200 }] : s.photo} resizeMode={fullWidth ? 'contain' : 'cover'} />
     </Pressable>;
   }
 
@@ -128,16 +134,37 @@ export default function IssuesScreen() {
     <Card>
       <Text style={s.label}>Loại sự cố</Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-        {errorReportKinds.map(kind => <Button key={kind.label} title={kind.label} disabled={busy}
-          secondary={kind.label !== draft.kind} onPress={() => setDraft({ ...draft, kind: kind.label })} />)}
+        {errorReportKinds.map(kind => {
+          const selected = kind.label === draft.kind;
+          return (
+            <Pressable
+              key={kind.value}
+              accessibilityRole="button"
+              accessibilityState={{ selected, disabled: busy }}
+              disabled={busy}
+              onPress={() => {
+                Keyboard.dismiss();
+                setDraft({ ...draft, kind: kind.label });
+              }}
+              style={({ pressed }) => [
+                s.button,
+                s.secondary,
+                selected && { backgroundColor: colors.primary, borderColor: colors.primary },
+                (busy || pressed) && { opacity: 0.5 }
+              ]}
+            >
+              <Text style={[s.buttonText, !selected && { color: colors.primaryText }]}>{kind.label}</Text>
+            </Pressable>
+          );
+        })}
       </View>
       <Input ref={descriptionRef} label="Mô tả sự cố *" placeholder="Bạn đang làm gì khi lỗi xảy ra?"
         multiline maxLength={3000} editable={!busy} value={draft.text}
         onChangeText={text => { setDraft({ ...draft, text }); setMessage(''); }} />
       <Button secondary title="Tải ảnh lên" disabled={busy || !!draft.photo} onPress={choosePhoto} />
       <Text style={s.muted}>Tối đa 1 ảnh, không quá 5 MB.</Text>
-      {!!draft.photo && <View style={{ width: 128, height: 128 }}>
-        {photo(draft.photo)}
+      {!!draft.photo && <View style={{ width: '100%' }}>
+        {photo(draft.photo, true)}
         <RemovePhotoButton disabled={busy} onPress={() => setDraft({ ...draft, photo: undefined, uploadedPhotoUrl: undefined })} />
       </View>}
       {!!message && <Text accessibilityRole="alert" style={s.muted}>{message}</Text>}
@@ -147,12 +174,24 @@ export default function IssuesScreen() {
     {!!loadError && <Card><Text accessibilityRole="alert" style={{ color: colors.danger }}>{loadError}</Text>
       <Button title="Thử tải lại" disabled={loading || busy} onPress={() => load()} /></Card>}
     {reports.map(report => <Card key={report.report_id}>
-      <Chip text={statuses[report.status] ?? report.status} />
-      <Text style={s.section}>{errorReportKinds.find(kind => kind.value === report.error_type)?.label ?? report.error_type ?? 'Khác'}</Text>
-      <Text style={s.muted}>{report.description}</Text>
-      <Text style={s.muted}>{new Date(report.submitted_at).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}</Text>
-      {!!report.screenshot_url && photo(photoUrl(report.screenshot_url))}
-      {!!report.admin_response && <View style={{ gap: 6 }}><Text style={s.label}>Phản hồi từ quản trị viên</Text><Text style={s.muted}>{report.admin_response}</Text></View>}
+      <View style={[s.row, { alignItems: 'flex-start' }]}>
+        <View style={{ flex: 1, minWidth: 0, gap: 8 }}>
+          <Text style={[s.chip, s.chipText, statusColors[report.status]]}>{statuses[report.status] ?? report.status}</Text>
+          <View style={[s.card, { padding: 10, gap: 5 }]}>
+            <Text style={s.label}>Nội dung báo lỗi</Text>
+            <Text style={s.body}>{report.description}</Text>
+          </View>
+          {!report.screenshot_url && <Text style={s.muted}>{new Date(report.submitted_at).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}</Text>}
+        </View>
+        {!!report.screenshot_url && <View style={{ width: s.photo.width, gap: 4 }}>
+          {photo(photoUrl(report.screenshot_url))}
+          <Text style={[s.muted, { textAlign: 'right' }]}>{new Date(report.submitted_at).toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}</Text>
+        </View>}
+      </View>
+      {!!report.admin_response && <View style={[s.card, { backgroundColor: colors.successSoft, padding: 10, gap: 5 }]}>
+        <Text style={s.label}>Phản hồi từ quản trị viên</Text>
+        <Text style={s.body}>{report.admin_response}</Text>
+      </View>}
     </Card>)}
     {loading && <ActivityIndicator color={colors.primary} />}
     {!loading && !loadError && !reports.length && <Empty text="Bạn chưa gửi báo cáo sự cố." />}

@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import { Text, TextInput, View } from "react-native";
 import { useLeader, type Diary } from "@/contexts/leader_context";
 import { Button, dateText, Input, s } from "./ui";
+import { colors, radius } from '@/styles/theme';
 
 export function Comments({
   diary
@@ -16,21 +17,17 @@ export function Comments({
   const inputRef = useRef<ComponentRef<typeof TextInput>>(null);
 
   return (
-    <View
-      style={{
-        gap: 12,
-        borderTopWidth: 1,
-        borderColor: '#EEF2ED',
-        paddingTop: 14
-      }}
-    >
+    <View style={{ marginTop: 12 }}>
       {diary.comments.map(c => (
         <View
           key={c.id}
           style={{
             padding: 12,
-            backgroundColor: '#F0F7EF',
-            borderRadius: 0,
+            backgroundColor: colors.successSoft,
+            borderColor: colors.border,
+            borderWidth: 1,
+            borderRadius: radius.control,
+            marginBottom: 12,
             gap: 5
           }}
         >
@@ -54,52 +51,54 @@ export function Comments({
         </View>
       ))}
 
-      <Input
-        ref={inputRef}
-        label="Viết nhận xét"
-        placeholder="Viết nhận xét về công việc…"
-        value={text}
-        onChangeText={value => {
-          setText(value);
+      <View style={{ gap: 12 }}>
+        <Input
+          ref={inputRef}
+          label="Viết nhận xét"
+          placeholder="Viết nhận xét về công việc…"
+          value={text}
+          onChangeText={value => {
+            setText(value);
 
-          if (value.trim())
+            if (value.trim())
+              setError('');
+          }}
+          multiline
+          maxLength={1000}
+        />
+
+        {!!error && <Text accessibilityRole="alert">
+          {error}
+        </Text>}
+        <Button
+          title="Gửi nhận xét"
+          disabled={saving}
+          onPress={async () => {
+            if (!text.trim()) {
+              setError('Vui lòng nhập nhận xét.');
+              inputRef.current?.focus();
+
+              return;
+            }
+
+            setSaving(true);
             setError('');
-        }}
-        multiline
-        maxLength={1000}
-      />
 
-      {!!error && <Text accessibilityRole="alert">
-        {error}
-      </Text>}
-      <Button
-        title="Gửi nhận xét"
-        disabled={saving}
-        onPress={async () => {
-          if (!text.trim()) {
-            setError('Vui lòng nhập nhận xét.');
-            inputRef.current?.focus();
-
-            return;
-          }
-
-          setSaving(true);
-          setError('');
-
-          try {
-            await addComment(
-              diary.id,
-              text.trim()
-            );
-            setText('');
-          } catch (e) {
-            setError(e instanceof Error ? e.message : 'Không lưu được nhận xét.');
-          }
-          finally {
-            setSaving(false);
-          }
-        }}
-      />
+            try {
+              await addComment(
+                diary.id,
+                text.trim()
+              );
+              setText('');
+            } catch (e) {
+              setError(e instanceof Error ? e.message : 'Không lưu được nhận xét.');
+            }
+            finally {
+              setSaving(false);
+            }
+          }}
+        />
+      </View>
     </View>
   );
 }

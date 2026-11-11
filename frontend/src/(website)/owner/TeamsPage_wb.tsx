@@ -1,3 +1,4 @@
+import { useWebPolling } from "../../hooks/use_web_polling_wb";
 import "../../styles/personnel_wb.css";
 import "../../styles/teams_wb.css";
 import {
@@ -75,7 +76,7 @@ function TeamsPage() {
   );
 
   const loadRequest = useRef(0);
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (background = false) => {
     const request = ++loadRequest.current;
     if (
       loadingFarms ||
@@ -91,8 +92,10 @@ function TeamsPage() {
       return;
     }
 
-    setLoading(true);
-    setError("");
+    if (!background) {
+      setLoading(true);
+      setError("");
+    }
 
     try {
       const [teamGroups, personnelGroups] =
@@ -122,6 +125,7 @@ function TeamsPage() {
       setTeams(teamGroups.flat());
       setPersonnel(personnelGroups.flat());
     } catch (loadError) {
+      if (background) return;
       if (request !== loadRequest.current) return;
       setError(
         loadError instanceof Error
@@ -132,6 +136,7 @@ function TeamsPage() {
       if (request === loadRequest.current) setLoading(false);
     }
   }, [loadingFarms, selectedFarmIds]);
+  useWebPolling(loadData, !loading);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void loadData(), 0);

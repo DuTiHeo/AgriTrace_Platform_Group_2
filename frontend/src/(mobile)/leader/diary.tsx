@@ -66,15 +66,17 @@ export default function DiaryScreen() {
       {!!error && <Card><Text accessibilityRole="alert" style={{ color: '#B42318' }}>{error}</Text><Button title="Thử tải lại" disabled={loading} onPress={() => { void refresh(); }} /></Card>}
       {!error && !visible.length && <Empty text="Không tìm thấy nhật ký phù hợp." />}
       {visible.map(d => (
-        <Card key={d.id}>
-          <View style={s.row}><Text style={[s.section, { flex: 1 }]}>{getTaskTypeLabel(d.title)}</Text><Chip text={reviewLabel(getReport(d.id) ?? {})} tone={getReport(d.id)?.review === 'rejected' ? 'danger' : 'green'} /></View>
-          <View style={s.row}><Avatar name={d.name} small /><View><Text style={s.link}>{d.name}</Text><Text style={s.muted}>{d.area} · {dateText(d.time)}</Text></View></View>
-          <Text style={{ color: '#617A68', fontSize: 13, lineHeight: 21 }}>{d.note}</Text>
-          <Photos photos={d.photos} />
-          <Button secondary title="Xem chi tiết nhật ký →" onPress={() => go('diary_detail', d.id)} />
-          <ReportReview id={d.id} onReviewed={() => setReview('all')} />
-          <Comments diary={d} />
-        </Card>
+        <View key={d.id} style={{ marginBottom: 12 }}>
+          <Card>
+            <View style={s.row}><Text style={[s.section, { flex: 1 }]}>{getTaskTypeLabel(d.title)}</Text><Chip text={reviewLabel(getReport(d.id) ?? {})} tone={getReport(d.id)?.review === 'rejected' ? 'danger' : 'green'} /></View>
+            <View style={s.row}><Avatar name={d.name} small /><View><Text style={s.link}>{d.name}</Text><Text style={s.muted}>{d.area} · {dateText(d.time)}</Text></View></View>
+            <Text style={{ color: '#617A68', fontSize: 13, lineHeight: 21 }}>{d.note}</Text>
+            <Photos photos={d.photos} />
+            <Button secondary title="Xem chi tiết nhật ký →" onPress={() => go('diary_detail', d.id)} />
+            <ReportReview id={d.id} onReviewed={() => setReview('all')} />
+            <Comments diary={d} />
+          </Card>
+        </View>
       ))}
       {visible.length < filtered.length && <Button secondary title="Xem thêm nhật ký" onPress={() => setLimit(value => value + 10)} />}
       {!!filtered.length && visible.length === filtered.length && filtered.length > 10 && <Text style={s.muted}>Đã hiển thị toàn bộ nhật ký.</Text>}

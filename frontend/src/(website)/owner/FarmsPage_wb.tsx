@@ -1,3 +1,4 @@
+import { useWebPolling } from "../../hooks/use_web_polling_wb";
 import { DetailViewLink } from "../../components/owner/ListRowActions_wb";
 import "../../styles/farms_wb.css";
 import {
@@ -45,16 +46,19 @@ function FarmsPage() {
     useState<PendingAction | null>(null);
   const [notice, setNotice] = useState("");
 
-  const loadFarms = useCallback(async () => {
-    setLoading(true);
+  const loadFarms = useCallback(async (background = false) => {
+    if (!background) setLoading(true);
 
     try {
       const data = await farmService.getAll();
       setFarms(data);
+    } catch (error) {
+      if (!background) throw error;
     } finally {
       setLoading(false);
     }
   }, []);
+  useWebPolling(loadFarms, !loading);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void loadFarms(), 0);

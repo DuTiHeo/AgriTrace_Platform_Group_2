@@ -1,3 +1,4 @@
+import { useWebPolling } from "../../hooks/use_web_polling_wb";
 import "../../styles/farming_logs_wb.css";
 import {
   AlertCircle,
@@ -71,10 +72,12 @@ function FarmingLogsPage() {
   const [error, setError] = useState("");
 
   const loadRequest = useRef(0);
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (background = false) => {
     const request = ++loadRequest.current;
-    setLoading(true);
-    setError("");
+    if (!background) {
+      setLoading(true);
+      setError("");
+    }
 
     try {
       const [logData, seasonData, plotData] = await Promise.all([
@@ -89,12 +92,14 @@ function FarmingLogsPage() {
       setSeasons(seasonData);
       setPlots(plotData);
     } catch {
+      if (background) return;
       if (request !== loadRequest.current) return;
       setError("Không thể tải danh sách nhật ký canh tác.");
     } finally {
       if (request === loadRequest.current) setLoading(false);
     }
   }, [selectedFarmId]);
+  useWebPolling(loadData, !loading);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -105,9 +110,10 @@ function FarmingLogsPage() {
   }, [loadData]);
 
   useEffect(() => {
-    window.addEventListener("farming-logs-updated", loadData);
+    const refresh = () => void loadData();
+    window.addEventListener("farming-logs-updated", refresh);
     return () =>
-      window.removeEventListener("farming-logs-updated", loadData);
+      window.removeEventListener("farming-logs-updated", refresh);
   }, [loadData]);
 
   const seasonById = useMemo(

@@ -1,3 +1,4 @@
+import { useWebPolling } from "../../hooks/use_web_polling_wb";
 import "../../styles/notifications_wb.css";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowUpRight, Bell, Check, CheckCheck, ClipboardCheck, Clock3, Info, Leaf, NotebookPen, PackageCheck, SlidersHorizontal, X } from "lucide-react";
@@ -23,10 +24,12 @@ export default function NotificationsPage() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const request = useRef(0);
-  const load = useCallback(async () => {
+  const load = useCallback(async (background = false) => {
     const current = ++request.current;
-    setLoading(true);
-    setError("");
+    if (!background) {
+      setLoading(true);
+      setError("");
+    }
     try {
       const [items, unreadCount] = await Promise.all([
         notificationService.getAll({ ...(category !== "all" ? { type: category } : {}), ...(unreadOnly ? { isRead: false } : {}) }),
@@ -41,14 +44,16 @@ export default function NotificationsPage() {
         const day = dateFormat.format(new Date(item.createdAt));
         return { id: item.id, type: item.type ?? null, category: item.category, title: item.title, message: item.message, target: item.target, unread: !item.readAt, group: day === today ? "Hôm nay" : day === yesterday ? "Hôm qua" : new Intl.DateTimeFormat("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" }).format(new Date(item.createdAt)), time: new Intl.DateTimeFormat("vi-VN", { timeZone: "Asia/Ho_Chi_Minh", hour: "2-digit", minute: "2-digit" }).format(new Date(item.createdAt)) };
       }));
-    } catch (cause) { if (current === request.current) setError(cause instanceof Error ? cause.message : "Không thể tải thông báo."); }
+    } catch (cause) {
+      if (background) return;
+      if (current === request.current) setError(cause instanceof Error ? cause.message : "Không thể tải thông báo."); }
     finally { if (current === request.current) setLoading(false); }
   }, [category, unreadOnly]);
+  useWebPolling(load, !loading);
   useEffect(() => {
     const requestCounter = request;
     const timer = window.setTimeout(() => void load(), 0);
-    const interval = window.setInterval(() => { if (!document.hidden) void load(); }, 60000);
-    return () => { window.clearTimeout(timer); window.clearInterval(interval); requestCounter.current++; };
+    return () => { window.clearTimeout(timer); requestCounter.current++; };
   }, [load]);
   const selected = notices.find(n => n.id === selectedId);
   const filtered = notices.filter(n => !unreadOnly || n.unread);

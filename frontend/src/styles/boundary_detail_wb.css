@@ -20,7 +20,9 @@
   grid-template-rows: auto 360px auto;
   gap: 12px 18px;
 }
-.boundary-detail-layout > .geographic-map { display: contents; }
+.boundary-detail-layout > .geographic-map,
+.boundary-detail-layout > .farm-boundary-map,
+.boundary-detail-layout > .farm-boundary-map > .geographic-map { display: contents; }
 .boundary-detail-layout .geographic-map-legend { grid-column: 1 / -1; grid-row: 1; margin: 0; }
 .boundary-detail-layout .geographic-map-canvas { grid-column: 1; grid-row: 2; height: 360px; }
 .boundary-detail-layout .geographic-map-status { grid-column: 1 / -1; grid-row: 3; }

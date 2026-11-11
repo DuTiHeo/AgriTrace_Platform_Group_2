@@ -1,3 +1,4 @@
+import { WEB_REFRESH_INTERVAL } from "../../hooks/use_web_polling_wb";
 import "../../styles/dashboard_wb.css";
 import {
   ClipboardCheck,
@@ -107,7 +108,7 @@ function DashboardPage() {
     const refreshWhenVisible = () => {
       if (document.visibilityState === "visible") refresh();
     };
-    const interval = window.setInterval(refreshWhenVisible, 60_000);
+    const interval = window.setInterval(refreshWhenVisible, WEB_REFRESH_INTERVAL);
     const events = [
       "plots-updated", "seasons-updated", "tasks-updated",
       "harvest-batches-updated",

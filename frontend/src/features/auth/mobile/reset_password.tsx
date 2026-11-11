@@ -1,7 +1,7 @@
 import type { ComponentRef } from 'react';
 import { type Href, Redirect, router } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Keyboard, Pressable, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from 'react-native';
+import { Keyboard, Platform, Pressable, StyleSheet, Text, TextInput, TouchableWithoutFeedback, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/common/primary_button';
@@ -243,6 +243,9 @@ const styles = StyleSheet.create({
   },
 
   input: {
+    textAlign: 'left',
+    letterSpacing: 0,
+    fontFamily: Platform.OS === 'android' ? 'sans-serif' : undefined,
     height: 48,
     paddingHorizontal: 14,
     backgroundColor: '#F4F7F4',

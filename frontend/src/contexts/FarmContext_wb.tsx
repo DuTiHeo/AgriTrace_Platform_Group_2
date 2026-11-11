@@ -1,3 +1,4 @@
+import { useWebPolling } from "../hooks/use_web_polling_wb";
 import {
   createContext,
   useCallback,
@@ -54,25 +55,30 @@ export function FarmProvider({
       );
     });
 
-  const refreshFarms = useCallback(async () => {
+  const loadFarms = useCallback(async (background = false) => {
     const currentRequest = ++requestId.current;
-    setLoadingFarms(true);
-    setFarmError("");
+    if (!background) {
+      setLoadingFarms(true);
+      setFarmError("");
+    }
     try {
       const data = await farmService.getAll();
       if (currentRequest !== requestId.current) return;
-      setFarms(data);
+      setFarms(current => JSON.stringify(current) === JSON.stringify(data) ? current : data);
       setSelectedFarmId((current) => {
         if (current === "all" || data.some((farm) => farm.id === current)) return current;
         localStorage.setItem(SELECTED_FARM_KEY, "all");
         return "all";
       });
     } catch (error) {
-      if (currentRequest === requestId.current) setFarmError(error instanceof Error ? error.message : "Không thể tải nông trại.");
+      if (!background && currentRequest === requestId.current) setFarmError(error instanceof Error ? error.message : "Không thể tải nông trại.");
     } finally {
       if (currentRequest === requestId.current) setLoadingFarms(false);
     }
   }, []);
+
+  const refreshFarms = useCallback(() => loadFarms(), [loadFarms]);
+  useWebPolling(loadFarms, !loadingFarms);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void refreshFarms(), 0);

@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { PrimaryButton } from '@/components/common/primary_button';
 import { FullScreenImageViewer } from '@/components/common/full_screen_image_viewer';
 import { RemovePhotoButton } from '@/components/common/remove_photo_button';
+import { ReportDictation } from '@/components/common/report_dictation';
 import { type ReportDraft, useReports } from '@/contexts/report_context';
 import { useFarmingLogForm } from '@/hooks/use_farming_log_form';
 import { useDiscardWarning } from '@/hooks/use_discard_warning';
@@ -71,6 +72,13 @@ export function FarmingLogFormScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const appendTranscript = useCallback((text: string) => {
+    updateDraft(old => ({
+      ...old,
+      note: old.note && !/\s$/.test(old.note) ? `${old.note} ${text}` : old.note + text
+    }));
+    setFieldErrors(old => old.note ? { ...old, note: '' } : old);
+  }, [updateDraft]);
   const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
   const contentRef = useRef<ComponentRef<typeof View>>(null);
   const titleRef = useRef<ComponentRef<typeof TextInput>>(null), noteRef = useRef<ComponentRef<typeof TextInput>>(null);
@@ -378,6 +386,17 @@ export function FarmingLogFormScreen() {
                 {!draft.seasonId && activeSeasons.length === 0 && <Text style={styles.fieldError}>Chưa có mùa vụ đang canh tác. Báo người quản lý thiết lập mùa vụ trước khi gửi.</Text>}
                 {fieldError('season')}
                 <View onLayout={event => {
+                  fieldY.current.area = event.nativeEvent.layout.y;
+                }}>
+                  {/* Cảnh báo khi GPS nằm ngoài ranh giới nông trại (EX-15) */}
+                  {!!locationError && (
+                    <View style={styles.alertBanner} accessibilityRole="alert">
+                      <Text style={styles.alertBannerText}>{locationError}</Text>
+                    </View>
+                  )}
+                  {fieldError('area')}
+                </View>
+                <View onLayout={event => {
                   fieldY.current.taskTitle = event.nativeEvent.layout.y;
                 }}>
                   {customTitle || (catalogLoaded && !taskTypes.length) ? <View style={{
@@ -482,21 +501,6 @@ export function FarmingLogFormScreen() {
                   </View>}
                   {fieldError('taskTitle')}
                 </View>
-                <View onLayout={event => {
-                  fieldY.current.area = event.nativeEvent.layout.y;
-                }}>
-                  {/* Cảnh báo khi GPS nằm ngoài ranh giới nông trại (EX-15) */}
-                  {!!locationError && (
-                    <View style={styles.alertBanner} accessibilityRole="alert">
-                      <Text style={styles.alertBannerText}>{locationError}</Text>
-                    </View>
-                  )}
-                  {fieldError('area')}
-                </View>
-                {!!activeSeasons.find(season => season.season_id === draft.seasonId)?.notes?.trim() && <View>
-                  <Text style={styles.label}>Ghi chú mùa vụ</Text>
-                  <Text style={shared.muted}>{activeSeasons.find(season => season.season_id === draft.seasonId)?.notes}</Text>
-                </View>}
                 <View
                   style={styles.noteField}
                   onLayout={event => {
@@ -527,7 +531,7 @@ export function FarmingLogFormScreen() {
                         clearFieldError('note');
                     }}
                   />
-                  <Text style={styles.taskMeta}>Có thể dùng micro trên bàn phím để nói</Text>
+                  <ReportDictation key={draftKey} disabled={busy} onTranscript={appendTranscript} />
                   {fieldError('note')}
                 </View>
               </View>

@@ -89,7 +89,7 @@ export default function FarmBoundaryMap({ farmId, regions = [], points = [], onA
     return true;
   };
 
-  return <div>
+  return <div className="farm-boundary-map">
     {onAutoAddPoint && onReplacePoints && <div className="boundary-coordinate-inputs">
       <label><span>Vĩ độ</span><input type="number" step="any" placeholder="20.999900" value={latitude} onChange={event => setLatitude(event.target.value)} /></label>
       <label><span>Kinh độ</span><input type="number" step="any" placeholder="105.842800" value={longitude} onChange={event => setLongitude(event.target.value)} /></label>

@@ -31,7 +31,8 @@ export default function DiaryDetailScreen() {
           </Card>
           <Card><Section title="Nội dung công việc" /><Text style={{ color: '#617A68', lineHeight: 23 }}>{diary.note || 'Không có ghi chú.'}</Text></Card>
           <Card><Section title={`Hình ảnh minh chứng (${diary.photos.length})`} /><Photos photos={diary.photos} /></Card>
-          <Card><ReportReview id={diary.id} /><Comments diary={diary} /></Card>
+          <Card><ReportReview id={diary.id} /></Card>
+          <Card><Section title="Lịch sử nhận xét và đánh giá" /><Comments diary={diary} /></Card>
         </>
       ) : <Empty text="Đang tải nhật ký…" />}
     </Screen>

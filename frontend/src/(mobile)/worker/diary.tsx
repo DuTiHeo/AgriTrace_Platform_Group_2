@@ -198,6 +198,7 @@ export default function WorkerDiaryScreen() {
                 key={report.id}
                 style={[
                   s.card,
+                  { marginBottom: 12 },
                   report.id === reportId && {
                     borderColor: colors.primary,
                     borderWidth: 2

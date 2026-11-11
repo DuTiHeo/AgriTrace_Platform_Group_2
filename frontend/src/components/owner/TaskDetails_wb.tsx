@@ -46,10 +46,6 @@ export default function TaskDetails({ task, tasks, farmName, plotName, teamName,
       <dl className="task-detail-schedule">{[
         ['Thời điểm giao', date(detail.createdAt)], ['Bắt đầu', date(detail.startAt)], ['Hạn hoàn thành', date(detail.dueAt)],
       ].map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
-      <dl className="task-detail-grid task-detail-notes">
-        <div><dt>Dụng cụ</dt><dd>{detail.tools ?? ''}</dd></div>
-        <div><dt>Ghi chú</dt><dd>{detail.instructions ?? ''}</dd></div>
-      </dl>
     </div>
     <footer className="app-modal-footer"><button type="button" className="btn btn-secondary" onClick={onClose}>Đóng</button></footer>
   </dialog>;

@@ -1,18 +1,17 @@
 import { localDateKey, taskOccursOn as occursOn } from '@/utils/task_dates';
 import { getTaskTypeLabel } from '@/constants/task_types';
-import { router, type Href, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/auth_context';
 import { useWorkSchedule } from '@/contexts/work_schedule_context';
 import { useReports } from '@/contexts/report_context';
+import { taskExecutionError } from '@/sevices/journal_filter';
 import { Button } from '@/components/common/role_ui';
 import { sharedStyles as shared } from '@/styles/role_styles';
 import { colors } from '@/styles/theme';
-import { taskExecutionError } from '@/sevices/journal_filter';
 import { useTaskRefresh } from '@/hooks/use_task_refresh';
-import { useScopedState } from '@/hooks/use_scoped_state';
 
 function dateKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -42,7 +41,8 @@ export default function WorkerScheduleScreen() {
   const { date, taskId } = useLocalSearchParams<{ date?: string; taskId?: string }>();
   const { user } = useAuth();
   const { workerTasks, ready, error, retry, startTask } = useWorkSchedule();
-  const { drafts, reports } = useReports();
+  const [actionError, setActionError] = useState<{ taskId: string; message: string } | null>(null);
+  const { reports } = useReports();
   const [selected, setSelected] = useState(() => scheduleDate(date) ?? todayDate());
   const [previousDate, setPreviousDate] = useState(date);
   if (previousDate !== date) {
@@ -50,7 +50,6 @@ export default function WorkerScheduleScreen() {
     const value = scheduleDate(date);
     if (value) setSelected(value);
   }
-  const [executionMessage, setExecutionMessage] = useScopedState('', String(selected.getTime()));
   const [refreshing, setRefreshing] = useState(false);
   useTaskRefresh(retry);
   const refreshSchedule = useCallback(async () => {
@@ -162,14 +161,6 @@ export default function WorkerScheduleScreen() {
           Ngày {selected.toLocaleDateString('vi-VN')} · {jobs.length} công việc
         </Text>
 
-        {!!executionMessage && (
-          <Text
-            accessibilityRole="alert"
-            style={{ color: colors.warning }}
-          >
-            {executionMessage}
-          </Text>
-        )}
 
         {!user ? (
           <Text style={shared.empty}>
@@ -204,53 +195,14 @@ export default function WorkerScheduleScreen() {
         ) : (
           jobs.map(task => {
             const latest = reports.find(item => item.taskId === task.id);
-            const report = latest?.review === 'rejected' ? undefined : latest;
-            const draft = drafts[`task:${task.id}`];
 
             return (
-              <Pressable
+              <View
                 key={task.id}
-                accessibilityRole="button"
-                accessibilityLabel={`${getTaskTypeLabel(task.title)}, ${report ? 'xem báo cáo' : task.started ? 'gửi nhật ký hoàn thành' : 'bắt đầu'}`}
-                style={({ pressed }) => [
+                style={[
                   shared.card,
-                  task.id === taskId && {
-                    borderColor: colors.primary,
-                    borderWidth: 2
-                  },
-                  pressed && { opacity: 0.7 }
+                  task.id === taskId && { borderColor: colors.primary, borderWidth: 2 }
                 ]}
-                onPress={() => {
-                  const blocked = report ? '' : taskExecutionError(task);
-                  setExecutionMessage(blocked);
-
-                  if (blocked) return;
-
-                  if (!report && !task.started) {
-                    void startTask(task.id);
-                    return;
-                  }
-
-                  router.push(
-                    report
-                      ? {
-                          pathname: '/worker/diary_detail',
-                          params: {
-                            id: report.id,
-                            fromNotification: 'false'
-                          }
-                        } as Href
-                      : {
-                          pathname: '/worker/report_note',
-                          params: {
-                            taskId: task.id,
-                            plotId: task.plotId,
-                            taskTitle: task.title,
-                            area: task.area
-                          }
-                        } as Href
-                  );
-                }}
               >
                 <View style={shared.row}>
                   <Text style={[shared.link, { flex: 1 }]}>
@@ -338,16 +290,43 @@ export default function WorkerScheduleScreen() {
                   </Text>
                 )}
 
-                <Text style={shared.link}>
-                  {report
-                    ? 'Đã gửi báo cáo · Xem nhật ký →'
-                    : !task.started
-                      ? 'Bắt đầu'
-                      : draft
-                        ? 'Tiếp tục bản nháp · Gửi nhật ký hoàn thành →'
-                        : 'Gửi nhật ký hoàn thành →'}
-                </Text>
-              </Pressable>
+                {actionError?.taskId === task.id && (
+                  <Text accessibilityRole="alert" style={{ color: colors.danger }}>{actionError.message}</Text>
+                )}
+                <View style={[shared.row, { justifyContent: 'space-between', flexWrap: 'wrap' }]}>
+                  {(latest?.review === 'rejected' || (task.status !== 'done' && !latest)) && (
+                    <Pressable
+                      accessibilityRole="button"
+                      style={shared.button}
+                      onPress={() => {
+                        const message = taskExecutionError(task);
+                        setActionError(message ? { taskId: task.id, message } : null);
+                        if (message) return;
+
+                        if (!task.started) {
+                          void startTask(task.id);
+                          return;
+                        }
+
+                        router.navigate({
+                          pathname: '/worker/report_note',
+                          params: { taskId: task.id, plotId: task.plotId, taskTitle: task.title, area: task.area }
+                        });
+                      }}
+                    >
+                      <Text style={shared.buttonText}>{task.started ? 'Hoàn thành' : 'Bắt đầu'}</Text>
+                    </Pressable>
+                  )}
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`Chi tiết ${getTaskTypeLabel(task.title)}`}
+                  style={[shared.button, shared.secondary, { marginLeft: 'auto' }]}
+                  onPress={() => router.navigate({ pathname: '/worker/task_detail', params: { id: task.id } })}
+                >
+                  <Text style={shared.link}>Chi tiết</Text>
+                </Pressable>
+                </View>
+              </View>
             );
           })
         )}

@@ -2,14 +2,16 @@ import { getTaskTypeLabel } from '@/constants/task_types';
 import { colors } from '@/styles/theme';
 import { sharedStyles as shared } from '@/styles/role_styles';
 import { router, useLocalSearchParams, useFocusEffect } from 'expo-router';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
+import { useReports } from '@/contexts/report_context';
+import { taskExecutionError } from '@/sevices/journal_filter';
 import { useWorkSchedule } from '@/contexts/work_schedule_context';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function WorkerTaskDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { workerTasks, loadWorkerTasks } = useWorkSchedule();
+  const { workerTasks, loadWorkerTasks, startTask, error } = useWorkSchedule();
 
   useFocusEffect(
     useCallback(() => {
@@ -17,7 +19,34 @@ export default function WorkerTaskDetailScreen() {
     }, [loadWorkerTasks])
   );
 
+  const { reports, drafts } = useReports();
+  const [executionError, setExecutionError] = useState('');
   const task = workerTasks.find(item => item.id === id);
+  const latest = reports.find(item => item.taskId === id);
+  const report = latest?.review === 'rejected' ? undefined : latest;
+  const draft = drafts[`task:${id}`];
+
+  function openTaskAction() {
+    if (!task) return;
+    if (report) {
+      router.push({ pathname: '/worker/diary_detail', params: { id: report.id, fromNotification: 'false' } });
+      return;
+    }
+
+    const blocked = taskExecutionError(task);
+    setExecutionError(blocked);
+    if (blocked) return;
+
+    if (!task.started) {
+      void startTask(task.id);
+      return;
+    }
+
+    router.push({
+      pathname: '/worker/report_note',
+      params: { taskId: task.id, plotId: task.plotId, taskTitle: task.title, area: task.area }
+    });
+  }
   const dueDate = task?.due ? new Date(`${task.due}T00:00:00`) : null;
   const dueLabel = dueDate && !Number.isNaN(dueDate.getTime()) ? dueDate.toLocaleDateString('vi-VN') : 'Chưa có dữ liệu';
 
@@ -100,6 +129,16 @@ export default function WorkerTaskDetailScreen() {
             {task?.instructions || 'Chưa có lưu ý.'}
           </Text>
         </View>
+        {!!(executionError || error) && (
+          <Text accessibilityRole="alert" style={{ color: colors.danger }}>{executionError || error}</Text>
+        )}
+        {task && (report || task.status !== 'done' || latest?.review === 'rejected') && (
+          <Pressable accessibilityRole="button" style={shared.button} onPress={openTaskAction}>
+            <Text style={shared.buttonText}>
+              {report ? 'Xem nhật ký' : !task.started ? 'Bắt đầu' : draft ? 'Tiếp tục bản nháp' : 'Gửi nhật ký hoàn thành'}
+            </Text>
+          </Pressable>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

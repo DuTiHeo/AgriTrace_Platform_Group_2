@@ -43,6 +43,13 @@
         {
           "locationWhenInUsePermission": "Cho phép AgriFarm lấy vị trí khi bạn ghi nhật ký canh tác."
         }
+      ],
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Cho phép AgriFarm dùng micro để nhập nội dung báo cáo.",
+          "speechRecognitionPermission": "Cho phép AgriFarm chuyển lời nói thành nội dung báo cáo."
+        }
       ]
     ],
     "experiments": {

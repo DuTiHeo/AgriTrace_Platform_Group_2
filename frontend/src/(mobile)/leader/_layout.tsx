@@ -10,6 +10,7 @@ export default function LeaderLayout() {
   if (user.role !== 'leader') return <Redirect href="/worker" />;
   return <LeaderProvider key={accessToken}><Tabs backBehavior="fullHistory" screenOptions={{ headerShown: false }} tabBar={props => <LeaderBottomNav {...props} />}>
     <Tabs.Screen name="index" options={{ title: 'Trang chủ' }} />
+    <Tabs.Screen name="task_detail" />
     <Tabs.Screen name="assignments" options={{ title: 'Giao việc' }} />
     <Tabs.Screen name="create_assignment" />
     <Tabs.Screen name="edit_assignment" />

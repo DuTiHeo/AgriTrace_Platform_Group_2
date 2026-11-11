@@ -342,6 +342,9 @@ const s = StyleSheet.create({
   },
 
   input: {
+    textAlign: 'left',
+    letterSpacing: 0,
+    fontFamily: Platform.OS === 'android' ? 'sans-serif' : undefined,
     ...shared.input
   },
 

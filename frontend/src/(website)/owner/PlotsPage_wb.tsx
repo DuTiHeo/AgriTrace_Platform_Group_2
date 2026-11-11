@@ -1,3 +1,4 @@
+import { useWebPolling } from "../../hooks/use_web_polling_wb";
 import ListRowActions from "../../components/owner/ListRowActions_wb";
 import GeographicMap from "../../components/owner/GeographicMap_wb";
 import "../../styles/plots_wb.css";
@@ -47,22 +48,26 @@ function PlotsPage() {
   const [error, setError] = useState("");
 
   const loadRequest = useRef(0);
-  const loadPlots = useCallback(async () => {
+  const loadPlots = useCallback(async (background = false) => {
     const request = ++loadRequest.current;
-    setLoading(true);
-    setError("");
+    if (!background) {
+      setLoading(true);
+      setError("");
+    }
 
     try {
       const data = await plotService.getAll(selectedFarmId);
       if (request !== loadRequest.current) return;
       setPlots(data);
     } catch {
+      if (background) return;
       if (request !== loadRequest.current) return;
       setError("Không thể tải danh sách vùng trồng.");
     } finally {
       if (request === loadRequest.current) setLoading(false);
     }
   }, [selectedFarmId]);
+  useWebPolling(loadPlots, !loading);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void loadPlots(), 0);

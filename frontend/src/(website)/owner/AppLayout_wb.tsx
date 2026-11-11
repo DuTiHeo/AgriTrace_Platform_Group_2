@@ -1,3 +1,4 @@
+import { WEB_REFRESH_INTERVAL } from "../../hooks/use_web_polling_wb";
 import { useEffect, useRef, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import useListViewport from "../../hooks/use_list_viewport_wb";
@@ -25,7 +26,7 @@ function AppLayout() {
       }
     };
     const timer = window.setTimeout(() => void loadUnreadCount(), 0);
-    const interval = window.setInterval(() => { if (!document.hidden) void loadUnreadCount(); }, 60000);
+    const interval = window.setInterval(() => { if (!document.hidden) void loadUnreadCount(); }, WEB_REFRESH_INTERVAL);
     const events = [
       "notifications-updated",
       "tasks-updated",

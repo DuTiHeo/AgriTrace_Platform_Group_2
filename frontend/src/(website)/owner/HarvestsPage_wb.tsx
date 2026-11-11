@@ -1,3 +1,4 @@
+import { useWebPolling } from "../../hooks/use_web_polling_wb";
 import "../../styles/harvests_wb.css";
 import { ListActionConfirmation } from "../../components/owner/ListRowActions_wb";
 import {
@@ -47,10 +48,12 @@ function HarvestsPage() {
   const [cancelTarget, setCancelTarget] = useState<HarvestBatch | null>(null);
 
   const loadRequest = useRef(0);
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (background = false) => {
     const request = ++loadRequest.current;
-    setLoading(true);
-    setError("");
+    if (!background) {
+      setLoading(true);
+      setError("");
+    }
 
     try {
       const [batchData, seasonData] = await Promise.all([
@@ -61,12 +64,14 @@ function HarvestsPage() {
       setBatches(batchData);
       setSeasons(seasonData);
     } catch {
+      if (background) return;
       if (request !== loadRequest.current) return;
       setError("Không thể tải danh sách lô thu hoạch.");
     } finally {
       if (request === loadRequest.current) setLoading(false);
     }
   }, [selectedFarmId]);
+  useWebPolling(loadData, !loading);
 
   useEffect(() => {
     const timer = window.setTimeout(() => void loadData(), 0);
@@ -74,9 +79,10 @@ function HarvestsPage() {
   }, [loadData]);
 
   useEffect(() => {
-    window.addEventListener("harvest-batches-updated", loadData);
+    const refresh = () => void loadData();
+    window.addEventListener("harvest-batches-updated", refresh);
     return () =>
-      window.removeEventListener("harvest-batches-updated", loadData);
+      window.removeEventListener("harvest-batches-updated", refresh);
   }, [loadData]);
 
   const seasonById = useMemo(

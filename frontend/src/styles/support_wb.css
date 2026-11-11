@@ -32,8 +32,20 @@
 .support-report-list article > .btn { margin-top: 12px; }
 .support-report-list article { padding: 14px; background: var(--agri-header); border: 1px solid var(--agri-border); border-radius: var(--agri-radius-card); }
 .support-report-title { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
-.support-report-title strong { color: var(--agri-title); font-size: 13px; }
+.support-report-title strong { color: var(--agri-title); font-size: 16px; line-height: 1.4; }
 .support-report-list article > p { margin-top: 8px; color: var(--agri-text); font-size: 11px; line-height: 1.55; }
+.support-report-body { display: flex; align-items: flex-start; gap: 16px; }
+.support-report-copy { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.support-report-description { margin: 0; color: var(--agri-text); font-size: 14px; line-height: 1.55; white-space: pre-wrap; }
+.support-report-message { display: grid; gap: 5px; margin-top: 8px; padding: 10px 12px; background: var(--agri-surface); border: 1px solid var(--agri-border); border-radius: var(--agri-radius-card); }
+.support-report-message > strong { color: var(--agri-title); font-size: 12px; }
+.support-report-reply { background: var(--agri-success-soft); }
+.support-report-copy .support-report-meta { gap: 6px 12px; margin: 0 0 10px; color: var(--agri-muted-strong); font-size: 12px; }
+.support-report-copy .support-report-meta span { display: inline; }
+.support-report-copy .support-report-meta strong { color: var(--agri-text); }
+.support-report-copy .support-response { font-size: 13px; line-height: 1.5; white-space: pre-wrap; }
+.support-report-photo { display: block; width: min(40%, 300px); flex-shrink: 0; }
+.support-report-photo img { display: block; width: 100%; height: 180px; object-fit: contain; object-position: right center; }
 .support-status { padding: 4px 7px; border-radius: var(--agri-radius-chip); font-size: 9px; font-weight: 800; white-space: nowrap; }
 .support-status-new { color: var(--agri-info-text); background: var(--agri-info-soft); }
 .support-status-processing { color: var(--agri-warning-text); background: var(--agri-warning-soft); }

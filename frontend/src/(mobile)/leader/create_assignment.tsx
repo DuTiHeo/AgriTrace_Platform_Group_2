@@ -1,7 +1,6 @@
 import { PartialAssignmentError } from '@/sevices/task_batch';
 import type { ComponentRef } from 'react';
 import { isValidDateKey, localDateKey } from '@/utils/task_dates';
-import { DEFAULT_WORK_START_TIME, DEFAULT_WORK_END_TIME } from '@/constants/work_hours';
 import { getTaskTypeLabel } from '@/constants/task_types';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -9,24 +8,24 @@ import { Keyboard, Pressable, ScrollView, Text, View, type NativeScrollEvent, ty
 import { useLeader } from '@/contexts/leader_context';
 import { useWorkSchedule } from '@/contexts/work_schedule_context';
 import { useAuth } from '@/contexts/auth_context';
-import { AreaPicker } from '@/components/leader/area_picker';
 import { Feedback } from '@/components/leader/feedback';
 import { Button, Calendar, Card, Input, Screen, s } from '@/components/leader/ui';
-import { listAssignedPlots, listTaskTypes, type Plot } from '@/sevices/farming_log.service';
+import { listPlots, listSeasons, listTaskTypes, type Season } from '@/sevices/farming_log.service';
 import { useDiscardWarning } from '@/hooks/use_discard_warning';
 
 export default function CreateAssignmentScreen() {
   const { members, addTask } = useLeader();
   const { accessToken, user } = useAuth();
   const { ready, error: storageError, retry } = useWorkSchedule();
-  const [plots, setPlots] = useState<Plot[]>([]);
+  const [seasons, setSeasons] = useState<Season[]>([]);
+  const [loadingSeasons, setLoadingSeasons] = useState(true);
   const [taskTypes, setTaskTypes] = useState<string[]>([]);
   const [title, setTitle] = useState('');
   const [taskPickerOpen, setTaskPickerOpen] = useState(false);
   const [customTitle, setCustomTitle] = useState(false);
   const [instructions, setInstructions] = useState('');
   const [selected, setSelected] = useState<string[]>([]);
-  const [area, setArea] = useState('');
+  const [seasonId, setSeasonId] = useState('');
   const [startDate, setStartDate] = useState('');
   const [due, setDue] = useState('');
   const [tools, setTools] = useState('');
@@ -47,9 +46,12 @@ export default function CreateAssignmentScreen() {
   const selectedActiveCount = activeMemberIds.filter(id => selected.includes(id)).length;
   const allActiveSelected = activeMemberIds.length > 0 && selectedActiveCount === activeMemberIds.length;
 
+  const hasMultiplePlots = new Set(seasons.map(season => season.plot_id)).size > 1;
+  const season = hasMultiplePlots ? seasons.find(item => item.season_id === seasonId) : seasons[0];
+
   const dirty = useMemo(() => !!(
-    title.trim() || instructions.trim() || selected.length || area || startDate || due || tools.trim()
-  ), [area, due, instructions, selected.length, startDate, title, tools]);
+    title.trim() || instructions.trim() || selected.length || seasonId || startDate || due || tools.trim()
+  ), [seasonId, due, instructions, selected.length, startDate, title, tools]);
 
   const clearAssignmentForm = useCallback(() => {
     setTitle('');
@@ -57,7 +59,7 @@ export default function CreateAssignmentScreen() {
     setCustomTitle(false);
     setInstructions('');
     setSelected([]);
-    setArea('');
+    setSeasonId('');
     setStartDate('');
     setDue('');
     setTools('');
@@ -71,9 +73,28 @@ export default function CreateAssignmentScreen() {
   useFocusEffect(useCallback(() => {
     if (!accessToken) return;
     let active = true;
-    void Promise.all([listAssignedPlots(accessToken, user), listTaskTypes(accessToken)])
-      .then(([plotList, typeList]) => { if (active) { setPlots(plotList); setTaskTypes(typeList); } })
-      .catch(error => { if (active) setMessage(error instanceof Error ? error.message : 'Không tải được danh sách lô đất.'); });
+    setLoadingSeasons(true);
+    const teamId = user?.team_id;
+    void Promise.all([
+      teamId ? listSeasons(accessToken, teamId) : Promise.resolve([]),
+      teamId ? listPlots(accessToken) : Promise.resolve([]),
+    ]).then(([assignedSeasons, plots]) => {
+      if (!active) return;
+      const activePlotIds = new Set(plots.map(plot => plot.plot_id));
+      setSeasons(assignedSeasons.filter(item =>
+        activePlotIds.has(item.plot_id) && ['growing', 'ready_to_harvest'].includes(item.status)
+      ));
+    }).catch(error => {
+      if (!active) return;
+      setSeasons([]);
+      setMessage(error instanceof Error ? error.message : 'Không tải được mùa vụ của tổ.');
+    }).finally(() => {
+      if (active) setLoadingSeasons(false);
+    });
+
+    void listTaskTypes(accessToken)
+      .then(types => { if (active) setTaskTypes(types); })
+      .catch(error => { if (active) setMessage(error instanceof Error ? error.message : 'Không tải được loại công việc.'); });
     return () => { active = false; };
   }, [accessToken, user]));
 
@@ -140,20 +161,19 @@ export default function CreateAssignmentScreen() {
   }
 
   async function submit() {
-    if (saving || !ready) return;
+    if (saving || !ready || loadingSeasons) return;
     const errors: Record<string, string> = {};
     if (!title.trim()) errors.title = 'Nhập tên nhiệm vụ.';
     if (!selected.length || selected.some(id => !members.some(member => member.id === id && member.active))) errors.members = 'Chọn ít nhất một công nhân đang hoạt động.';
-    const plot = plots.find(item => item.code === area);
-    if (!plot) errors.area = 'Chọn lô đất đang hoạt động.';
+    if (hasMultiplePlots && !season) errors.season = 'Chọn mùa vụ để xác định khu vực giao việc.';
     if (!isValidDateKey(startDate) || startDate < localDateKey(new Date())) errors.startDate = 'Chọn ngày bắt đầu từ hôm nay trở đi.';
     if (!isValidDateKey(due) || !isValidDateKey(startDate) || due < startDate) errors.due = 'Chọn ngày kết thúc bằng hoặc sau ngày bắt đầu.';
-    if (showErrors(errors)) return;
+    if (showErrors(errors) || !season) return;
 
     setSaving(true); setMessage('');
     try {
       await addTask({
-        title: title.trim(), instructions, memberIds: selected, area, plotId: plot!.plot_id,
+        title: title.trim(), instructions, memberIds: selected, area: season.plot_code, plotId: season.plot_id,
         startDate, due, tools: tools.trim() || undefined,
       });
       allowLeave.current = true;
@@ -258,10 +278,27 @@ export default function CreateAssignmentScreen() {
           {fieldError('members')}
         </View>
 
-        <View ref={node => { fields.current.area = node; }} {...fieldProps('area')}>
-          <AreaPicker value={area} onChange={value => { setArea(value); clearFieldError('area'); }} options={plots.map(plot => plot.code)} />
-          {fieldError('area')}
-        </View>
+        {loadingSeasons ? (
+          <Text style={s.muted}>Đang tải mùa vụ của tổ…</Text>
+        ) : hasMultiplePlots ? (
+          <View ref={node => { fields.current.season = node; }} {...fieldProps('season')}>
+            <Text style={s.label}>Mùa vụ</Text>
+            {seasons.map(item => (
+              <Button
+                key={item.season_id}
+                secondary={seasonId !== item.season_id}
+                title={`${item.crop_name} · ${item.plot_code} · ${item.planting_date}`}
+                onPress={() => {
+                  setSeasonId(item.season_id);
+                  clearFieldError('season');
+                }}
+              />
+            ))}
+            {fieldError('season')}
+          </View>
+        ) : !season && (
+          <Text style={s.muted}>Tổ chưa được gán vào mùa vụ đang hoạt động có lô đất hợp lệ.</Text>
+        )}
         <View style={{ gap: 8 }}>
           <Text style={[s.label, { fontWeight: '700' }]}>Thời gian thực hiện *</Text>
           <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
@@ -288,16 +325,15 @@ export default function CreateAssignmentScreen() {
               {fieldError('due')}
             </View>
           </View>
-          <Text style={s.muted}>Giờ bắt đầu mặc định: {DEFAULT_WORK_START_TIME} · Giờ kết thúc mặc định: {DEFAULT_WORK_END_TIME} (giờ Việt Nam).</Text>
           <Text style={s.muted}>Ngày kết thúc không được trước ngày bắt đầu.</Text>
         </View>
         <View ref={node => { fields.current.tools = node; }} {...fieldProps('tools')}><Input label="Công cụ / vật tư (không bắt buộc)" value={tools} onFocus={() => focusInput('tools')} onBlur={() => blurInput('tools')} onChangeText={setTools} placeholder="Ví dụ: Kéo cắt tỉa, bình xịt" maxLength={300} /></View>
-        <View ref={node => { fields.current.instructions = node; }} {...fieldProps('instructions')}><Input label="Ghi chú / hướng dẫn" value={instructions} onFocus={() => {
+        <View ref={node => { fields.current.instructions = node; }}><Input label="Ghi chú / hướng dẫn" value={instructions} onFocus={() => {
           focusInput('instructions');
         }} onBlur={() => blurInput('instructions')} onChangeText={setInstructions} placeholder="Ghi chú chi tiết cho công nhân…" multiline maxLength={3000} /></View>
 
         <View ref={submitAreaRef} collapsable={false}>
-          <Button title={saving ? 'Đang giao việc…' : 'Giao việc ngay'} disabled={saving || !ready} onPress={submit} />
+          <Button title={saving ? 'Đang giao việc…' : 'Giao việc ngay'} disabled={saving || !ready || loadingSeasons || !seasons.length} onPress={submit} />
         </View>
       </Card>
     </Screen>

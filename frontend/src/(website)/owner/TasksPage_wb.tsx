@@ -1,3 +1,4 @@
+import { useWebPolling } from "../../hooks/use_web_polling_wb";
 import { groupTaskAssignments, type TaskGroup } from '../../features/owner/task_wb';
 import TaskDetails from '../../components/owner/TaskDetails_wb';
 import "../../styles/tasks_wb.css";
@@ -39,10 +40,13 @@ export default function TasksPage() {
   const [saving,setSaving] = useState(false), [formError,setFormError] = useState(""), [notice,setNotice] = useState("");
   const requestId=useRef(0);
   const farmIds=useMemo(() => selectedFarmId === "all" ? farms.map(f=>f.id) : [selectedFarmId], [farms,selectedFarmId]);
-  const load=useCallback(async () => {
+  const load=useCallback(async (background = false) => {
     const id=++requestId.current;
     if (loadingFarms) return;
-    setLoading(true); setError("");
+    if (!background) {
+      setLoading(true);
+      setError("");
+    }
     try {
       const groups=await Promise.all(farmIds.map(async farmId => {
         const [tasks,plots,teams,personnel]=await Promise.all([
@@ -53,15 +57,20 @@ export default function TasksPage() {
       }));
       if (id!==requestId.current) return;
       setData({tasks:groups.flatMap(g=>g.tasks),plots:groups.flatMap(g=>g.plots),teams:groups.flatMap(g=>g.teams),personnel:groups.flatMap(g=>g.personnel)});
-    } catch(e) { if(id===requestId.current) setError(e instanceof Error ? e.message : "Không thể tải công việc."); }
+    } catch(e) {
+      if (background) return;
+      if(id===requestId.current) setError(e instanceof Error ? e.message : "Không thể tải công việc.");
+    }
     finally { if(id===requestId.current) setLoading(false); }
   },[farmIds,loadingFarms]);
+  useWebPolling(load, !loading);
   useEffect(() => {
     const requestCounter=requestId;
     const timer=window.setTimeout(()=>void load(),0);
     const events=["tasks-updated","plots-updated","teams-updated","personnel-updated"];
-    events.forEach(e=>window.addEventListener(e,load));
-    return () => { window.clearTimeout(timer); requestCounter.current++; events.forEach(e=>window.removeEventListener(e,load)); };
+    const refresh = () => void load();
+    events.forEach(e=>window.addEventListener(e,refresh));
+    return () => { window.clearTimeout(timer); requestCounter.current++; events.forEach(e=>window.removeEventListener(e,refresh)); };
   },[load]);
   const plots=data.plots.filter(p=>p.farmId===draft.farmId && p.status==="active");
   const teams=data.teams.filter(t=>t.farmId===draft.farmId);
