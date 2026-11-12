@@ -18,3 +18,13 @@ dist/
 web-build/
 coverage/
 *.log
+*.local
+dist-ssr/
+logs/
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

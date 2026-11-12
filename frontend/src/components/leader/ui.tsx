@@ -1,11 +1,10 @@
-import { useAccountUtilities } from '@/contexts/account-utilities-context';
-import { PersonalAvatarButton } from '@/components/common/personal-avatar-button';
-import { sharedStyles as s } from '@/styles/role-styles';
-export { sharedStyles as s } from '@/styles/role-styles';
-import { Button } from '@/components/common/role-ui';
-export { Avatar, Button, Card, Section, Input, Chip, Status, Empty, Row } from '@/components/common/role-ui';
+import { type ComponentRef, useState, type ReactNode, type RefObject, type PropsWithChildren } from 'react';
+import { NotificationBell } from '@/components/common/notification_bell';
+import { PersonalAvatarButton } from '@/components/common/personal_avatar_button';
+import { sharedStyles as s } from '@/styles/role_styles';
+import { Button } from '@/components/common/role_ui';
 import { router, type Href } from 'expo-router';
-import { useState, type ReactNode, type RefObject, type PropsWithChildren } from 'react';
+
 import {
   Keyboard,
   KeyboardAvoidingView,
@@ -19,20 +18,20 @@ import {
 } from 'react-native';
 import type { ScrollViewProps } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { SymbolView } from 'expo-symbols';
-import { useAuth } from '@/contexts/auth-context';
-import { useLeader } from '@/contexts/leader-context';
+import { useAuth } from '@/contexts/auth_context';
+export { sharedStyles as s } from '@/styles/role_styles';
+export { Avatar, Button, Card, Section, Input, Chip, Status, Empty, Row } from '@/components/common/role_ui';
 
 export const go = (path: string, id?: string) =>
   router.push(
     (id
       ? {
-        pathname: `/(leader)/${path}`,
+        pathname: `/leader/${path}`,
         params: {
           id
         }
       }
-      : `/(leader)/${path}`) as Href
+      : `/leader/${path}`) as Href
   );
 
 export const dateText = (value: string) =>
@@ -52,14 +51,11 @@ export function Screen({
   title?: string;
   titleAction?: ReactNode;
   back?: boolean;
-  scrollRef?: RefObject<ScrollView | null>;
+  scrollRef?: RefObject<ComponentRef<typeof ScrollView> | null>;
   onScroll?: ScrollViewProps['onScroll'];
   onBack?: () => void;
 }>) {
   const { user } = useAuth();
-  const { showBadge } = useAccountUtilities();
-  const { notices } = useLeader();
-  const unread = notices.filter(n => !n.read).length;
 
   return (
     <SafeAreaView
@@ -119,32 +115,7 @@ export function Screen({
                   </Text>
                 </View>
 
-                <Pressable
-                  accessibilityLabel="Thông báo"
-                  style={s.bell}
-                  onPress={() => {
-                    Keyboard.dismiss();
-                    go('notifications');
-                  }}
-                >
-                  <SymbolView
-                    name={{
-                      ios: 'bell',
-                      android: 'notifications',
-                      web: 'notifications'
-                    }}
-                    size={23}
-                    tintColor="#35573C"
-                  />
-
-                  {showBadge && unread > 0 && (
-                    <View style={s.badge}>
-                      <Text style={s.badgeText}>
-                        {unread}
-                      </Text>
-                    </View>
-                  )}
-                </Pressable>
+                <NotificationBell role="leader" />
               </>
             )}
           </View>

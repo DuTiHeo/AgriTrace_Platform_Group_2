@@ -1,0 +1,374 @@
+.season-form-page {
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+.season-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.season-form-card {
+  padding: 22px;
+}
+
+.season-form-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 22px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--agri-border);
+}
+
+.season-form-icon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  place-items: center;
+  color: var(--agri-title);
+  background: var(--agri-success-soft);
+  border-radius: 10px;
+}
+
+.season-form-heading h2 {
+  margin: 0 0 4px;
+  color: var(--agri-title);
+  font-size: 18px;
+}
+
+.season-form-heading p {
+  margin: 0;
+  color: var(--agri-muted-strong);
+  font-size: 13px;
+}
+
+.season-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.season-form-field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.season-form-full {
+  grid-column: 1 / -1;
+}
+
+.season-form-field > span {
+  color: var(--agri-text);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.season-form-field b {
+  color: var(--agri-danger);
+}
+
+.season-form-field input,
+.season-form-field select,
+.season-form-field textarea {
+  width: 100%;
+  padding: 11px 12px;
+  color: var(--agri-title);
+  font: inherit;
+  background: var(--agri-input);
+  border: 1px solid var(--agri-input-border);
+  border-radius: var(--agri-radius-control);
+  outline: none;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.season-form-field input,
+.season-form-field select {
+  height: 44px;
+}
+
+.season-form-field textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.season-form-field input:focus,
+.season-form-field select:focus,
+.season-form-field textarea:focus {
+  border-color: var(--agri-primary);
+  box-shadow: 0 0 0 3px rgb(var(--agri-primary-rgb) / 12%);
+}
+
+.season-form-field input:disabled,
+.season-form-field select:disabled {
+  color: var(--agri-muted);
+  background: var(--agri-input);
+  cursor: not-allowed;
+}
+
+.season-form-note {
+  color: var(--agri-warning-text);
+  font-size: 12px;
+}
+
+.selected-plot-card {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  background: var(--agri-success-soft);
+  border: 1px solid var(--agri-border);
+  border-radius: var(--agri-radius-card);
+}
+
+.selected-plot-icon {
+  display: grid;
+  width: 41px;
+  height: 41px;
+  flex-shrink: 0;
+  place-items: center;
+  color: var(--agri-title);
+  background: var(--agri-success-soft);
+  border-radius: 9px;
+}
+
+.selected-plot-card > div:last-child {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.selected-plot-card strong {
+  color: var(--agri-title);
+  font-size: 14px;
+}
+
+.selected-plot-card span {
+  color: var(--agri-title);
+  font-size: 12px;
+}
+
+.selected-plot-card small {
+  color: var(--agri-muted-strong);
+  font-size: 11px;
+}
+
+.manual-date-toggle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: max-content;
+  max-width: 100%;
+  color: var(--agri-muted-strong);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.manual-date-toggle input {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--agri-title);
+}
+
+.harvest-calculation {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1fr)
+    auto
+    minmax(0, 1fr);
+  align-items: center;
+  gap: 18px;
+  padding: 16px;
+  background: var(--agri-input);
+  border: 1px solid var(--agri-border);
+  border-radius: var(--agri-radius-card);
+}
+
+.harvest-calculation > div:not(
+    .calculation-arrow
+  ) {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.harvest-calculation span {
+  color: var(--agri-muted-strong);
+  font-size: 12px;
+}
+
+.harvest-calculation strong {
+  color: var(--agri-title);
+  font-size: 15px;
+}
+
+.calculation-arrow {
+  padding: 7px 11px;
+  color: var(--agri-title);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  background: var(--agri-success-soft);
+  border-radius: 999px;
+}
+
+.season-review-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--agri-border);
+  border-radius: var(--agri-radius-card);
+}
+
+.season-review-item {
+  display: flex;
+  min-height: 74px;
+  justify-content: center;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border-right: 1px solid var(--agri-border);
+  border-bottom: 1px solid var(--agri-border);
+}
+
+.season-review-item:nth-child(even) {
+  border-right: 0;
+}
+
+.season-review-item:last-child,
+.season-review-item:nth-last-child(2):nth-child(odd) {
+  border-bottom: 0;
+}
+
+.season-review-full {
+  grid-column: 1 / -1;
+  border-right: 0;
+}
+
+.season-review-item span {
+  color: var(--agri-muted-strong);
+  font-size: 12px;
+}
+
+.season-review-item strong {
+  color: var(--agri-title);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.season-form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  background: var(--agri-white);
+  border: 1px solid var(--agri-border);
+  border-radius: var(--agri-radius-card);
+}
+
+@media (max-width: 700px) {
+  .season-form-card {
+    padding: 16px;
+  }
+
+  .season-form-grid,
+  .season-review-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .season-form-full,
+  .selected-plot-card,
+  .season-review-full {
+    grid-column: auto;
+  }
+
+  .harvest-calculation {
+    grid-template-columns: 1fr;
+  }
+
+  .calculation-arrow {
+    width: max-content;
+  }
+
+  .season-review-item {
+    border-right: 0;
+    border-bottom: 1px solid var(--agri-border);
+  }
+
+  .season-review-item:nth-last-child(2) {
+    border-bottom: 1px solid var(--agri-border);
+  }
+
+  .season-form-footer {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .season-form-footer .btn {
+    width: 100%;
+  }
+}
+.season-form-time-heading {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--agri-border);
+}
+
+.season-create-form {
+  gap: 0;
+}
+
+.season-create-form > .season-form-footer {
+  border: 0;
+  border-top: 1px solid var(--agri-border);
+  border-radius: 0 0 var(--agri-radius-card) var(--agri-radius-card);
+  padding: 16px 22px;
+}
+
+.season-create-notes {
+  margin-top: 18px;
+}
+
+.season-create-notes textarea {
+  min-height: 150px;
+  resize: vertical;
+}
+
+.season-review-notes {
+  white-space: pre-wrap;
+}
+
+.season-form-page .season-create-heading {
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 14px;
+}
+
+.season-create-back {
+  display: inline-flex;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--agri-border);
+  border-radius: var(--agri-radius-control);
+  background: var(--agri-surface);
+  color: var(--agri-text);
+}
+
+.season-create-back:hover {
+  border-color: var(--agri-primary);
+  color: var(--agri-primary-text);
+}

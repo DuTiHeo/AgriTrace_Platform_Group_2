@@ -1,0 +1,516 @@
+.plots-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.plots-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.plot-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.plot-summary-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+}
+
+.plot-summary-icon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  place-items: center;
+  color: var(--agri-title);
+  background: var(--agri-success-soft);
+  border-radius: 12px;
+}
+
+.plot-summary-card > div:last-child {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.plot-summary-card span {
+  color: var(--agri-muted-strong);
+  font-size: 13px;
+}
+
+.plot-summary-card strong {
+  font-variant-numeric: tabular-nums;
+  color: var(--agri-title);
+  font-size: 21px;
+  line-height: 1.2;
+}
+
+.plots-content {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.plots-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--agri-border);
+}
+
+.plots-search {
+  display: flex;
+  min-width: 260px;
+  flex: 1;
+  align-items: center;
+  gap: 9px;
+  padding: 0 12px;
+  color: var(--agri-muted-strong);
+  background: var(--agri-input);
+  border: 1px solid var(--agri-input-border);
+  border-radius: var(--agri-radius-control);
+}
+
+.plots-search:focus-within {
+  color: var(--agri-title);
+  background: var(--agri-white);
+  border-color: var(--agri-primary);
+  box-shadow: 0 0 0 3px rgb(var(--agri-primary-rgb) / 12%);
+}
+
+.plots-search input {
+  width: 100%;
+  height: 42px;
+  padding: 0;
+  color: var(--agri-title);
+  font: inherit;
+  background: transparent;
+  border: 0;
+  outline: none;
+}
+
+.plots-search input::placeholder {
+  color: var(--agri-muted);
+}
+
+.plots-status-filter {
+  height: 44px;
+  min-width: 180px;
+  padding: 0 36px 0 12px;
+  color: var(--agri-text);
+  font: inherit;
+  background: var(--agri-input);
+  border: 1px solid var(--agri-input-border);
+  border-radius: var(--agri-radius-control);
+  outline: none;
+  cursor: pointer;
+}
+
+.plots-status-filter:focus {
+  border-color: var(--agri-primary);
+  box-shadow: 0 0 0 3px rgb(var(--agri-primary-rgb) / 12%);
+}
+
+.view-switcher {
+  display: flex;
+  padding: 3px;
+  background: var(--agri-background);
+  border-radius: var(--agri-radius-control);
+}
+
+.view-switcher button {
+  display: grid;
+  width: 38px;
+  height: 36px;
+  padding: 0;
+  place-items: center;
+  color: var(--agri-muted-strong);
+  background: transparent;
+  border: 0;
+  border-radius: var(--agri-radius-control);
+  cursor: pointer;
+}
+
+.view-switcher button:hover:not(:disabled) {
+  color: var(--agri-title);
+}
+
+.view-switcher button.active {
+  color: var(--agri-title);
+  background: var(--agri-white);
+  box-shadow: 0 1px 4px rgb(var(--agri-shadow-rgb) / 10%);
+}
+
+.plots-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.plots-table {
+  width: 100%;
+  min-width: 920px;
+  border-collapse: collapse;
+}
+
+.plots-table th {
+  padding: 12px 16px;
+  color: var(--agri-muted-strong);
+  font-size: 12px;
+  font-weight: 700;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  background: var(--agri-input);
+  border-bottom: 1px solid var(--agri-border);
+}
+
+.plots-table td {
+  padding: 15px 16px;
+  color: var(--agri-text);
+  font-size: 14px;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--agri-divider);
+}
+
+.plots-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.plots-table tbody tr:hover {
+  background: var(--agri-header);
+}
+
+.plot-name-cell {
+  display: flex;
+  min-width: 165px;
+  align-items: center;
+  gap: 11px;
+}
+
+.plot-table-icon {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  place-items: center;
+  color: var(--agri-title);
+  background: var(--agri-success-soft);
+  border-radius: 9px;
+}
+
+.plot-name-cell > div:last-child,
+.plot-season-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.plot-name-cell strong,
+.plot-season-cell strong {
+  color: var(--agri-title);
+  font-size: 14px;
+}
+
+.plot-name-cell span,
+.plot-season-cell span,
+.muted-text {
+  color: var(--agri-muted-strong);
+  font-size: 12px;
+}
+
+.plots-page .status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: max-content;
+  padding: 5px 9px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  border-radius: var(--agri-radius-chip);
+}
+
+.plots-page .status-active {
+  color: var(--agri-title);
+  background: var(--agri-success-soft);
+}
+
+.plots-page .status-inactive {
+  color: var(--agri-muted-strong);
+  background: var(--agri-background);
+}
+
+.plots-empty {
+  padding: 56px 20px;
+  text-align: center;
+}
+
+.plots-empty {
+  display: flex;
+  min-height: 320px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.plots-empty-icon {
+  display: grid;
+  width: 58px;
+  height: 58px;
+  margin-bottom: 14px;
+  place-items: center;
+  color: var(--agri-title);
+  background: var(--agri-success-soft);
+  border-radius: 16px;
+}
+
+.plots-empty h2 {
+  margin: 0 0 8px;
+  color: var(--agri-title);
+  font-size: 19px;
+}
+
+.plots-empty p {
+  max-width: 420px;
+  margin: 0 0 20px;
+  color: var(--agri-muted-strong);
+  font-size: 14px;
+}
+
+.plots-map-layout {
+  --plots-map-height: 520px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 290px;
+  grid-template-rows: auto var(--plots-map-height) auto;
+  gap: 12px 16px;
+  padding: 16px;
+}
+
+.plots-map-layout > .geographic-map {
+  display: contents;
+}
+
+.plots-map-layout .geographic-map-legend {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  margin: 0;
+}
+
+.plots-map-layout .geographic-map-toolbar {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  margin-bottom: 0;
+}
+
+.plots-map-layout .geographic-map-canvas {
+  grid-column: 1;
+  grid-row: 2;
+  height: var(--plots-map-height);
+}
+
+.plots-map-layout .geographic-map-status {
+  grid-column: 1;
+  grid-row: 3;
+}
+
+.plots-map {
+  position: relative;
+  min-height: 500px;
+  overflow: hidden;
+  background:
+  linear-gradient(
+  rgb(var(--agri-surface-rgb) / 30%),
+  rgb(var(--agri-surface-rgb) / 30%)
+  ),
+  var(--agri-success-soft);
+  border-right: 1px solid var(--agri-border);
+}
+
+.map-grid {
+  position: absolute;
+  inset: 0;
+  opacity: 0.55;
+  background-image:
+  linear-gradient(var(--agri-border) 1px, transparent 1px),
+  linear-gradient(90deg, var(--agri-border) 1px, transparent 1px);
+  background-size: 42px 42px;
+}
+
+.map-plot {
+  position: absolute;
+  display: flex;
+  min-width: 105px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 3px;
+  padding: 14px;
+  color: var(--agri-white);
+  background: rgb(var(--agri-primary-rgb) / 88%);
+  border: 2px solid var(--agri-white);
+  border-radius: 42% 58% 48% 52%;
+  box-shadow: 0 8px 20px rgb(var(--agri-shadow-rgb) / 18%);
+  transition:
+  transform 150ms ease,
+  background 150ms ease;
+}
+
+.map-plot:hover {
+  z-index: 2;
+  color: var(--agri-white);
+  background: var(--agri-title);
+  transform: translateY(-3px);
+}
+
+.map-plot strong {
+  font-size: 15px;
+}
+
+.map-plot span {
+  font-size: 11px;
+  opacity: 0.9;
+}
+
+.map-plot-0 {
+  top: 13%;
+  left: 11%;
+}
+
+.map-plot-1 {
+  top: 19%;
+  left: 48%;
+}
+
+.map-plot-2 {
+  top: 55%;
+  left: 23%;
+}
+
+.map-plot-3 {
+  top: 62%;
+  left: 63%;
+}
+
+.map-plot-4 {
+  top: 34%;
+  left: 72%;
+}
+
+.map-plot-5 {
+  top: 72%;
+  left: 8%;
+}
+
+.plots-map-list {
+  grid-column: 2;
+  grid-row: 2;
+  min-height: 0;
+  height: var(--plots-map-height);
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
+  border: 1px solid var(--agri-border);
+  border-radius: 8px;
+  background: var(--agri-white);
+}
+
+.plots-map-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 15px 16px;
+  color: var(--agri-text);
+  border-bottom: 1px solid var(--agri-divider);
+}
+
+.plots-map-item:hover {
+  color: var(--agri-title);
+  background: var(--agri-header);
+}
+
+.plots-map-item > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.plots-map-item strong {
+  color: var(--agri-title);
+  font-size: 14px;
+}
+
+.plots-map-item span {
+  overflow: hidden;
+  color: var(--agri-muted-strong);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 1000px) {
+  .plot-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .plots-map-layout {
+    --plots-map-height: 400px;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto var(--plots-map-height) 280px auto;
+  }
+
+  .plots-map {
+    border-right: 0;
+    border-bottom: 1px solid var(--agri-border);
+  }
+
+  .plots-map-list {
+    grid-column: 1;
+    grid-row: 3;
+    height: 280px;
+  }
+
+  .plots-map-layout .geographic-map-status {
+    grid-row: 4;
+  }
+
+
+}
+
+@media (max-width: 760px) {
+  .plots-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .plots-heading .btn {
+    justify-content: center;
+  }
+
+  .plots-toolbar {
+    align-items: stretch;
+    flex-wrap: wrap;
+  }
+
+  .plots-search,
+  .plots-status-filter {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .view-switcher {
+    margin-left: auto;
+  }
+
+
+}

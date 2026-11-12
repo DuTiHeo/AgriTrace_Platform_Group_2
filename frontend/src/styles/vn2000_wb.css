@@ -1,0 +1,8 @@
+.vn2000-import { border: 1px solid var(--agri-border); padding: 16px; margin-bottom: 18px; }
+.vn2000-import summary { cursor: pointer; color: var(--agri-primary-text); font-weight: 600; }
+.vn2000-fields { border: 0; padding: 16px 0 0; margin: 0; min-width: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.vn2000-fields label { display: grid; gap: 8px; }
+.vn2000-fields .vn2000-points { grid-column: 1 / -1; }
+.vn2000-fields input, .vn2000-fields textarea, .vn2000-fields select { width: 100%; box-sizing: border-box; }
+.vn2000-fields textarea { min-height: 120px; }
+@media (max-width: 640px) { .vn2000-fields { grid-template-columns: 1fr; } }

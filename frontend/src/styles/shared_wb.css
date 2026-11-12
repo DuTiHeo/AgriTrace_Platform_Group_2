@@ -1,0 +1,472 @@
+/* Shared loading states, form feedback, steps, and dialogs. */
+.page-back-button,
+.app-content .page-back-button {
+  display: inline-flex;
+  box-sizing: border-box;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--agri-border);
+  border-radius: var(--agri-radius-control);
+  background: var(--agri-white);
+  color: var(--agri-primary);
+  text-decoration: none;
+  cursor: pointer;
+}
+.app-content .page-back-button:hover:not(:disabled) { border-color: var(--agri-primary); color: var(--agri-primary-text); background: var(--agri-white); text-decoration: none; }
+.app-content .page-back-button:disabled { opacity: 0.5; cursor: default; }
+.page-title-with-back { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.personnel-profile-name:has(> .page-back-button) { flex-direction: row; align-items: center; }
+
+.app-content :is(.team-detail-page, .personnel-detail-page, .plot-detail-page, .season-detail-page) > :is(.personnel-detail-topbar, .plot-detail-topbar, .season-detail-topbar) {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.list-action-dialog {
+  width: min(440px, calc(100vw - 32px));
+  max-height: calc(100dvh - 48px);
+  margin: auto;
+  padding: 26px;
+  overflow-y: auto;
+  border: 1px solid var(--agri-border);
+  border-radius: var(--agri-radius-card);
+  background: var(--agri-surface);
+  color: var(--agri-text);
+  text-align: center;
+  box-shadow: var(--shadow-md);
+}
+.list-action-dialog::backdrop { background: var(--agri-backdrop); backdrop-filter: blur(var(--agri-backdrop-blur)); }
+.list-action-dialog h2 { margin: 14px 0 8px; font-size: 20px; color: var(--agri-title); }
+.list-action-dialog p { margin: 8px 0; font-size: 13px; color: var(--agri-muted-strong); line-height: 1.6; overflow-wrap: anywhere; }
+.list-action-dialog .list-action-name { font-weight: 700; color: var(--agri-text); }
+.list-action-symbol { display: grid; place-items: center; width: 48px; height: 48px; margin: auto; border-radius: 50%; color: var(--agri-warning-text); background: var(--agri-warning-soft); }
+.list-action-symbol.is-danger { color: var(--agri-danger-text); background: var(--agri-danger-soft); }
+.list-action-footer { display: flex; justify-content: center; gap: 12px; margin-top: 22px; }
+.list-action-fields { display: grid; gap: 14px; margin: 16px 0; text-align: left; }
+.list-action-fields label { display: grid; gap: 6px; font-size: 13px; font-weight: 600; }
+.list-action-fields :is(select, input) { width: 100%; padding: 10px; border: 1px solid var(--agri-input-border); border-radius: var(--agri-radius-control); color: var(--agri-text); background: var(--agri-input); }
+.list-row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  width: max-content;
+  margin-left: auto;
+}
+
+.list-row-actions > :is(a, button) {
+  display: inline-flex;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--agri-border);
+  border-radius: var(--agri-radius-control);
+  background: var(--agri-surface);
+  color: var(--agri-muted-strong);
+  cursor: pointer;
+}
+
+.list-row-actions > :is(a, button):hover {
+  border-color: var(--agri-primary);
+  background: var(--agri-primary-soft);
+  color: var(--agri-primary-text);
+}
+
+
+/* Status labels share the boundary column's shape; each domain owns its colors. */
+.app-shell .app-content :is(
+  .boundary-status,
+  .creation-review-status,
+  .status-badge,
+  .season-status,
+  .task-status,
+  .harvest-status,
+  .support-status,
+  .farming-log-recorded-badge,
+  .farming-log-attention-badge
+) {
+  display: inline-flex;
+  box-sizing: border-box;
+  width: max-content;
+  min-height: 26px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 0;
+  border-radius: var(--agri-radius-chip);
+  padding: 4px 9px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  vertical-align: middle;
+  white-space: nowrap;
+  -webkit-text-fill-color: color-mix(in srgb, currentColor 78%, var(--agri-surface));
+}
+
+.app-content td:has(> :is(.boundary-status, .status-badge, .season-status, .task-status, .harvest-status)) {
+  text-align: center;
+}
+
+.table-action-button {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  color: var(--agri-muted-strong);
+  background: var(--agri-input);
+  border: 1px solid var(--agri-border);
+  border-radius: var(--agri-radius-control);
+  transition:
+  color 150ms ease,
+  background 150ms ease,
+  border-color 150ms ease;
+}
+
+.table-action-button:hover:not(:disabled) {
+  color: var(--agri-title);
+  background: var(--agri-success-soft);
+  border-color: var(--agri-border);
+}
+
+.page-loading,
+.page-error {
+  padding: 56px 20px;
+  text-align: center;
+}
+
+.page-loading {
+  color: var(--agri-muted-strong);
+}
+
+.page-error {
+  color: var(--agri-danger-text);
+  background: var(--agri-danger-soft);
+}
+
+.form-stepper {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 20px 0;
+  padding: 16px;
+  background: var(--agri-white);
+  border: 1px solid var(--agri-border);
+  border-radius: var(--agri-radius-card);
+}
+
+.form-step {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  color: var(--agri-muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.form-step:not(:last-child)::after {
+  position: absolute;
+  top: 50%;
+  right: -12%;
+  width: 24%;
+  height: 2px;
+  content: "";
+  background: var(--agri-border);
+  transform: translateY(-50%);
+}
+
+.form-step-number {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  background: var(--agri-background);
+  border-radius: 50%;
+}
+
+.form-step.active {
+  color: var(--agri-primary-text);
+}
+
+.form-step.active .form-step-number {
+  color: var(--agri-white);
+  background: var(--agri-primary);
+  box-shadow: 0 0 0 4px rgb(var(--agri-primary-rgb) / 12%);
+}
+
+.form-step.completed {
+  color: var(--agri-title);
+}
+
+.form-step.completed .form-step-number {
+  color: var(--agri-white);
+  background: var(--agri-primary);
+}
+
+.form-step.completed::after {
+  background: var(--agri-border);
+}
+
+.form-error {
+  color: var(--agri-danger);
+  font-size: 12px;
+}
+
+.form-error-block {
+  padding: 11px 13px;
+  color: var(--agri-danger-text);
+  font-size: 13px;
+  background: var(--agri-danger-soft);
+  border: 1px solid var(--agri-danger-border-soft);
+  border-radius: var(--agri-radius-card);
+}
+
+@media (max-width: 640px) {
+  .form-stepper {
+    padding: 12px 8px;
+  }
+
+  .form-step {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .form-step:not(:last-child)::after {
+    display: none;
+  }
+
+  .form-step span {
+    font-size: 11px;
+  }
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--agri-muted-strong);
+  font-weight: 700;
+}
+
+.back-link:hover {
+  color: var(--agri-title);
+}
+
+.not-found-card {
+  display: flex;
+  min-height: 380px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 14px;
+  padding: 30px;
+  color: var(--agri-title);
+  text-align: center;
+}
+
+.not-found-card h1 {
+  color: var(--agri-title);
+  font-size: 21px;
+}
+
+.modal-backdrop {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: var(--agri-backdrop);
+  backdrop-filter: blur(var(--agri-backdrop-blur));
+}
+
+.app-modal {
+  width: min(100%, 580px);
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  background: var(--agri-white);
+  border-radius: var(--agri-radius-card);
+  box-shadow: 0 24px 70px rgb(var(--agri-shadow-rgb) / 28%);
+}
+
+.app-modal-large {
+  width: min(100%, 1050px);
+}
+
+.app-modal-header {
+  position: sticky;
+  z-index: 5;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 17px 20px;
+  background: var(--agri-white);
+  border-bottom: 1px solid var(--agri-border);
+}
+
+.app-modal-header h2 {
+  margin: 0;
+  color: var(--agri-title);
+  font-size: 18px;
+}
+
+.app-modal-header > button {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  place-items: center;
+  color: var(--agri-muted-strong);
+  background: transparent;
+  border: 0;
+  border-radius: var(--agri-radius-control);
+}
+
+.app-modal-header > button:hover:not(:disabled) {
+  color: var(--agri-title);
+  background: var(--agri-background);
+}
+
+.app-modal-body {
+  padding: 20px;
+}
+
+.app-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.app-modal-body > p {
+  margin: 0;
+  color: var(--agri-muted-strong);
+  line-height: 1.65;
+}
+
+.app-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 9px;
+  padding: 15px 20px;
+  background: var(--agri-input);
+  border-top: 1px solid var(--agri-border);
+}
+
+.blocked-delete-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  color: var(--agri-danger-text);
+  background: var(--agri-danger-soft);
+  border: 1px solid var(--agri-danger-border-soft);
+  border-radius: var(--agri-radius-card);
+}
+
+.blocked-delete-message > svg {
+  flex-shrink: 0;
+}
+
+.blocked-delete-message strong {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.blocked-delete-message p {
+  margin: 0;
+  color: var(--agri-danger-text);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+@media (max-width: 700px) {
+  .app-modal-footer {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .app-modal-footer .btn {
+    width: 100%;
+  }
+}
+
+.account-success {
+  padding: 9px 11px; color: var(--agri-title); background: var(--agri-success-soft); border: 1px solid var(--agri-border); border-radius: var(--agri-radius-card); font-size: 11px;
+}
+
+/* Shared outer shape for form and confirmation popups, including portaled dialogs. */
+html body :is(dialog, [role="dialog"][aria-modal="true"]) {
+  border-radius: 5px;
+}
+
+/* Keep list columns stable; narrow screens scroll instead of squeezing adjacent cells. */
+.app-content table:is(.farm-table, .plots-table, .seasons-table, .personnel-table, .harvest-table) {
+  width: 100%;
+  min-width: 1200px;
+  table-layout: fixed;
+}
+.app-content table.seasons-table { min-width: 1350px; }
+.app-content table.personnel-table { min-width: 1050px; }
+.app-content table.team-member-table { min-width: 950px; }
+.app-content :is(.farm-table, .plots-table, .seasons-table, .personnel-table, .harvest-table) :is(th, td) {
+  padding-left: 16px;
+  padding-right: 16px;
+  vertical-align: middle;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  text-align: left;
+}
+.app-content :is(.farm-table, .plots-table, .seasons-table, .harvest-table) :is(th, td):nth-child(n + 3),
+.app-content .personnel-table :is(th, td):is(:nth-child(2), :nth-child(3), :nth-child(5), :nth-child(6)),
+.app-content .team-member-table :is(th, td):nth-child(n + 2) {
+  text-align: center;
+}
+.app-content :is(.farm-table, .plots-table, .seasons-table, .personnel-table, .harvest-table) :is(.farm-name-cell, .plot-name-cell, .season-name-cell, .personnel-name-cell, .harvest-code-cell, .season-plot-cell) {
+  min-width: 0;
+  max-width: 100%;
+}
+.app-content :is(.farm-table, .plots-table, .seasons-table, .personnel-table, .harvest-table) td > div,
+.app-content :is(.farm-name-cell, .plot-name-cell, .season-name-cell, .personnel-name-cell, .personnel-identity, .harvest-code-cell) > div:last-child {
+  min-width: 0;
+  max-width: 100%;
+}
+.app-content :is(.plots-table .plot-season-cell, .seasons-table .season-date-cell, .harvest-table .harvest-season-cell) {
+  align-items: center;
+  text-align: center;
+}
+.app-content :is(.farm-table, .plots-table, .seasons-table, .personnel-table, .harvest-table) :is(.list-row-actions, .table-actions, .personnel-actions, .team-member-actions) {
+  justify-content: center;
+  flex-wrap: nowrap;
+  width: max-content;
+  max-width: none;
+  margin-left: auto;
+  margin-right: auto;
+}
+.app-content :is(.farm-table, .plots-table, .seasons-table, .personnel-table, .harvest-table) :is(th, td):last-child { padding-left: 10px; padding-right: 10px; }
+.app-content :is(.list-row-actions, .table-actions) > :is(a, button) { flex: 0 0 34px; }
+.app-content :is(.farm-table, .plots-table, .seasons-table, .personnel-table, .harvest-table) :is(.status-badge, .boundary-status, .season-status, .harvest-status, .personnel-status) {
+  max-width: 100%;
+  white-space: normal;
+}
+.app-content .harvest-table .harvest-season-cell span {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.app-content :is(.farm-table, .plots-table, .seasons-table, .personnel-table, .harvest-table) td {
+  font-variant-numeric: tabular-nums;
+}

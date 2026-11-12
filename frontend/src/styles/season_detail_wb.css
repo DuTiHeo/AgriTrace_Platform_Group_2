@@ -1,0 +1,543 @@
+.season-detail-page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.season-detail-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.season-detail-actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+}
+
+
+
+
+
+
+.season-detail-hero {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 20px;
+}
+
+.season-detail-hero-icon {
+  display: grid;
+  width: 53px;
+  height: 53px;
+  flex-shrink: 0;
+  place-items: center;
+  color: var(--agri-title);
+  background: var(--agri-success-soft);
+  border-radius: 14px;
+}
+
+.season-detail-title {
+  min-width: 0;
+}
+
+.season-detail-title > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.season-detail-title h1 {
+  margin: 0;
+  color: var(--agri-title);
+  font-size: 24px;
+}
+
+.season-detail-title p {
+  margin: 4px 0 0;
+  color: var(--agri-muted-strong);
+}
+
+.season-detail-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.season-detail-summary-card {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 16px;
+}
+
+.season-detail-summary-card > svg {
+  flex-shrink: 0;
+  color: var(--agri-title);
+}
+
+.season-detail-summary-card > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.season-detail-summary-card span {
+  color: var(--agri-muted-strong);
+  font-size: 11px;
+}
+
+.season-detail-summary-card strong {
+  overflow: hidden;
+  color: var(--agri-title);
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.season-detail-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 16px;
+}
+
+.season-detail-section-heading h2 {
+  margin: 0;
+  color: var(--agri-title);
+  font-size: 17px;
+}
+
+.season-detail-section-heading p {
+  margin: 4px 0 0;
+  color: var(--agri-muted-strong);
+  font-size: 12px;
+}
+
+.season-detail-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.65fr);
+  gap: 18px;
+}
+
+.season-detail-card {
+  padding: 20px;
+}
+
+.season-information-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.season-information-item {
+  display: flex;
+  min-width: 0;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  background: var(--agri-input);
+  border-radius: var(--agri-radius-card);
+}
+
+.season-information-item > svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--agri-title);
+}
+
+.season-information-item > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.season-information-item span {
+  color: var(--agri-muted-strong);
+  font-size: 11px;
+}
+
+.season-information-item strong {
+  color: var(--agri-title);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.season-notes {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  min-height: 120px;
+  padding: 14px;
+  color: var(--agri-muted-strong);
+  background: var(--agri-input);
+  border-radius: var(--agri-radius-card);
+}
+
+.season-notes svg {
+  flex-shrink: 0;
+  color: var(--agri-title);
+}
+
+.season-notes p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.season-cultivation-notes .season-detail-section-heading {
+  flex-wrap: wrap;
+}
+
+.season-cultivation-notes .btn {
+  flex-shrink: 0;
+  min-height: 34px;
+  padding: 7px 10px;
+  font-size: 12px;
+}
+
+.season-notes-status {
+  color: var(--agri-muted-strong);
+  font-size: 13px;
+}
+
+.season-note-list {
+  display: grid;
+  gap: 12px;
+  max-height: 440px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.season-note-list li {
+  min-width: 0;
+  padding: 14px;
+  background: var(--agri-input);
+  border: 1px solid var(--agri-border);
+  border-radius: var(--agri-radius-card);
+  overflow-wrap: anywhere;
+}
+
+.season-note-meta,
+.season-note-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  font-size: 11px;
+}
+
+.season-note-meta {
+  color: var(--agri-muted-strong);
+}
+
+.season-note-meta strong {
+  color: var(--agri-title);
+  font-size: 12px;
+}
+
+.season-note-list p {
+  margin: 10px 0;
+  color: var(--agri-text);
+  font-size: 13px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+
+.season-note-footer a,
+.season-note-footer .resolved {
+  color: var(--agri-title);
+}
+
+.season-note-footer .pending {
+  color: var(--agri-warning-text);
+}
+
+.season-team-support {
+  padding: 20px;
+}
+
+.season-team-support .season-detail-section-heading > svg {
+  flex-shrink: 0;
+  color: var(--agri-title);
+}
+
+.season-team-assign-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  width: 100%;
+}
+
+.season-team-layout {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 24px;
+}
+
+.season-team-picker,
+.season-team-assigned {
+  min-width: 0;
+}
+
+.season-team-assigned {
+  min-height: 110px;
+  padding: 16px;
+  border: 1px solid var(--agri-border);
+  border-radius: var(--agri-radius-card);
+  background: var(--agri-header);
+}
+
+.season-team-assigned h3 {
+  margin: 0;
+  color: var(--agri-title);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.season-team-assigned .season-team-list {
+  grid-template-columns: minmax(0, 1fr);
+  max-height: 240px;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  margin: 12px 0 0;
+  padding: 0;
+}
+
+.season-team-assign-form label {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.season-team-assign-form label span {
+  color: var(--agri-text);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.season-team-assign-form select {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 11px;
+  color: var(--agri-title);
+  background: var(--agri-input);
+  border: 1px solid var(--agri-input-border);
+  border-radius: var(--agri-radius-control);
+}
+
+.season-team-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+  list-style: none;
+}
+
+.season-team-list li {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 11px;
+  padding: 12px;
+  background: var(--agri-header);
+  border: 1px solid var(--agri-border);
+  border-radius: var(--agri-radius-card);
+}
+
+.season-team-avatar {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  place-items: center;
+  color: var(--agri-title);
+  background: var(--agri-success-soft);
+  border-radius: 8px;
+}
+
+.season-team-info {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.season-team-info strong,
+.season-team-info span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.season-team-info strong {
+  color: var(--agri-title);
+  font-size: 13px;
+}
+
+.season-team-info span,
+.season-team-empty {
+  color: var(--agri-muted-strong);
+  font-size: 12px;
+}
+
+.season-team-remove {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  place-items: center;
+  color: var(--agri-muted-strong);
+  background: transparent;
+  border: 0;
+  border-radius: var(--agri-radius-control);
+}
+
+.season-team-remove:hover:not(:disabled) {
+  color: var(--agri-danger-text);
+  background: var(--agri-danger-soft);
+}
+
+.season-team-empty {
+  margin-top: 16px;
+}
+
+.season-team-error {
+  margin-top: 10px;
+  color: var(--agri-danger-text);
+  font-size: 12px;
+}
+
+.season-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  padding: 20px;
+}
+
+.season-edit-form > label,
+.season-edit-date-grid label,
+.season-status-field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.season-edit-form label > span,
+.season-status-field > span {
+  color: var(--agri-text);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.season-edit-date-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.season-edit-context { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 24px; padding: 18px; border: 1px solid var(--agri-border); border-radius: 5px; background: var(--agri-background); }
+.season-edit-context > div { display: flex; min-width: 0; flex-direction: column; gap: 6px; }
+.season-edit-context span { font-size: 12px; color: var(--agri-muted-strong); }
+.season-edit-context strong { font-size: 14px; color: var(--agri-title); overflow-wrap: anywhere; }
+.season-edit-form select { width: 100%; height: 42px; padding: 10px 11px; color: var(--agri-title); font: inherit; background: var(--agri-input); border: 1px solid var(--agri-input-border); border-radius: var(--agri-radius-control); }
+.season-edit-form label b { color: var(--agri-danger-text); }
+@media (max-width: 560px) { .season-edit-context, .season-edit-date-grid { grid-template-columns: 1fr; } }
+
+.season-edit-form input,
+.season-edit-form textarea,
+.season-status-field input,
+.season-status-field select {
+  width: 100%;
+  padding: 10px 11px;
+  color: var(--agri-title);
+  font: inherit;
+  background: var(--agri-input);
+  border: 1px solid var(--agri-input-border);
+  border-radius: var(--agri-radius-control);
+  outline: none;
+}
+
+.season-edit-form input,
+.season-status-field input,
+.season-status-field select {
+  height: 42px;
+}
+
+.season-edit-form textarea {
+  resize: vertical;
+}
+
+.season-edit-form input:focus,
+.season-edit-form textarea:focus,
+.season-status-field input:focus,
+.season-status-field select:focus {
+  border-color: var(--agri-primary);
+  box-shadow: 0 0 0 3px rgb(var(--agri-primary-rgb) / 12%);
+}
+
+.season-edit-form .app-modal-footer {
+  margin: 3px -20px -20px;
+}
+
+@media (max-width: 1050px) {
+  .season-detail-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .season-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .season-team-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+  .season-detail-topbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .season-detail-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .season-detail-actions .btn {
+    width: 100%;
+  }
+
+  .season-detail-summary,
+  .season-information-list,
+  .season-edit-date-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .season-team-assign-form {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .season-team-list {
+    grid-template-columns: 1fr;
+  }
+
+}
+.season-detail-page .season-detail-topbar {
+  justify-content: flex-end;
+}

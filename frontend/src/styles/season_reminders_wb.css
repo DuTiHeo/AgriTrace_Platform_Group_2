@@ -1,0 +1,17 @@
+.season-reminders h2 { display: flex; align-items: center; gap: 8px; }
+.season-reminder-list { display: flex; flex-direction: column; gap: 10px; max-height: 360px; overflow-y: auto; }
+.season-reminder-list article { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px; border: 1px solid var(--agri-border); border-radius: var(--agri-radius-control); }
+.season-reminder-list article > div:first-child { display: flex; min-width: 0; flex-direction: column; gap: 6px; }
+.season-reminder-list article span { font-size: 12px; color: var(--agri-muted-strong); }
+.season-reminder-actions { display: flex; flex-shrink: 0; gap: 6px; }
+.season-reminder-dialog { width: min(560px, calc(100vw - 32px)); max-height: 90dvh; overflow: auto; margin: auto; padding: 0; border: 1px solid var(--agri-border); border-radius: 12px; background: var(--agri-surface); color: var(--agri-text); }
+.season-reminder-dialog::backdrop { background: var(--agri-backdrop); backdrop-filter: blur(var(--agri-backdrop-blur)); }
+.season-reminder-dialog header, .season-reminder-dialog footer { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 20px 24px; }
+.season-reminder-dialog header { border-bottom: 1px solid var(--agri-border); }
+.season-reminder-dialog h2 { font-size: 20px; }
+.season-reminder-dialog header button { border: 0; background: transparent; color: var(--agri-text); }
+.season-reminder-dialog footer { justify-content: flex-end; border-top: 1px solid var(--agri-border); }
+.season-reminder-dialog fieldset { display: flex; flex-direction: column; gap: 18px; border: 0; margin: 0; padding: 24px; }
+.season-reminder-dialog label { display: flex; flex-direction: column; gap: 8px; font-size: 13px; font-weight: 600; }
+.season-reminder-dialog input, .season-reminder-dialog select { min-height: 44px; padding: 10px 12px; border: 1px solid var(--agri-input-border); border-radius: var(--agri-radius-control); background: var(--agri-input); color: var(--agri-text); font: inherit; }
+@media (max-width: 560px) { .season-reminder-list article { align-items: flex-start; flex-direction: column; } }

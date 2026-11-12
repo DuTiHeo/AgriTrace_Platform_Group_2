@@ -21,10 +21,15 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/icon.png"
     },
     "plugins": [
-      "expo-router",
+      [
+        "expo-router",
+        {
+          "root": "./src/(mobile)"
+        }
+      ],
       [
         "expo-splash-screen",
         {
@@ -37,6 +42,13 @@
         "expo-location",
         {
           "locationWhenInUsePermission": "Cho phép AgriFarm lấy vị trí khi bạn ghi nhật ký canh tác."
+        }
+      ],
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Cho phép AgriFarm dùng micro để nhập nội dung báo cáo.",
+          "speechRecognitionPermission": "Cho phép AgriFarm chuyển lời nói thành nội dung báo cáo."
         }
       ]
     ],

@@ -13,6 +13,10 @@ export type Token = {
 };
 
 export type UserInformation = {
+  user_id?: string | null;
+  date_of_birth?: string | null;
+  status?: string | null;
+  created_at?: string | null;
   full_name: string;
   phone: string;
   national_id: string | null;
