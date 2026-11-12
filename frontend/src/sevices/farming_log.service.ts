@@ -124,6 +124,9 @@ export type CreateLog = {
   content?: string;
   gps: GPSPoint
 };
+export type TranscribeResponse = {
+  text: string;
+};
 export { encodeTaskContent, decodeTaskContent, type TaskContent } from '@/utils/task_content';
 
 export const listLogs = (token: string, seasonId?: string) => request<FarmingLog[]>(token, `/farming-logs${seasonId ? `?season_id=${encodeURIComponent(seasonId)}` : ''}`);
@@ -206,5 +209,9 @@ export const uploadPhotos = (token: string, logId: string, body: FormData) => re
   method: 'POST',
   body
 }, 60000, expoFetch as typeof fetch);
+export const transcribeAudio = (token: string, body: FormData) => request<TranscribeResponse>(token, '/farming-logs/transcribe', {
+  method: 'POST',
+  body
+}, 45000, expoFetch as typeof fetch);
 export const photoUrl = (path: string) => /^https?:\/\//i.test(path) ? path : `${API_BASE_URL}/${path.replace(/^\/+/, '')}`;
 export const seasonLabel = (season: Season) => `${season.plot_code} · ${season.crop_name} · ${season.planting_date}`;
