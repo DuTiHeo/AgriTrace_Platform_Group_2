@@ -51,13 +51,13 @@ npm.cmd ci
 | `npm.cmd run android` | Chạy Android native bằng Expo |
 | `npm.cmd run ios` | Chạy iOS native trên macOS |
 | `npm.cmd run mobile:web` | Xem giao diện Expo trong trình duyệt |
-| `npm run web` | Chạy web (5173) và cổng Admin riêng (5174/admin). Đăng nhập web bằng tài khoản Admin để vào /admin. |
+| `npm run web` | Chạy web tại http://127.0.0.1:5173/. Owner và Admin dùng chung trang đăng nhập; tài khoản Admin được chuyển đến /admin. |
 
 `npm start` vẫn chạy Expo. Các lệnh `owner:dev`, `owner:build`, `owner:lint`
 được giữ để tương thích. Có thể nhấp đúp `frontend/START_OWNER.cmd` để chạy Owner.
 `npm run dev` dùng `start_dev.cjs`; giữ terminal mở để quét QR hoặc nhấn `a` mở
 máy ảo Android. Nhấn Ctrl+C để dừng cả hai. Dừng các phiên Expo/Vite cũ trước khi
-chạy để tránh trùng cổng 8083/5173/5174.
+chạy để tránh trùng cổng 8083/5173.
 Admin hiện chỉ là HTML trống; cấu hình này không thêm giao diện hay chức năng.
 
 ## Môi trường
