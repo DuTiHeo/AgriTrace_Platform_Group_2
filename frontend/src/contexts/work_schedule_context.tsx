@@ -36,6 +36,7 @@ export type ScheduledTask = {
   teamId: string | null;
   teamName?: string | null;
   leaderName?: string | null;
+  ownerName?: string | null;
   workerName?: string | null;
   updatedAt?: string | null;
   rawContent: string;
@@ -90,6 +91,7 @@ export function mapTask(task: ApiTask): ScheduledTask {
     teamId: task.team_id,
     teamName: task.team_name,
     leaderName: task.team_leader_name ?? null,
+    ownerName: task.owner_name ?? null,
     workerName: task.worker_name,
     updatedAt: task.updated_at,
     rawContent: task.content,
