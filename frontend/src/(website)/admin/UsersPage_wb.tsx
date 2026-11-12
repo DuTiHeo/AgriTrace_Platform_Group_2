@@ -1,4 +1,4 @@
-import { LockOpen, Pencil, Trash2 } from "lucide-react";
+import { LockOpen, PauseCircle, Pencil } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { adminAuditMessage } from "../../features/admin/adminAudit_wb";
 import { useRef, useState } from "react";
@@ -17,10 +17,12 @@ function RoleFields({ user }: { user: UserDetail }) {
   const [role, setRole] = useState(user.role);
   const [loadTeams] = useState(() => async (signal: AbortSignal) => {
     if (!user.org_id) return [];
-    const teams = await webApi.team.listTeams({ query: { org_id: user.org_id }, signal });
-    return teams.filter(team => !team.team_leader_id || team.team_leader_id === user.user_id);
+    return webApi.team.listTeams({ query: { org_id: user.org_id }, signal });
   });
   const teams = useAdminData(loadTeams);
+  const availableTeams = teams.data?.filter(team =>
+    user.role === "worker" || !team.team_leader_id || team.team_leader_id === user.user_id
+  );
   return <>
 
     <label>Vai trò<select name="role" value={role} onChange={event => setRole(event.target.value as AssignableRole)}>
@@ -29,8 +31,16 @@ function RoleFields({ user }: { user: UserDetail }) {
     {role === "leader" && <>
       <LoadFeedback pending={teams.pending} error={teams.error} retry={teams.reload} />
       <label>Tổ phụ trách<select name="team" required defaultValue={user.team_id ?? ""}>
-        <option value="">Chọn tổ</option>{user.role === "leader" && user.team_id && !teams.data?.some(team => team.team_id === user.team_id) && <option value={user.team_id}>Tổ hiện tại</option>}{teams.data?.map(team => <option key={team.team_id} value={team.team_id}>{team.name}</option>)}
+        <option value="">Chọn tổ</option>
+        {user.role === "leader" && user.team_id && !availableTeams?.some(team => team.team_id === user.team_id) &&
+          <option value={user.team_id}>Tổ hiện tại</option>}
+        {availableTeams?.map(team => (
+          <option key={team.team_id} value={team.team_id}>
+            {team.name} — {team.team_leader_id ? team.leader_name || "Đã có tổ trưởng" : "Chưa có tổ trưởng"}
+          </option>
+        ))}
       </select></label>
+      {user.role === "worker" && <small>Nếu tổ đã có tổ trưởng, người đó sẽ trở thành công nhân trong tổ khi bạn lưu.</small>}
     </>}
   </>;
 }
@@ -54,7 +64,7 @@ export default function UsersPage() {
           title={user.status === "locked" ? "Mở khóa" : "Khóa"}
           aria-label={`${user.status === "locked" ? "Mở khóa" : "Khóa"} ${user.full_name}`}
           onClick={() => setAction({ kind: "status", user })}
-        >{user.status === "locked" ? <LockOpen size={16} /> : <Trash2 size={16} />}</button>}
+        >{user.status === "locked" ? <LockOpen size={16} /> : <PauseCircle size={16} />}</button>}
       </div>,
     ] }));
   const label = action?.kind === "status" && action.user.status === "locked" ? "Mở khóa tài khoản" : "Khóa tài khoản";
@@ -120,7 +130,14 @@ function EditUserDialog({ user, onClose, onSaved }: {
     }
     if (role && (role !== previous.role || (role === "leader" && teamId !== previous.team_id))) {
       try {
-        await webApi.user.updateRole({ path, body: { role, team_id: teamId } });
+        if (previous.role === "worker" && role === "leader" && teamId) {
+          await webApi.team.updateTeam({
+            path: { team_id: teamId },
+            body: { team_leader_id: user.user_id },
+          });
+        } else {
+          await webApi.user.updateRole({ path, body: { role, team_id: teamId } });
+        }
       } catch (error) {
         if (!message) throw error;
         onSaved(message);

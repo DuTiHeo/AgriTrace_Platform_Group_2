@@ -80,7 +80,7 @@ export default function ListRowActions({ to, name, statusLabel, resume = false, 
   return <>
     <div className="list-row-actions" role="group" aria-label={`Thao tác với ${name}`}>
       <DetailViewLink to={to} name={name}><Eye size={16} /></DetailViewLink>
-      <button type="button" title={statusLabel} aria-label={`${statusLabel}: ${name}`} onClick={() => setStatusOpen(true)}><StatusIcon size={16} /></button>
+      <button type="button" className={StatusIcon === PauseCircle ? "pause-action" : undefined} title={statusLabel} aria-label={`${statusLabel}: ${name}`} onClick={() => setStatusOpen(true)}><StatusIcon size={16} /></button>
     </div>
     {statusOpen && <ListActionConfirmation action="status" name={name} statusLabel={statusLabel} onClose={() => setStatusOpen(false)}
       unavailable={!onStatus ? "Chưa thể thay đổi trạng thái mục này." : undefined}
