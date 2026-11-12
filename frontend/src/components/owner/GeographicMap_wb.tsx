@@ -7,7 +7,7 @@ type Point = { latitude: number; longitude: number; label?: string };
 export type MapRegion = { id: string; label: string; points: Point[]; href?: string; kind?: "farm"; reference?: boolean };
 type Props = {
   points?: Point[];
-  pointsKind?: "farm" | "plot";
+  pointsKind?: "farm" | "plot" | "gps";
   regions?: MapRegion[];
   onAddPoint?: (point: Point) => void;
   onAutoAddPoint?: (point: Point) => void;
@@ -72,7 +72,7 @@ export default function GeographicMap({ points = [], pointsKind = "plot", region
     const tokens = getComputedStyle(container.current!);
     const primary = tokens.getPropertyValue("--agri-primary").trim() || "currentColor";
     const farmColor = tokens.getPropertyValue("--agri-info-text").trim() || primary;
-    const draw = (items: Point[], text?: string, href?: string, editable = false, farm = false, reference = false) => {
+    const draw = (items: Point[], text?: string, href?: string, editable = false, farm = false, reference = false, showMarkers = true) => {
       const color = farm ? farmColor : primary;
       const validItems = items.map((point, index) => ({ point, index })).filter(item => validPoint(item.point));
       const coordinates: L.LatLngTuple[] = validItems.map(({point}) => [point.latitude, point.longitude]);
@@ -93,7 +93,7 @@ export default function GeographicMap({ points = [], pointsKind = "plot", region
         tooltip.textContent = text;
         shape.bindTooltip(tooltip);
       }
-      if (reference) return;
+      if (reference || !showMarkers) return;
       coordinates.forEach((coordinate, position) => {
         const { point, index } = validItems[position];
         const name = point.label || `GPS ${index + 1}`;
@@ -126,10 +126,17 @@ export default function GeographicMap({ points = [], pointsKind = "plot", region
         }
       });
     };
-    regions.forEach(region => draw(region.points, region.label, region.href, false, region.kind === "farm", region.reference));
+    regions.forEach(region => draw(region.points, region.label, region.href, false, region.kind === "farm", region.reference, pointsKind !== "gps"));
     draw(points, undefined, undefined, !!onMovePoint, pointsKind === "farm");
     const region = regions.find(item => !item.reference);
-    if (region && (onMovePoint || region.kind === "farm") && focusedRegionRef.current !== region.id && region.points.some(validPoint)) {
+    if (pointsKind === "gps") {
+      const bounds = group.getBounds();
+      const focusKey = JSON.stringify([regions.map(item => item.id), points]);
+      if (bounds.isValid() && focusedRegionRef.current !== focusKey) {
+        mapRef.current?.fitBounds(bounds, { padding: [24, 24], maxZoom: 18 });
+        focusedRegionRef.current = focusKey;
+      }
+    } else if (region && (onMovePoint || region.kind === "farm") && focusedRegionRef.current !== region.id && region.points.some(validPoint)) {
       mapRef.current?.fitBounds(L.latLngBounds([...region.points, ...points].filter(validPoint).map(p => [p.latitude, p.longitude] as L.LatLngTuple)), { padding: [45, 45], maxZoom: 18 });
       focusedRegionRef.current = region.id;
     } else if (fitReferenceFarms && !focusedRegionRef.current && !points.length) {

@@ -1,5 +1,10 @@
+import base64
+import json
 from pathlib import Path
 import os
+import time
+import urllib.error
+import urllib.request
 from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
@@ -9,7 +14,13 @@ from app.core.security import get_current_user
 from app.crud import farming_log as crud_farming_log
 from app.db.session import get_db
 from app.routers.user import ensure_owns_org, require_role
-from app.schemas.farming_log import FarmingLogCreate, FarmingLogDetail, FarmingLogSummary, LogPhotoOut
+from app.schemas.farming_log import (
+    FarmingLogCreate,
+    FarmingLogDetail,
+    FarmingLogSummary,
+    FarmingLogTranscribeOut,
+    LogPhotoOut,
+)
 
 
 router = APIRouter()
@@ -19,6 +30,43 @@ FARMING_LOG_UPLOAD_DIR = UPLOAD_ROOT / "farming-logs"
 MAX_PHOTOS_PER_LOG = 5
 MAX_PHOTO_BYTES = 5 * 1024 * 1024
 ALLOWED_PHOTO_EXTENSIONS = {".jpg", ".jpeg"}
+
+MAX_AUDIO_BYTES = 10 * 1024 * 1024
+ALLOWED_AUDIO_MIME_BY_EXT = {
+    ".m4a": "audio/mp4",
+    ".mp4": "audio/mp4",
+    ".mp3": "audio/mp3",
+    ".wav": "audio/wav",
+    ".aac": "audio/aac",
+    ".ogg": "audio/ogg",
+    ".webm": "audio/webm",
+    ".flac": "audio/flac",
+    ".3gp": "audio/3gpp",
+    ".amr": "audio/amr",
+    ".caf": "audio/x-caf",
+}
+ALLOWED_AUDIO_CONTENT_TYPES = {
+    "audio/mp4": "audio/mp4",
+    "audio/x-m4a": "audio/mp4",
+    "audio/m4a": "audio/mp4",
+    "audio/mpeg": "audio/mp3",
+    "audio/mp3": "audio/mp3",
+    "audio/wav": "audio/wav",
+    "audio/x-wav": "audio/wav",
+    "audio/wave": "audio/wav",
+    "audio/aac": "audio/aac",
+    "audio/ogg": "audio/ogg",
+    "audio/webm": "audio/webm",
+    "audio/flac": "audio/flac",
+    "audio/3gpp": "audio/3gpp",
+    "audio/amr": "audio/amr",
+    "audio/x-caf": "audio/x-caf",
+}
+DEFAULT_GEMINI_TRANSCRIBE_MODEL = "gemini-3.5-flash-lite"
+TRANSCRIBE_PROMPT = (
+    "Chỉ chép lại chính xác lời nói tiếng Việt trong đoạn ghi âm này thành văn bản, "
+    "không giải thích hay bình luận thêm. Nếu không có tiếng người nói, trả về chuỗi rỗng."
+)
 
 
 def _ensure_can_read_log(log: dict, current_user: dict, db: Session) -> None:
@@ -190,3 +238,113 @@ async def upload_log_photos(
         urls.append(f"/uploads/farming-logs/{log_id}/{filename}")
 
     return crud_farming_log.add_photos(db, log_id, urls)
+
+
+def _call_gemini_transcribe(audio_bytes: bytes, mime_type: str, api_key: str, model: str) -> str:
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+    payload = {
+        "contents": [
+            {
+                "parts": [
+                    {
+                        "inline_data": {
+                            "mime_type": mime_type,
+                            "data": base64.b64encode(audio_bytes).decode("ascii"),
+                        }
+                    },
+                    {"text": TRANSCRIBE_PROMPT},
+                ]
+            }
+        ],
+        "generationConfig": {"temperature": 0},
+    }
+    data = json.dumps(payload).encode("utf-8")
+
+    last_error_detail = "Không thể kết nối dịch vụ phiên âm giọng nói"
+    for attempt in range(2):
+        req = urllib.request.Request(
+            url,
+            data=data,
+            headers={
+                "Content-Type": "application/json",
+                "x-goog-api-key": api_key,
+            },
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                body = json.loads(resp.read().decode("utf-8"))
+                candidates = body.get("candidates") or []
+                if not candidates:
+                    return ""
+                parts = (candidates[0].get("content") or {}).get("parts") or []
+                texts = [p.get("text", "") for p in parts if isinstance(p, dict) and p.get("text")]
+                return " ".join(texts).strip()
+        except urllib.error.HTTPError as exc:
+            err_body = exc.read().decode("utf-8", errors="ignore")
+            try:
+                err_json = json.loads(err_body)
+                err_msg = (err_json.get("error") or {}).get("message") or err_body
+            except Exception:
+                err_msg = err_body or str(exc)
+
+            if exc.code in (429, 503) and attempt == 0:
+                time.sleep(1.0)
+                continue
+            if exc.code == 429:
+                raise HTTPException(
+                    status.HTTP_429_TOO_MANY_REQUESTS,
+                    "Dịch vụ phiên âm đang đạt giới hạn lượt gọi miễn phí, vui lòng thử lại sau ít giây",
+                )
+            if exc.code == 503:
+                raise HTTPException(
+                    status.HTTP_503_SERVICE_UNAVAILABLE,
+                    "Dịch vụ phiên âm đang quá tải tạm thời, vui lòng thử lại sau ít giây",
+                )
+            last_error_detail = f"Lỗi dịch vụ phiên âm ({exc.code}): {err_msg}"
+            break
+        except Exception as exc:
+            last_error_detail = f"Lỗi kết nối dịch vụ phiên âm: {exc}"
+            break
+
+    raise HTTPException(status.HTTP_502_BAD_GATEWAY, last_error_detail)
+
+
+@router.post("/transcribe", response_model=FarmingLogTranscribeOut)
+def transcribe_farming_log_audio(
+    audio: UploadFile = File(..., description="File ghi âm giọng nói (.m4a, .mp3, .wav, .aac, .ogg, .webm)"),
+    current_user: dict = Depends(require_role("worker", "leader")),
+):
+    """UC-W01 / QuickLog Voice-to-Text: Phiên âm giọng nói tiếng Việt sang văn bản cho Công nhân & Tổ trưởng."""
+    from dotenv import dotenv_values
+
+    env_fallback = dotenv_values(".env")
+    api_key = (os.getenv("GEMINI_API_KEY") or env_fallback.get("GEMINI_API_KEY") or "").strip()
+    if not api_key:
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+            "Chưa cấu hình GEMINI_API_KEY trên máy chủ backend",
+        )
+    model = (
+        os.getenv("GEMINI_TRANSCRIBE_MODEL")
+        or env_fallback.get("GEMINI_TRANSCRIBE_MODEL")
+        or DEFAULT_GEMINI_TRANSCRIBE_MODEL
+    ).strip()
+
+    extension = Path(audio.filename or "").suffix.lower()
+    raw_content_type = (audio.content_type or "").split(";")[0].strip().lower()
+    mime_type = ALLOWED_AUDIO_MIME_BY_EXT.get(extension) or ALLOWED_AUDIO_CONTENT_TYPES.get(raw_content_type)
+    if not mime_type:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "Định dạng file ghi âm không hỗ trợ. Chỉ chấp nhận: .m4a, .mp3, .wav, .aac, .ogg, .webm, .flac, .mp4",
+        )
+
+    audio_bytes = audio.file.read()
+    if not audio_bytes:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "File ghi âm rỗng")
+    if len(audio_bytes) > MAX_AUDIO_BYTES:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "File ghi âm không được vượt quá 10MB")
+
+    text = _call_gemini_transcribe(audio_bytes=audio_bytes, mime_type=mime_type, api_key=api_key, model=model)
+    return FarmingLogTranscribeOut(text=text)

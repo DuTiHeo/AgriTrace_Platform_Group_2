@@ -50,3 +50,7 @@ class FarmingLogSummary(BaseModel):
 class FarmingLogDetail(FarmingLogSummary):
     photos: list[LogPhotoOut] = Field(default_factory=list)
     notes: list[LogNoteInLogOut] = Field(default_factory=list)
+
+
+class FarmingLogTranscribeOut(BaseModel):
+    text: str
