@@ -3,7 +3,7 @@ import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import { File } from 'expo-file-system';
 import * as FileSystem from 'expo-file-system/legacy';
 import { Platform } from 'react-native';
-import { getLog, uploadPhotos, type GPSPoint } from './farming_log.service';
+import { getLog, transcribeAudio, uploadPhotos, type GPSPoint } from './farming_log.service';
 
 export async function getLogLocation(): Promise<GPSPoint> {
   const permission = await Location.requestForegroundPermissionsAsync();
@@ -82,4 +82,36 @@ export async function uploadDraftPhotos(token: string, logId: string, photos: st
     ...current,
     photos: uploaded
   };
+}
+
+export async function transcribeRecordedAudio(token: string, uri: string): Promise<string> {
+  const form = new FormData();
+
+  if (Platform.OS === 'web') {
+    const blob = await (await fetch(uri)).blob();
+    if (!blob.size || blob.size > 10 * 1024 * 1024)
+      throw new Error('Bản ghi âm không hợp lệ hoặc vượt quá 10 MB.');
+
+    const mime = blob.type.toLowerCase();
+    const ext = mime.includes('mp4') || mime.includes('m4a')
+      ? '.m4a'
+      : mime.includes('ogg')
+        ? '.ogg'
+        : mime.includes('wav')
+          ? '.wav'
+          : mime.includes('mp3') || mime.includes('mpeg')
+            ? '.mp3'
+            : '.webm';
+    form.append('audio', blob, `voice-log${ext}`);
+  } else {
+    const info = await FileSystem.getInfoAsync(uri);
+    const size = info.exists ? info.size : 0;
+    if (!size || size > 10 * 1024 * 1024)
+      throw new Error('Bản ghi âm không hợp lệ hoặc vượt quá 10 MB.');
+
+    form.append('audio', new File(uri));
+  }
+
+  const result = await transcribeAudio(token, form);
+  return result.text.trim();
 }

@@ -50,6 +50,12 @@
           "microphonePermission": "Cho phép AgriFarm dùng micro để nhập nội dung báo cáo.",
           "speechRecognitionPermission": "Cho phép AgriFarm chuyển lời nói thành nội dung báo cáo."
         }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Cho phép AgriFarm dùng micro để ghi âm nội dung báo cáo."
+        }
       ]
     ],
     "experiments": {
