@@ -470,3 +470,12 @@ html body :is(dialog, [role="dialog"][aria-modal="true"]) {
 .app-content :is(.farm-table, .plots-table, .seasons-table, .personnel-table, .harvest-table) td {
   font-variant-numeric: tabular-nums;
 }
+
+.app-content button.pause-action {
+  color: var(--agri-danger-text);
+}
+
+.app-content button.pause-action:hover:not(:disabled) {
+  background: var(--agri-danger-soft);
+  color: var(--agri-danger-text);
+}

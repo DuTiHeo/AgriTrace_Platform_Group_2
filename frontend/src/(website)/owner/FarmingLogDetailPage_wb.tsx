@@ -1,14 +1,11 @@
 import BackButton from "../../components/owner/BackButton_wb";
-import GeographicMap from "../../components/owner/GeographicMap_wb";
+import GeographicMap, { type MapRegion } from "../../components/owner/GeographicMap_wb";
 import "../../styles/farming_logs_wb.css";
 import {
   Camera,
-  CheckCircle2,
-  Clock3,
   MapPin,
   MessageSquareText,
   NotebookPen,
-  RotateCcw,
   Send,
   Sprout,
   UserRound,
@@ -29,6 +26,11 @@ import type { Farm } from "../../features/owner/farm_wb";
 import type { FarmingLog } from "../../features/owner/farmingLog_wb";
 import type { Plot } from "../../features/owner/plot_wb";
 import type { Season } from "../../features/owner/season_wb";
+import { getFarmPolygon } from "../../utils/geometry_wb";
+
+const reviewLabels = ["Đạt", "Không đạt"] as const;
+type ReviewLabel = (typeof reviewLabels)[number];
+const ownerReviewContent = (label: ReviewLabel) => `Đánh giá của chủ nông trại: ${label}`;
 
 function formatDateTime(value: string | null) {
   if (!value) {
@@ -49,6 +51,7 @@ function FarmingLogDetailPage() {
   const [plot, setPlot] = useState<Plot | null>(null);
   const [noteContent, setNoteContent] = useState("");
   const [loading, setLoading] = useState(true);
+  const [reviewing, setReviewing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -118,24 +121,20 @@ function FarmingLogDetailPage() {
     }
   };
 
-  const toggleNote = async (noteId: string, resolved: boolean) => {
+  const submitReview = async (result: ReviewLabel) => {
+    setReviewing(true);
     setError("");
     setNotice("");
-
     try {
-      await farmingLogService.setNoteResolved(logId, noteId, resolved);
-      setNotice(
-        resolved
-          ? "Đã đánh dấu ghi chú là đã xử lý."
-          : "Đã mở lại ghi chú để tiếp tục theo dõi.",
-      );
-      await loadData();
-    } catch (toggleError) {
-      setError(
-        toggleError instanceof Error
-          ? toggleError.message
-          : "Không thể cập nhật ghi chú.",
-      );
+      const note = await farmingLogService.addNote(logId, ownerReviewContent(result));
+      setLog((current) => current?.id === logId
+        ? { ...current, notes: [...current.notes, note] }
+        : current);
+      setNotice("Đã lưu đánh giá.");
+    } catch (reviewError) {
+      setError(reviewError instanceof Error ? reviewError.message : "Không thể lưu đánh giá.");
+    } finally {
+      setReviewing(false);
     }
   };
 
@@ -158,7 +157,19 @@ function FarmingLogDetailPage() {
     );
   }
 
-  const unresolvedCount = log.notes.filter((note) => !note.resolved).length;
+  const reviews = log.notes
+    .filter((note) => note.authorRole === "owner" && reviewLabels.some((label) => note.content === ownerReviewContent(label)))
+    .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
+  const notes = log.notes.filter((note) => !reviews.includes(note));
+
+  const regions: MapRegion[] = [];
+  const farmBoundary = getFarmPolygon(farm);
+  if (farm && farmBoundary.length) {
+    regions.push({ id: farm.id, kind: "farm", label: farm.name, points: farmBoundary });
+  }
+  if (plot && plot.boundary.length >= 3) {
+    regions.push({ id: plot.id, label: plot.name, points: plot.boundary });
+  }
 
   return (
     <div className="page farming-log-detail-page">
@@ -219,31 +230,33 @@ function FarmingLogDetailPage() {
             <div className="farming-log-section-heading">
               <div>
                 <MessageSquareText size={19} />
-                <h2>Ghi chú nhắc nhở ({log.notes.length})</h2>
+                <h2>Ghi chú nhắc nhở ({notes.length})</h2>
               </div>
-              {unresolvedCount > 0 && (
-                <span className="farming-log-attention-badge">
-                  {unresolvedCount} chưa xử lý
-                </span>
-              )}
-            </div>
-
-            <div className="farming-log-note-explainer">
-              Ghi chú dùng để trao đổi và nhắc người ghi bổ sung thông tin;
-              không phải thao tác duyệt hoặc từ chối nhật ký.
+              <div className="farming-log-review-actions" role="group" aria-label={`Đánh giá nhật ký của ${log.workerName || "công nhân"}`}>
+                {reviewLabels.map((label) => (
+                  <button
+                    key={label}
+                    className={label === "Đạt" ? "btn btn-primary" : "btn farming-log-review-reject"}
+                    type="button"
+                    aria-pressed={reviews[0]?.content === ownerReviewContent(label)}
+                    disabled={reviewing || saving || reviews[0]?.content === ownerReviewContent(label)}
+                    onClick={() => void submitReview(label)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="farming-log-notes">
-              {log.notes.length === 0 ? (
+              {notes.length === 0 ? (
                 <div className="farming-log-notes-empty">
                   Chưa có ghi chú cho nhật ký này.
                 </div>
               ) : (
-                log.notes.map((note) => (
+                notes.map((note) => (
                   <article
-                    className={`farming-log-note ${
-                      note.resolved ? "farming-log-note-resolved" : ""
-                    }`}
+                    className="farming-log-note"
                     key={note.id}
                   >
                     <div className="farming-log-note-avatar">
@@ -265,42 +278,27 @@ function FarmingLogDetailPage() {
                         <span>{formatDateTime(note.createdAt)}</span>
                       </div>
                       <p>{note.content}</p>
-                      <div className="farming-log-note-footer">
-                        <span
-                          className={
-                            note.resolved
-                              ? "farming-log-note-status resolved"
-                              : "farming-log-note-status"
-                          }
-                        >
-                          {note.resolved ? (
-                            <CheckCircle2 size={14} />
-                          ) : (
-                            <Clock3 size={14} />
-                          )}
-                          {note.resolved ? "Đã xử lý" : "Cần theo dõi"}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            void toggleNote(note.id, !note.resolved)
-                          }
-                        >
-                          {note.resolved ? (
-                            <RotateCcw size={14} />
-                          ) : (
-                            <CheckCircle2 size={14} />
-                          )}
-                          {note.resolved
-                            ? "Mở lại ghi chú"
-                            : "Đánh dấu đã xử lý"}
-                        </button>
-                      </div>
                     </div>
                   </article>
                 ))
               )}
             </div>
+
+            {reviews.length > 0 && (
+              <div className="farming-log-notes farming-log-review-history" aria-label="Lịch sử đánh giá của chủ nông trại">
+                {reviews.map((note) => (
+                  <article className="farming-log-note" key={note.id}>
+                    <div className="farming-log-note-body">
+                      <div className="farming-log-note-meta">
+                        <strong>{note.authorName}</strong>
+                        <span>{formatDateTime(note.createdAt)}</span>
+                      </div>
+                      <p>{note.content}</p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
 
             <form className="farming-log-note-form" onSubmit={submitNote}>
               <label htmlFor="farming-log-note">Thêm ghi chú nhắc nhở</label>
@@ -317,7 +315,7 @@ function FarmingLogDetailPage() {
                 <button
                   className="btn btn-primary"
                   type="submit"
-                  disabled={saving || !noteContent.trim()}
+                  disabled={saving || reviewing || !noteContent.trim()}
                 >
                   <Send size={16} />
                   {saving ? "Đang gửi..." : "Gửi ghi chú"}
@@ -367,7 +365,7 @@ function FarmingLogDetailPage() {
               <MapPin size={18} />
               <h2>Vị trí ghi nhận</h2>
             </div>
-            <GeographicMap label="Vị trí GPS của nhật ký canh tác" points={[log.gps]} />
+            <GeographicMap label="Vị trí GPS và ranh giới của nhật ký canh tác" points={[log.gps]} pointsKind="gps" regions={regions} />
             <dl>
               <div>
                 <dt>Vĩ độ</dt>

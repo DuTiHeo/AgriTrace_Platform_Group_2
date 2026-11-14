@@ -76,6 +76,7 @@ export type ApiTask = MemberTask & {
   team_id: string;
   team_name: string | null;
   team_leader_name?: string | null;
+  owner_name?: string | null;
   worker_name: string | null;
   worker_phone: string | null;
   plot_id: string;

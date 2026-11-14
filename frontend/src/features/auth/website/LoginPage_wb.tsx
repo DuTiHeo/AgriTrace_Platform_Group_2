@@ -76,9 +76,6 @@ function LoginPage() {
             <div><UserRound size={17} /><input required type="tel" value={login} onChange={(event) => setLogin(event.target.value)} autoComplete="username" /></div>
           </label>
 
-          <Link className="login-forgot-link" to="/forgot-password">
-            Quên mật khẩu?
-          </Link>
           <label>
             <span>Mật khẩu</span>
             <div>
@@ -89,6 +86,10 @@ function LoginPage() {
               </button>
             </div>
           </label>
+
+          <Link className="login-forgot-link" to="/forgot-password">
+            Quên mật khẩu?
+          </Link>
 
           {error && <div className="form-error-block">{error}</div>}
           <button className="btn btn-primary login-submit" type="submit" disabled={loading}>

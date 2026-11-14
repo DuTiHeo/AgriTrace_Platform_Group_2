@@ -33,8 +33,8 @@ export default function LeaderTaskDetailScreen() {
       ) : (
         <>
           <Card>
-            <View style={[s.row, { flexWrap: 'wrap' }]}>
-              <Chip text="Từ chủ nông trại" />
+            <View style={[s.row, { justifyContent: 'space-between', flexWrap: 'wrap' }]}>
+              <Chip text={task.ownerName ? `Từ ${task.ownerName}` : 'Từ chủ nông trại'} />
               {task.displayStatus === 'pending' && !task.started
                 ? <Chip text="Đã nhận" />
                 : <Status status={task.displayStatus === 'pending' ? 'in_progress' : task.displayStatus} />}

@@ -238,7 +238,7 @@ function FarmDetailPage() {
 
           {farm.status === "active" && (
             <button
-              className="btn btn-secondary"
+              className="btn btn-secondary pause-action"
               type="button"
               onClick={() =>
                 setPendingAction("suspend")

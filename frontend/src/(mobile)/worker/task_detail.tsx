@@ -1,3 +1,4 @@
+import { Chip } from '@/components/common/role_ui';
 import { getTaskTypeLabel } from '@/constants/task_types';
 import { colors } from '@/styles/theme';
 import { sharedStyles as shared } from '@/styles/role_styles';
@@ -68,7 +69,8 @@ export default function WorkerTaskDetailScreen() {
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={shared.card}>
-          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+          <View style={styles.taskHeading}>
+            {task && <Chip text={task.leaderName ? `Từ ${task.leaderName}` : 'Từ tổ trưởng'} />}
             {task?.displayStatus === 'incomplete' ? (
               <Text style={[styles.status, { backgroundColor: '#fef2f2', color: colors.danger }]}>
                 Chưa hoàn thành
@@ -186,9 +188,16 @@ const styles = StyleSheet.create({
     ...shared.content
   },
 
+  taskHeading: {
+    ...shared.row,
+    flexWrap: 'wrap'
+  },
+
   status: {
     ...shared.chip,
     ...shared.chipText,
+    alignSelf: 'center',
+    marginStart: 'auto',
     backgroundColor: colors.warningSoft,
     color: colors.warning
   },

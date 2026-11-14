@@ -36,7 +36,7 @@ LOCKOUT_MINUTES=15
 Mở terminal (PowerShell hoặc CMD) tại thư mục gốc của dự án (`AgriTrace_Platform_Group_2`):
 
 ```powershell
-docker-compose up -d --build
+docker compose up -d --build
 ```
 
 ### Các lệnh kiểm tra:
@@ -44,7 +44,7 @@ docker-compose up -d --build
 Kiểm tra trạng thái container:
 
 ```powershell
-docker-compose ps
+docker compose ps
 ```
 
 (Cần thấy cả 2 dịch vụ `agritrace_db` và `agritrace_backend` ở trạng thái `Up`)
@@ -52,7 +52,7 @@ docker-compose ps
 Xem log Backend nếu cần gỡ lỗi:
 
 ```powershell
-docker-compose logs -f backend
+docker compose logs -f backend
 ```
 
 Kiểm tra trên trình duyệt máy tính:
@@ -63,7 +63,7 @@ Kiểm tra trên trình duyệt máy tính:
 (Tùy chọn) Nạp dữ liệu mẫu ban đầu vào Database:
 
 ```powershell
-docker exec -i agritrace_db psql -U agritrace -d agritrace_farm < database/sample_data.sql
+cmd /c "docker exec -i agritrace_db psql -v ON_ERROR_STOP=1 -U agritrace -d agritrace_farm < database\sample_data.sql"
 ```
 
 ---
@@ -75,7 +75,7 @@ Do Expo Go trên điện thoại chạy độc lập, điện thoại không th�
 Mở PowerShell hoặc CMD và gõ:
 
 ```powershell
-ipconfig getifaddr en0
+ipconfig
 ```
 
 Cuộn tìm card mạng đang dùng:
@@ -128,53 +128,53 @@ cd frontend
 2. Cài đặt các gói phụ thuộc (nếu chưa cài):
 
 ```powershell
-npm install
+npm.cmd ci
 ```
 
-3. Khởi động Expo Server với cờ xóa cache `-c` (bắt buộc để hệ thống nhận IP LAN mới):
+3. Khởi động Expo Go và làm mới bộ nhớ đệm:
 
 ```powershell
-npx expo start -c
+npm.cmd start -- --clear
 ```
 
 ### Kết nối ứng dụng:
 
 - **Trên điện thoại Android:** Mở ứng dụng Expo Go -> Chọn `Scan QR code` -> Quét mã QR trên terminal.
 - **Trên điện thoại iOS (iPhone):** Mở ứng dụng Camera mặc định -> Quét mã QR -> Bấm thông báo vàng mở bằng Expo Go.
-- **Trên Trình duyệt Web** (nếu muốn xem nhanh trên máy): Nhấn phím `w` trong terminal.
+- **Trên điện thoại:** Kết nối cùng mạng nội bộ với máy tính và giữ terminal Expo mở.
 
 ---
 
 ## 7. KHỞI CHẠY ỨNG DỤNG WEB CHỦ NÔNG TRẠI (OWNER WEB - PORT 5173)
 
-Ứng dụng Web dành riêng cho Chủ sở hữu nông trại (`owner`) nằm tại thư mục `frontend/owner/`, xây dựng trên công nghệ React 19 + Vite + TypeScript.
+Owner và Admin dùng chung trang đăng nhập web trên cổng 5173.
 
 ### Cách 1: Khởi chạy từ thư mục `frontend/` (Khuyên dùng)
 Mở một cửa sổ Terminal mới tại thư mục `frontend/`:
-```bash
+```powershell
 # Cài đặt dependencies cho Owner Web (chỉ cần làm lần đầu)
-npm run owner:install
+npm.cmd ci
 
 # Khởi chạy Vite Dev Server
-npm run owner:dev
+npm.cmd run web
 ```
 
-### Cách 2: Khởi chạy trực tiếp từ thư mục `frontend/owner/`
-```bash
-cd frontend/owner
+### Cách 2: Khởi chạy cả web và mobile từ thư mục `frontend/`
+```powershell
+cd frontend
 
 # Cài đặt thư viện theo package-lock.json
-npm ci
+npm.cmd ci
 
 # Khởi chạy
-npm run dev
+npm.cmd run dev
 ```
 
 ### Cách 3 (Dành cho Windows):
-Click đúp tệp tin `frontend/owner/START_OWNER.cmd` để script tự động cài đặt và mở server.
+Click đúp tệp tin `frontend/START_OWNER.cmd` để script tự động cài đặt và mở server.
 
 ### Đăng nhập và Trải nghiệm:
-- **Địa chỉ truy cập**: `http://localhost:5173`
+- **Địa chỉ truy cập**: `http://127.0.0.1:5173/`
 - **Tài khoản đăng nhập mẫu**:
   - Số điện thoại: **`0901000001`**
   - Mật khẩu: **`Test@1234`**
@@ -209,7 +209,7 @@ Nếu máy đã cài PostgreSQL trước đó, cổng 5432 bị chiếm dụng.
 ### Lỗi 3: Muốn reset sạch toàn bộ Database và nạp lại từ đầu
 
 ```powershell
-docker-compose down -v
-docker-compose up -d --build
-docker exec -i agritrace_db psql -U agritrace -d agritrace_farm < database/sample_data.sql
+docker compose down -v
+docker compose up -d --build
+cmd /c "docker exec -i agritrace_db psql -v ON_ERROR_STOP=1 -U agritrace -d agritrace_farm < database\sample_data.sql"
 ```

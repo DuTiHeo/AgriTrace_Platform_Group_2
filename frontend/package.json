@@ -78,7 +78,7 @@
     "owner:dev": "npm run web",
     "owner:build": "tsc --noEmit -p tsconfig.web.json && vite build --config vite.config.mts",
     "owner:lint": "npm run web:lint",
-    "admin:dev": "vite --config vite.config.mts --mode admin --port 5174 --open /admin",
+    "admin:dev": "npm run web",
     "admin:build": "tsc --noEmit -p tsconfig.web.json && vite build --config vite.config.mts --mode admin"
   },
   "private": true

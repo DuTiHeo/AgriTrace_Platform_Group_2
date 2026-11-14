@@ -2,7 +2,7 @@ const path = require('node:path');
 const { spawn } = require('node:child_process');
 
 const frontendRoot = __dirname;
-const webServers = [];
+let web;
 let mobile;
 let stopping = false;
 
@@ -14,7 +14,7 @@ async function stop(code = 0) {
     mobile.kill('SIGTERM');
   }
 
-  for (const web of webServers) {
+  if (web) {
     try {
       await web.close();
     } catch (error) {
@@ -33,24 +33,17 @@ async function start() {
   const { createServer } = await import('vite');
   const mobilePort = process.env.AGRITRACE_MOBILE_PORT || '8083';
 
-  for (const [name, mode, port] of [
-    ['Owner', 'development', process.env.AGRITRACE_WEB_PORT],
-    ['Admin', 'admin', process.env.AGRITRACE_ADMIN_PORT],
-  ]) {
-    const web = await createServer({
-      configFile: path.join(frontendRoot, 'vite.config.mts'),
-      mode,
-      clearScreen: false,
-      ...(port ? { server: { port: Number(port) } } : {}),
-    });
-    webServers.push(web);
-    if (stopping) { await web.close(); return; }
-    await web.listen();
-    if (stopping) return;
-    console.log(`\nWeb ${name} đã chạy:`);
-    web.printUrls();
-    if (name === 'Admin') console.log('Mở đường dẫn /admin để xem trang Admin.');
-  }
+  const port = process.env.AGRITRACE_WEB_PORT;
+  web = await createServer({
+    configFile: path.join(frontendRoot, 'vite.config.mts'),
+    clearScreen: false,
+    ...(port ? { server: { port: Number(port) } } : {}),
+  });
+  if (stopping) { await web.close(); return; }
+  await web.listen();
+  if (stopping) return;
+  console.log('\nWeb đã chạy. Mở link bên dưới để đăng nhập:');
+  web.printUrls();
 
   if (process.argv.includes('--web-only')) return;
   console.log('\nĐang khởi động app mobile. Mã QR sẽ hiện bên dưới.\n');

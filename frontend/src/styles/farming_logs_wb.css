@@ -471,14 +471,37 @@
   display: flex;
   gap: 11px;
   padding: 13px;
-  background: var(--agri-warning-soft);
-  border: 1px solid var(--agri-warning-border);
+  background: var(--agri-success-soft);
+  border: 1px solid var(--agri-border);
   border-radius: var(--agri-radius-card);
 }
 
-.farming-log-note-resolved {
-  background: var(--agri-success-soft);
-  border-color: var(--agri-border);
+.farming-log-section-heading:has(.farming-log-review-actions),
+.farming-log-review-actions {
+  flex-wrap: wrap;
+}
+
+.farming-log-review-actions {
+  margin-left: auto;
+}
+
+.farming-log-review-actions .farming-log-review-reject {
+  background: var(--agri-surface);
+  color: var(--agri-danger-text);
+  border-color: var(--agri-danger-border-soft);
+}
+
+.farming-log-review-actions .farming-log-review-reject:hover:not(:disabled) {
+  background: var(--agri-danger-soft);
+  border-color: var(--agri-danger);
+}
+
+.farming-log-review-actions .btn:disabled {
+  opacity: 0.5;
+}
+
+.farming-log-review-history {
+  margin-top: 16px;
 }
 
 .farming-log-note-avatar {

@@ -287,7 +287,7 @@ function FarmsPage() {
                         </DetailViewLink>
 
                         {farm.status === "active" && (
-                          <button
+                          <button className="pause-action"
                             type="button"
                             aria-label={`Tạm ngưng ${farm.name}`}
                             title="Tạm ngưng"

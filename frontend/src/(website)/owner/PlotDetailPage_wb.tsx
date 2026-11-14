@@ -299,7 +299,7 @@ function PlotDetailPage() {
           </button>
 
           <button
-            className="btn btn-secondary"
+            className={plot.status === "active" ? "btn btn-secondary pause-action" : "btn btn-secondary"}
             type="button"
             onClick={() => {
               setActionError("");
@@ -647,7 +647,7 @@ function PlotDetailPage() {
                   </button>
 
                   <button
-                    className="btn btn-primary"
+                    className={plot.status === "active" ? "btn btn-secondary pause-action" : "btn btn-primary"}
                     type="button"
                     disabled={saving}
                     onClick={handleChangeStatus}
