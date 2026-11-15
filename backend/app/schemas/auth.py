@@ -29,3 +29,37 @@ class UserInformation(BaseModel):
 class ChangePasswordRequest(BaseModel):
     old_password: str
     new_password: str
+
+
+class ForgotPasswordRequest(BaseModel):
+    phone: str
+
+
+class ForgotPasswordResponse(BaseModel):
+    challenge: str
+    session_id: str
+    expires_in: int = 300
+    resend_available_in: int = 60
+    message: str = "Mã xác nhận đã được gửi về số điện thoại của bạn."
+    demo_otp: Optional[str] = None
+
+
+class VerifyOtpRequest(BaseModel):
+    challenge: str
+    otp: str
+
+
+class VerifyOtpResponse(BaseModel):
+    reset_token: str
+    expires_in: int = 600
+    message: str = "Xác thực mã OTP thành công."
+
+
+class ResendOtpRequest(BaseModel):
+    challenge: str
+
+
+class ResetPasswordRequest(BaseModel):
+    reset_token: str
+    new_password: str
+
