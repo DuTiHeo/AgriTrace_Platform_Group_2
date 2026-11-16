@@ -46,8 +46,7 @@ export default function CreateAssignmentScreen() {
   const selectedActiveCount = activeMemberIds.filter(id => selected.includes(id)).length;
   const allActiveSelected = activeMemberIds.length > 0 && selectedActiveCount === activeMemberIds.length;
 
-  const hasMultiplePlots = new Set(seasons.map(season => season.plot_id)).size > 1;
-  const season = hasMultiplePlots ? seasons.find(item => item.season_id === seasonId) : seasons[0];
+  const season = seasons.length === 1 ? seasons[0] : seasons.find(item => item.season_id === seasonId);
 
   const dirty = useMemo(() => !!(
     title.trim() || instructions.trim() || selected.length || seasonId || startDate || due || tools.trim()
@@ -165,7 +164,7 @@ export default function CreateAssignmentScreen() {
     const errors: Record<string, string> = {};
     if (!title.trim()) errors.title = 'Nhập tên nhiệm vụ.';
     if (!selected.length || selected.some(id => !members.some(member => member.id === id && member.active))) errors.members = 'Chọn ít nhất một công nhân đang hoạt động.';
-    if (hasMultiplePlots && !season) errors.season = 'Chọn mùa vụ để xác định khu vực giao việc.';
+    if (!season) errors.season = 'Chọn mùa vụ để xác định khu vực giao việc.';
     if (!isValidDateKey(startDate) || startDate < localDateKey(new Date())) errors.startDate = 'Chọn ngày bắt đầu từ hôm nay trở đi.';
     if (!isValidDateKey(due) || !isValidDateKey(startDate) || due < startDate) errors.due = 'Chọn ngày kết thúc bằng hoặc sau ngày bắt đầu.';
     if (showErrors(errors) || !season) return;
@@ -280,23 +279,23 @@ export default function CreateAssignmentScreen() {
 
         {loadingSeasons ? (
           <Text style={s.muted}>Đang tải mùa vụ của tổ…</Text>
-        ) : hasMultiplePlots ? (
+        ) : seasons.length > 0 ? (
           <View ref={node => { fields.current.season = node; }} {...fieldProps('season')}>
             <Text style={s.label}>Mùa vụ</Text>
             {seasons.map(item => (
               <Button
                 key={item.season_id}
-                secondary={seasonId !== item.season_id}
-                title={`${item.crop_name} · ${item.plot_code} · ${item.planting_date}`}
+                secondary={season?.season_id !== item.season_id}
+                title={`${item.crop_name} · ${item.plot_code}`}
                 onPress={() => {
-                  setSeasonId(item.season_id);
+                  if (seasons.length > 1) setSeasonId(item.season_id);
                   clearFieldError('season');
                 }}
               />
             ))}
             {fieldError('season')}
           </View>
-        ) : !season && (
+        ) : (
           <Text style={s.muted}>Tổ chưa được gán vào mùa vụ đang hoạt động có lô đất hợp lệ.</Text>
         )}
         <View style={{ gap: 8 }}>

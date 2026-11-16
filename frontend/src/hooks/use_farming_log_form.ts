@@ -160,7 +160,7 @@ export function useFarmingLogForm(draft: ReportDraft, updateDraft: (update: (old
       storeDetail(withPhotos, accessToken);
     }
 
-    if (draft.taskId && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(draft.taskId)) {
+    if (draft.taskId) {
       checkExecutionDate();
       await updateTaskStatus(accessToken, draft.taskId, 'completed');
       await loadWorkerTasks();

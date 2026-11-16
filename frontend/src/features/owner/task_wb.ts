@@ -23,6 +23,7 @@ export type Task = {
   assignedByRole: TaskActorRole | null;
   content: string;
   instructions?: string;
+  cropVarietyName?: string;
   tools?: string;
   assignmentId?: string;
   startAt: string;
@@ -36,6 +37,7 @@ export type Task = {
 };
 
 export type CreateTaskInput = {
+  cropVarietyName?: string;
   farmId: string;
   plotId: string;
   teamId: string;
