@@ -33,7 +33,7 @@ import type {
   BoundaryPoint,
   Plot,
 } from "../../features/owner/plot_wb";
-import { calculatePlotArea, getFarmPolygon, plotBoundaryError } from "../../utils/geometry_wb";
+import { calculatePlotArea, existingPlotPointError, getFarmPolygon, plotBoundaryError } from "../../utils/geometry_wb";
 
 type DialogType =
   | "edit"
@@ -49,17 +49,27 @@ type EditForm = {
 
 import type { Farm } from "../../features/owner/farm_wb";
 
+type PlotReferences = Awaited<ReturnType<typeof plotService.getMapBoundaries>>;
+const referenceLoadError = "Không tải được ranh giới các vùng trồng hiện có.";
+
 function PlotBoundaryPreview({
   points,
   farm,
+  referencePlots = [],
 }: {
   points: BoundaryPoint[];
   farm?: Farm;
+  referencePlots?: PlotReferences;
 }) {
   const polygon = getFarmPolygon(farm);
   return <>
     <GeographicMap label="Vùng trồng và ranh giới nông trại" points={points}
-      regions={farm && polygon.length ? [{ id: farm.id, kind: "farm", label: farm.name, points: polygon.map((p, i) => ({ ...p, label: `NT ${i + 1}` })) }] : []} />
+      regions={[
+        ...(farm && polygon.length ? [{ id: farm.id, kind: "farm" as const, label: farm.name, points: polygon.map((p, i) => ({ ...p, label: `NT ${i + 1}` })) }] : []),
+        ...referencePlots.filter(plot => plot.boundary.length >= 3).map(plot => ({
+          id: plot.id, label: plot.name, points: plot.boundary, reference: true,
+        })),
+      ]} />
   </>;
 }
 
@@ -84,6 +94,24 @@ function PlotDetailPage() {
 
   const [editingBoundary, setEditingBoundary] =
     useState<BoundaryPoint[]>([]);
+  const [referenceResult, setReferenceResult] = useState<{
+    farmId: string;
+    plots?: PlotReferences;
+    error?: string;
+  }>();
+  const farmId = plot?.farmId;
+  const references = referenceResult?.farmId === farmId ? referenceResult : undefined;
+  const referencePlots = references?.plots?.filter(item => item.id !== plot?.id);
+
+  useEffect(() => {
+    if (!farmId) return;
+    let active = true;
+    void plotService.getMapBoundaries(farmId).then(
+      plots => { if (active) setReferenceResult({ farmId, plots }); },
+      () => { if (active) setReferenceResult({ farmId, error: referenceLoadError }); },
+    );
+    return () => { active = false; };
+  }, [farmId]);
 
   const loadRequest = useRef(0);
   const loadPlot = useCallback(async () => {
@@ -203,11 +231,12 @@ function PlotDetailPage() {
   };
 
   const handleSaveBoundary = async () => {
-    if (!plot || saving) {
+    if (!plot || saving || !referencePlots || plot.currentSeasonId) {
       return;
     }
 
-    const boundaryError = plotBoundaryError(editingBoundary, farms.find(farm => farm.id === plot.farmId), true);
+    const boundaryError = plotBoundaryError(editingBoundary, farms.find(farm => farm.id === plot.farmId), true)
+      || existingPlotPointError(editingBoundary, referencePlots);
     if (boundaryError) {
       setActionError(boundaryError);
       return;
@@ -438,7 +467,7 @@ function PlotDetailPage() {
           <div><span>Số điểm tọa độ</span><strong>{plot.boundary.length} điểm</strong></div>
         </div>
         <div className="boundary-detail-layout">
-          <PlotBoundaryPreview points={plot.boundary} farm={farms.find(farm => farm.id === plot.farmId)} />
+          <PlotBoundaryPreview points={plot.boundary} farm={farms.find(farm => farm.id === plot.farmId)} referencePlots={referencePlots} />
           <div className="boundary-detail-points" role="region" aria-label="Tọa độ ranh giới vùng trồng" tabIndex={0}>
             <table>
               <thead><tr><th>STT</th><th>Vĩ độ</th><th>Kinh độ</th></tr></thead>
@@ -448,6 +477,7 @@ function PlotDetailPage() {
             </table>
           </div>
         </div>
+        {references?.error && <p className="form-error-block" role="status">{references.error}</p>}
       </section>
 
       {dialog && (
@@ -580,11 +610,13 @@ function PlotDetailPage() {
               <>
                 <div className="app-modal-body">
                   {plot.currentSeasonId && <p className="form-error-block" role="status">Không thể sửa ranh giới khi vùng trồng đang có mùa vụ hoạt động.</p>}
+                  {!referencePlots && <p className="form-error-block" role="status">{references?.error ?? "Đang tải ranh giới các vùng trồng hiện có."}</p>}
                   <div inert={saving}>
                   <PlotBoundaryEditor
                     farm={farms.find(farm => farm.id === plot.farmId)}
                     points={editingBoundary}
-                    disabled={Boolean(plot.currentSeasonId)}
+                    referencePlots={referencePlots}
+                    disabled={!referencePlots || Boolean(plot.currentSeasonId)}
                     onChange={setEditingBoundary}
                     summary={<div className="calculated-area"><span>Diện tích từ ranh giới</span><strong>{calculatePlotArea(editingBoundary).toLocaleString("vi-VN")} ha</strong></div>}
                   />
@@ -609,7 +641,7 @@ function PlotDetailPage() {
                   <button
                     className="btn btn-primary"
                     type="button"
-                    disabled={saving || Boolean(plot.currentSeasonId) || calculatePlotArea(editingBoundary) <= 0}
+                    disabled={saving || !referencePlots || Boolean(plot.currentSeasonId) || calculatePlotArea(editingBoundary) <= 0}
                     onClick={handleSaveBoundary}
                   >
                     <Save size={17} />
