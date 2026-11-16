@@ -23,6 +23,7 @@ export default function WorkerTaskDetailScreen() {
   const { reports, drafts } = useReports();
   const [executionError, setExecutionError] = useState('');
   const task = workerTasks.find(item => item.id === id);
+  const canSubmitReport = task?.started || task?.displayStatus === 'incomplete';
   const latest = reports.find(item => item.taskId === id);
   const report = latest?.review === 'rejected' ? undefined : latest;
   const draft = drafts[`task:${id}`];
@@ -34,11 +35,11 @@ export default function WorkerTaskDetailScreen() {
       return;
     }
 
-    const blocked = taskExecutionError(task);
+    const blocked = taskExecutionError(task, new Date(), canSubmitReport);
     setExecutionError(blocked);
     if (blocked) return;
 
-    if (!task.started) {
+    if (!canSubmitReport) {
       void startTask(task.id);
       return;
     }
@@ -137,7 +138,7 @@ export default function WorkerTaskDetailScreen() {
         {task && (report || task.status !== 'done' || latest?.review === 'rejected') && (
           <Pressable accessibilityRole="button" style={shared.button} onPress={openTaskAction}>
             <Text style={shared.buttonText}>
-              {report ? 'Xem nhật ký' : !task.started ? 'Bắt đầu' : draft ? 'Tiếp tục bản nháp' : 'Gửi nhật ký hoàn thành'}
+              {report ? 'Xem nhật ký' : !canSubmitReport ? 'Bắt đầu' : draft ? 'Tiếp tục bản nháp' : 'Gửi nhật ký hoàn thành'}
             </Text>
           </Pressable>
         )}

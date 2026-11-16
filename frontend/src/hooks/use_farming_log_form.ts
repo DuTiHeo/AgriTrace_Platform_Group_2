@@ -125,7 +125,7 @@ export function useFarmingLogForm(draft: ReportDraft, updateDraft: (update: (old
       if (task.plotId !== draft.plotId)
         throw new Error('Vị trí nhật ký không khớp vùng trồng được giao. Hãy đến đúng vùng trồng và lấy lại GPS.');
 
-      const blocked = taskExecutionError(task);
+      const blocked = taskExecutionError(task, new Date(), true);
 
       if (blocked)
         throw new Error(blocked);

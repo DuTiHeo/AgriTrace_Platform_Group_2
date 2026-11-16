@@ -243,6 +243,8 @@ function useScheduleState() {
       if (currentToken.current !== accessToken) return;
       setTasks(old => old.map(t => t.id === taskId ? { ...mapTask(updated), owner: t.owner } : t));
       await loadTasks();
+      if (currentToken.current === accessToken && updated.status === 'incomplete')
+        setError('Đã quá hạn thực hiện công việc.');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Không lưu được trạng thái bắt đầu. Vui lòng thử lại.');
     }
