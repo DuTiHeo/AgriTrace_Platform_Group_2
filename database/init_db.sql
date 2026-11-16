@@ -404,8 +404,29 @@ COMMENT ON TABLE token_blacklist IS 'Cac access token da bi vo hieu hoa (do nguo
 --Dùng để dọn nhanh các bản ghi đã hết hạn (token đã tự hết hạn, không cần check nữa)
 CREATE INDEX idx_token_blacklist_expires ON token_blacklist(expires_at);
 
+-- 20. OTP_VERIFICATIONS (Bảng quản lý mã OTP và xác thực khôi phục mật khẩu)
+CREATE TABLE otp_verifications (
+    id                  UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id             UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    phone               VARCHAR(20) NOT NULL,
+    otp_hash            VARCHAR(255) NOT NULL,
+    purpose             VARCHAR(30) NOT NULL DEFAULT 'password_reset',
+    attempts            INT NOT NULL DEFAULT 0,
+    max_attempts        INT NOT NULL DEFAULT 5,
+    is_verified         BOOLEAN NOT NULL DEFAULT FALSE,
+    is_used             BOOLEAN NOT NULL DEFAULT FALSE,
+    reset_token_hash    VARCHAR(255),
+    expires_at          TIMESTAMP WITH TIME ZONE NOT NULL,
+    resend_available_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at          TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+COMMENT ON TABLE otp_verifications IS 'Bảng lưu trữ và xác thực mã OTP, đếm số lần thử và chống tấn công vét cạn';
+CREATE INDEX idx_otp_phone_purpose ON otp_verifications(phone, purpose);
+CREATE INDEX idx_otp_expires ON otp_verifications(expires_at);
+
 -- ============================================================================
--- 20. BUSINESS & AUDIT DATABASE TRIGGERS (Tự động hóa thông báo & Kiểm toán)
+-- 21. BUSINESS & AUDIT DATABASE TRIGGERS (Tự động hóa thông báo & Kiểm toán)
 -- ============================================================================
 
 -- ----------------------------------------------------------------------------

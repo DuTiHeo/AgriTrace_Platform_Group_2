@@ -40,6 +40,7 @@ async function request(path: string, options: RequestInit): Promise<Response> {
     if (!response.ok && !(path === '/auth/logout' && response.status === 401)) {
       if ([
         '/auth/forgot-password',
+        '/auth/resend-otp',
         '/auth/verify-otp',
         '/auth/reset-password',
         '/auth/change-password'
@@ -93,6 +94,20 @@ export async function forgotPassword(phone: string): Promise<RecoveryChallenge> 
     },
     body: JSON.stringify({
       phone
+    }),
+  });
+
+  return response.json();
+}
+
+export async function resendOtp(challenge: string): Promise<RecoveryChallenge> {
+  const response = await request('/auth/resend-otp', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      challenge
     }),
   });
 
