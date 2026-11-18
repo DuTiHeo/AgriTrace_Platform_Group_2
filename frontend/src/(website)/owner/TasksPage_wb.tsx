@@ -8,8 +8,6 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } fro
 import { useFarmContext } from "../../contexts/FarmContext_wb";
 import { getPersonnelList } from "../../sevices/personnelService_wb";
 import { plotService } from "../../sevices/plotService_wb";
-import { calculateExpectedHarvestDate, seasonService } from "../../sevices/seasonService_wb";
-import type { CropVariety } from "../../features/owner/season_wb";
 import { taskService } from "../../sevices/taskService_wb";
 import { getTeamList } from "../../sevices/teamService_wb";
 import type { Personnel } from "../../features/owner/personnel_wb";
@@ -17,14 +15,14 @@ import type { Plot } from "../../features/owner/plot_wb";
 import type { Task, TaskStatus } from "../../features/owner/task_wb";
 import type { TeamSummary } from "../../features/owner/team_wb";
 
-type Draft = { farmId: string; plotId: string; teamId: string; assigneeId: string; content: string; startAt: string; dueAt: string; varietyId: string };
+type Draft = { farmId: string; plotId: string; teamId: string; assigneeId: string; content: string; startAt: string; dueAt: string };
 type PageData = { tasks: Task[]; plots: Plot[]; teams: TeamSummary[]; personnel: Personnel[] };
 const labels: Record<TaskStatus, string> = { pending: "Chờ thực hiện", in_progress: "Đang thực hiện", completed: "Đã hoàn thành", cancelled: "Đã thu hồi", incomplete: "Chưa hoàn thành" };
 function localDate(date: Date) {
   return new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Ho_Chi_Minh", year: "numeric", month: "2-digit", day: "2-digit" }).format(date);
 }
 function emptyDraft(farmId: string): Draft {
-  return { farmId, plotId: "", teamId: "", assigneeId: "", content: "", startAt: localDate(new Date()), dueAt: localDate(new Date(Date.now()+86400000)), varietyId: "" };
+  return { farmId, plotId: "", teamId: "", assigneeId: "", content: "", startAt: localDate(new Date()), dueAt: localDate(new Date(Date.now()+86400000)) };
 }
 function formatTime(value: string) {
   const date = new Date(value);
@@ -37,11 +35,6 @@ export default function TasksPage() {
   const [loading,setLoading] = useState(true), [error,setError] = useState("");
   const [search,setSearch] = useState(""), [status,setStatus] = useState<TaskStatus|"all">("all");
   const [createOpen,setCreateOpen] = useState(false), [draft,setDraft] = useState(() => emptyDraft(""));
-  const [cropCatalog, setCropCatalog] = useState<{ varieties: CropVariety[]; message?: string }>({ varieties: [] });
-  const selectedVariety = cropCatalog.varieties.find(variety => variety.id === draft.varietyId);
-  const earliestDueDate = selectedVariety
-    ? calculateExpectedHarvestDate(draft.startAt, selectedVariety.growthDays + 1)
-    : draft.startAt;
   const [detailTarget, setDetailTarget] = useState<TaskGroup | null>(null);
   const [recallTarget, setRecallTarget] = useState<TaskGroup | null>(null);
   const [saving,setSaving] = useState(false), [formError,setFormError] = useState(""), [notice,setNotice] = useState("");
@@ -93,36 +86,21 @@ export default function TasksPage() {
     setFormError("");
     setCreateOpen(true);
   };
-  useEffect(() => {
-    if (!createOpen) return;
-    let active = true;
-    void seasonService.getCropVarieties().then(
-      varieties => { if (active) setCropCatalog({ varieties: varieties.filter(variety => Number.isInteger(variety.growthDays) && variety.growthDays > 0) }); },
-      () => { if (active) setCropCatalog({ varieties: [], message: "Không tải được danh sách giống cây." }); },
-    );
-    return () => { active = false; };
-  }, [createOpen]);
-
-  function updateSchedule(startAt: string, varietyId: string) {
-    const variety = cropCatalog.varieties.find(item => item.id === varietyId);
-    const minimum = variety ? calculateExpectedHarvestDate(startAt, variety.growthDays + 1) : startAt;
+  function updateSchedule(startAt: string) {
     setDraft(current => ({
-      ...current, startAt, varietyId, dueAt: current.dueAt < minimum ? minimum : current.dueAt,
+      ...current, startAt, dueAt: current.dueAt < startAt ? startAt : current.dueAt,
     }));
     setFormError("");
   }
   async function create(e:FormEvent) {
     e.preventDefault();
     if (saving) return;
-    if (draft.varietyId && !selectedVariety) { setFormError("Vui lòng chọn lại giống cây."); return; }
-    if (!draft.startAt || !draft.dueAt || draft.dueAt < earliestDueDate) {
-      setFormError(selectedVariety
-        ? `Hạn hoàn thành phải sau thời gian sinh trưởng ${selectedVariety.growthDays} ngày của giống cây.`
-        : "Hạn hoàn thành phải từ ngày bắt đầu trở đi.");
+    if (!draft.startAt || !draft.dueAt || draft.dueAt < draft.startAt) {
+      setFormError("Hạn hoàn thành phải từ ngày bắt đầu trở đi.");
       return;
     }
     setSaving(true); setFormError("");
-    try { await taskService.create({ ...draft, cropVarietyName: selectedVariety?.name, startAt: `${draft.startAt}T08:00:00+07:00`, dueAt: `${draft.dueAt}T17:00:00+07:00` }); setCreateOpen(false); setNotice("Đã giao công việc."); await load(); }
+    try { await taskService.create({ ...draft, startAt: `${draft.startAt}T08:00:00+07:00`, dueAt: `${draft.dueAt}T17:00:00+07:00` }); setCreateOpen(false); setNotice("Đã giao công việc."); await load(); }
     catch(e) { setFormError(e instanceof Error ? e.message : "Không thể giao công việc."); }
     finally { setSaving(false); }
   }
@@ -177,20 +155,11 @@ export default function TasksPage() {
         <label><span>Tổ phụ trách</span><select required value={draft.teamId} disabled={!draft.farmId} onChange={e=>setDraft({...draft,teamId:e.target.value,assigneeId:""})}><option value="">Chọn tổ</option>{teams.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}</select></label>
         <label><span>Người nhận</span><select required value={draft.assigneeId} disabled={!draft.teamId} onChange={e=>setDraft({...draft,assigneeId:e.target.value})}><option value="">Chọn người nhận</option>{members.map(p=><option key={p.id} value={p.id}>{p.fullName} · {p.role==="leader"?"Tổ trưởng":"Công nhân"}</option>)}</select></label>
         <label className="task-field-full"><span>Nội dung công việc</span><textarea required rows={3} maxLength={500} value={draft.content} onChange={e=>setDraft({...draft,content:e.target.value})}/></label>
-        <label className="task-field-full">
-          <span>Giống cây</span>
-          <select value={draft.varietyId} onChange={e=>updateSchedule(draft.startAt,e.target.value)}>
-            <option value="">Công việc không áp dụng giống cây</option>
-            {cropCatalog.varieties.map(variety => <option key={variety.id} value={variety.id}>{variety.name} · {variety.growthDays} ngày</option>)}
-          </select>
-          {cropCatalog.message && <small role="status">{cropCatalog.message}</small>}
-        </label>
         <div className="task-date-grid">
-          <label><span>Ngày bắt đầu</span><input required type="date" value={draft.startAt} onChange={e=>updateSchedule(e.target.value,draft.varietyId)}/></label>
+          <label><span>Ngày bắt đầu</span><input required type="date" value={draft.startAt} onChange={e=>updateSchedule(e.target.value)}/></label>
           <label>
             <span>Ngày hoàn thành</span>
-            <input required type="date" min={earliestDueDate} value={draft.dueAt} onChange={e=>setDraft({...draft,dueAt:e.target.value})} aria-describedby={selectedVariety ? "task-minimum-due-date" : undefined}/>
-            {selectedVariety && earliestDueDate && <small id="task-minimum-due-date">Sớm nhất {earliestDueDate.split("-").reverse().join("/")} ({selectedVariety.growthDays + 1} ngày sau ngày bắt đầu).</small>}
+            <input required type="date" min={draft.startAt} value={draft.dueAt} onChange={e=>setDraft({...draft,dueAt:e.target.value})}/>
           </label>
         </div>
         {formError && <div className="form-error task-field-full" role="alert">{formError}</div>}
