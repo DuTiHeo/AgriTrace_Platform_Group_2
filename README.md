@@ -64,11 +64,17 @@ Repository được tổ chức theo mô hình Monorepo.
 ## 3. Khởi Chạy Nhanh Hệ Thống (Quick Start)
 
 ### Bước 1: Khởi động Database & Backend (Docker Compose)
+> **Yêu cầu:** Đảm bảo ứng dụng **Docker Desktop** đã được mở và đang chạy (Engine Running) trên máy tính của bạn trước khi gõ lệnh.
+
 ```bash
-# Khởi chạy Database PostGIS (cổng 5432) và Backend FastAPI (cổng 8000)
+# 1. Khởi chạy Database PostGIS (cổng 5432) và Backend FastAPI (cổng 8000)
 docker compose up -d --build
 
-# Nạp dữ liệu mẫu (chỉ cần chạy lần đầu sau khi container DB khởi động)
+# 2. Nạp dữ liệu mẫu (chờ DB khởi động khoảng 5-10 giây rồi chạy lần đầu):
+# Nếu dùng PowerShell (Windows):
+Get-Content database/sample_data.sql | docker exec -i agritrace_db psql -U agritrace -d agritrace_farm
+
+# Nếu dùng Git Bash / Linux / macOS / CMD:
 docker exec -i agritrace_db psql -U agritrace -d agritrace_farm < database/sample_data.sql
 ```
 - **Kiểm tra trạng thái**: `curl -s http://localhost:8000/health` $\rightarrow$ `{"status":"ok","message":"Backend da ket noi thanh cong voi Database"}`
@@ -92,7 +98,7 @@ npm run owner:dev        # Khởi chạy server phát triển
 Ứng dụng di động tại `frontend/src` dành cho Công nhân và Tổ trưởng:
 ```bash
 cd frontend
-npm ci                   # Cài đặt thư viện theo lockfile (lần đầu)
+npm install              # Cài đặt thư viện (nếu đã chạy ở Bước 2 thì có thể bỏ qua bước này)
 cp .env.example .env     # Sửa EXPO_PUBLIC_API_BASE_URL thành IP mạng LAN máy bạn (ví dụ: http://192.168.1.53:8000)
 npm start -- --clear     # Khởi chạy Expo Dev Server (Cổng 8083)
 ```

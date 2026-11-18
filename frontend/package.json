@@ -74,7 +74,7 @@
     "web:preview": "vite preview --config vite.config.mts",
     "build": "npm run web:build",
     "lint": "npm run mobile:lint && npm run web:lint",
-    "owner:install": "npm ci",
+    "owner:install": "npm install",
     "owner:dev": "npm run web",
     "owner:build": "tsc --noEmit -p tsconfig.web.json && vite build --config vite.config.mts",
     "owner:lint": "npm run web:lint",

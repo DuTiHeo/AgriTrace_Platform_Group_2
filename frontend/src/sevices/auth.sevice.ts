@@ -47,7 +47,7 @@ async function request(path: string, options: RequestInit): Promise<Response> {
       ].includes(path)) {
         const body = await response.json().catch(() => null);
 
-        if (response.status < 500 && typeof body?.detail === 'string')
+        if (typeof body?.detail === 'string')
           throw new Error(body.detail);
       }
 
@@ -70,11 +70,26 @@ async function request(path: string, options: RequestInit): Promise<Response> {
       throw new Error('Máy chủ phản hồi quá lâu. Vui lòng thử lại.');
     }
 
-    if (error instanceof TypeError) {
-      throw new Error('Không thể kết nối máy chủ. Vui lòng thử lại.');
+    // Re-throw lỗi đã được xử lý ở trên (response không ok → message tiếng Việt)
+    if (error instanceof Error && !(error instanceof TypeError)) {
+      const msg = error.message;
+      // Nếu message chứa tên exception Java hoặc lỗi fetch thô thì đây là lỗi mạng,
+      // không re-throw mà để rơi xuống thông báo thân thiện bên dưới.
+      const isRawNetworkError =
+        msg.includes('java.net.') ||
+        msg.includes('fetch failed') ||
+        msg.includes('Network request failed') ||
+        msg.includes('Failed to fetch') ||
+        msg.includes('network') ||
+        msg.includes('ECONNREFUSED') ||
+        msg.includes('ETIMEDOUT');
+      if (!isRawNetworkError) {
+        throw error;
+      }
     }
 
-    throw error;
+    // Mọi lỗi mạng khác (TypeError, Java exceptions trên Android, v.v.)
+    throw new Error('Không thể kết nối máy chủ. Vui lòng kiểm tra kết nối mạng và thử lại.');
   } finally {
     clearTimeout(timeout);
   }

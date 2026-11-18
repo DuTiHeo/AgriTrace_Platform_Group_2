@@ -29,6 +29,8 @@ services:
     volumes:
       # Mount code de sua code xong tu reload, khong can build lai image
       - ./backend/app:/app/app
+      # Mount file .env de container luon nhan gia tri moi nhat khi sua file .env
+      - ./backend/.env:/app/.env
       # Anh upload cua nhat ky canh tac duoc luu tren disk cuc bo qua Docker volume rieng
       - ./backend/uploads:/app/uploads
 
