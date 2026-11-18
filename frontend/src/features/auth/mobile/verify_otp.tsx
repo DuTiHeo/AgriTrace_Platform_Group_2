@@ -163,7 +163,7 @@ export default function VerifyOtpScreen() {
                     ? `OTP thử nghiệm tự điền sau ${seconds}s`
                     : 'OTP thử nghiệm đã tự điền. Nhấn Xác nhận.'
                 )
-              : 'Nhập mã OTP của bạn.'}
+              : 'Vui lòng kiểm tra tin nhắn SMS trên điện thoại và nhập mã OTP 4 chữ số.'}
           </Text>
 
           {error ? (

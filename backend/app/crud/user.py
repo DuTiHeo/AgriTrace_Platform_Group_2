@@ -3,8 +3,28 @@ from sqlalchemy.orm import Session
 from uuid import UUID
 
 
+def normalize_phone_variants(phone: str) -> list[str]:
+    """Tạo các biến thể phổ biến của số điện thoại (09xxx, +84xxx, 84xxx) để tìm kiếm linh hoạt."""
+    raw = phone.strip().replace(" ", "").replace("-", "")
+    variants = {raw, phone.strip()}
+    if raw.startswith("+84"):
+        variants.add("0" + raw[3:])
+        variants.add("84" + raw[3:])
+    elif raw.startswith("84"):
+        variants.add("0" + raw[2:])
+        variants.add("+" + raw)
+    elif raw.startswith("0"):
+        variants.add("+84" + raw[1:])
+        variants.add("84" + raw[1:])
+    return list(variants)
+
+
 def get_user_by_phone(db: Session, phone: str) -> dict | None:
-    row = db.execute(text("SELECT * FROM users WHERE phone = :phone"), {"phone": phone}).mappings().first()
+    variants = tuple(normalize_phone_variants(phone))
+    row = db.execute(
+        text("SELECT * FROM users WHERE phone IN :variants"),
+        {"variants": variants}
+    ).mappings().first()
     return dict(row) if row else None
 
 
@@ -22,7 +42,11 @@ def update_password(db: Session, user_id: UUID, new_password_hash: str) -> None:
 # HELPER KIEM TRA TRUNG - de router bao loi than thien (400)
 # thay vi de rot xuong loi constraint 500 kho doc cua Postgres 
 def phone_exists(db: Session, phone: str) -> bool:
-    row = db.execute(text("SELECT 1 FROM users WHERE phone = :phone"), {"phone": phone}).first()
+    variants = tuple(normalize_phone_variants(phone))
+    row = db.execute(
+        text("SELECT 1 FROM users WHERE phone IN :variants"),
+        {"variants": variants}
+    ).first()
     return row is not None
  
  
