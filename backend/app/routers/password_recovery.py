@@ -109,10 +109,12 @@ def forgot_password(request: Request, payload: PhoneRequest, db: Session = Depen
     )
 
     # Gửi mã OTP qua SMS Service
-    sms_sent = send_sms_otp(phone=phone, otp=otp, expire_minutes=settings.otp_expire_minutes)
-    if not sms_sent:
-        # Trong trường hợp gửi SMS thất bại nghiêm trọng từ cổng nhà mạng
-        pass
+    sms_sent, sms_error = send_sms_otp(phone=phone, otp=otp, expire_minutes=settings.otp_expire_minutes)
+    if not sms_sent and settings.sms_provider.lower().strip() != "console":
+        raise HTTPException(
+            status_code=400,
+            detail=sms_error
+        )
 
     session_id = str(otp_record["id"])
     challenge_token = issue_token(
@@ -131,8 +133,8 @@ def forgot_password(request: Request, payload: PhoneRequest, db: Session = Depen
         "message": "Mã xác nhận OTP đã được gửi về số điện thoại của bạn."
     }
 
-    # Bổ sung demo_otp nếu đang bật chế độ dev/test để thuận tiện kiểm thử
-    if settings.password_reset_demo_enabled or settings.sms_provider == "console":
+    # Bổ sung demo_otp CHỈ KHI đang ở chế độ console mock và bật demo_enabled
+    if settings.sms_provider.lower().strip() == "console" and settings.password_reset_demo_enabled:
         response_data["demo_otp"] = otp
 
     return response_data
@@ -175,7 +177,12 @@ def resend_otp(request: Request, payload: ResendRequest, db: Session = Depends(g
         purpose="password_reset"
     )
 
-    send_sms_otp(phone=user["phone"], otp=otp, expire_minutes=settings.otp_expire_minutes)
+    resend_sms_sent, resend_sms_error = send_sms_otp(phone=user["phone"], otp=otp, expire_minutes=settings.otp_expire_minutes)
+    if not resend_sms_sent and settings.sms_provider.lower().strip() != "console":
+        raise HTTPException(
+            status_code=400,
+            detail=resend_sms_error
+        )
 
     new_session_id = str(otp_record["id"])
     new_challenge = issue_token(
@@ -194,7 +201,7 @@ def resend_otp(request: Request, payload: ResendRequest, db: Session = Depends(g
         "message": "Đã gửi lại mã OTP mới về số điện thoại của bạn."
     }
 
-    if settings.password_reset_demo_enabled or settings.sms_provider == "console":
+    if settings.sms_provider.lower().strip() == "console" and settings.password_reset_demo_enabled:
         response_data["demo_otp"] = otp
 
     return response_data

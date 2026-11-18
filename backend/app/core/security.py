@@ -11,12 +11,23 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.crud import user as crud_user
+from pathlib import Path
 from dotenv import load_dotenv
 
 from app.crud import token_blacklist as crud_blacklist
 
 import os
-load_dotenv()
+_env_candidates = [
+    Path(__file__).resolve().parent.parent.parent / '.env',
+    Path.cwd() / 'backend' / '.env',
+    Path.cwd() / '.env',
+]
+for _candidate in _env_candidates:
+    if _candidate.is_file():
+        load_dotenv(dotenv_path=_candidate, override=True)
+        break
+else:
+    load_dotenv(override=True)
 
 SECRET_KEY = os.getenv('SECRET_KEY')
 ALGORITHM = os.getenv('ALGORITHM')

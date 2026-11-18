@@ -78,8 +78,7 @@ export default function ForgotPasswordScreen() {
           <Text style={styles.title}>Quên mật khẩu?</Text>
 
           <Text style={styles.description}>
-            Nhập số điện thoại đã đăng ký để khôi phục mật khẩu. Chế độ thử
-            nghiệm: mã OTP sẽ tự điền sau 5 giây, chưa gửi SMS thật.
+            Nhập số điện thoại đã đăng ký để nhận mã xác nhận gồm 4 chữ số.
           </Text>
 
           <View style={styles.form}>
