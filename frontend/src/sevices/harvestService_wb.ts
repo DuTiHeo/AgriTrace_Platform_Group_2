@@ -21,6 +21,7 @@ type HarvestBatchDto = {
     planting_date?: string | null;
     actual_harvest_date?: string | null;
     season_status?: string | null;
+    status?: string;
   }>;
 };
 
@@ -29,6 +30,35 @@ type BatchSeasonDto = {
   season_id: string;
   contributed_quantity: number | null;
 };
+
+type SeasonDto = {
+  season_id: string;
+  plot_id: string;
+  org_id: string;
+  crop_id: string;
+  status: string;
+  actual_harvest_date: string | null;
+};
+
+type SeasonBatchDto = {
+  batch_id: string;
+  batch_status: HarvestBatch["status"];
+  status: string;
+  harvest_date: string | null;
+};
+
+export class HarvestSeasonSyncError extends Error {
+  readonly batch: HarvestBatch;
+  readonly seasonIds: string[];
+
+  constructor(batch: HarvestBatch, seasonIds: string[], cause: unknown) {
+    const savedAction = batch.status === "cancelled" ? "đã được hủy" : "đã được lưu";
+    super(`Lô ${batch.code} ${savedAction}, nhưng chưa cập nhật được trạng thái mùa vụ. ${cause instanceof Error ? cause.message : "Vui lòng thử lại."}`);
+    this.name = "HarvestSeasonSyncError";
+    this.batch = batch;
+    this.seasonIds = seasonIds;
+  }
+}
 
 function mapHarvestBatch(batch: HarvestBatchDto): HarvestBatch {
   const updatedAt = batch.updated_at ?? batch.created_at ?? "";
@@ -50,8 +80,117 @@ function mapHarvestBatch(batch: HarvestBatchDto): HarvestBatch {
   };
 }
 
-async function getHarvestDetail(id: string) {
-  return httpClient.get<HarvestBatchDto>(`/harvest-batches/${id}`);
+async function getHarvestDetail(id: string, fresh = false) {
+  return httpClient.get<HarvestBatchDto>(`/harvest-batches/${encodeURIComponent(id)}`, fresh ? { cacheTtl: 0 } : {});
+}
+
+function notifyHarvestChanged() {
+  window.dispatchEvent(new Event("harvest-batches-updated"));
+  window.dispatchEvent(new Event("seasons-updated"));
+  window.dispatchEvent(new Event("plots-updated"));
+}
+
+function batchSeasonIds(batch: HarvestBatchDto) {
+  return (batch.seasons ?? []).filter(season => season.status !== "cancelled").map(season => season.season_id);
+}
+
+function getSeason(id: string) {
+  return httpClient.get<SeasonDto>(`/seasons/${encodeURIComponent(id)}`, { cacheTtl: 0 });
+}
+
+async function effectiveBatches(seasonId: string) {
+  const links = await httpClient.get<SeasonBatchDto[]>(
+    `/batch-seasons/by-season/${encodeURIComponent(seasonId)}?include_cancelled=true`, { cacheTtl: 0 },
+  );
+  return links.filter(link => link.status === "active" && ["pending", "ready"].includes(link.batch_status));
+}
+
+async function assertCanReopen(season: SeasonDto) {
+  const seasons = await httpClient.get<SeasonDto[]>(`/seasons?plot_id=${encodeURIComponent(season.plot_id)}`, { cacheTtl: 0 });
+  if (seasons.some(other => other.season_id !== season.season_id && ["growing", "ready_to_harvest"].includes(other.status))) {
+    throw new Error("Không thể mở lại mùa vụ cũ vì vùng trồng đã có mùa vụ mới đang hoạt động. Vui lòng xử lý mùa vụ mới trước khi thu hồi lô cuối cùng.");
+  }
+}
+
+async function checkReleaseSeasons(batchId: string, seasonIds: string[]) {
+  for (const id of new Set(seasonIds)) {
+    const [season, batches] = await Promise.all([getSeason(id), effectiveBatches(id)]);
+    if (!batches.some(batch => batch.batch_id !== batchId)) await assertCanReopen(season);
+  }
+}
+
+function localDate(value: string) {
+  return new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "Asia/Ho_Chi_Minh", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(new Date(value));
+}
+
+async function synchronizeSeason(seasonId: string) {
+  const [season, batches] = await Promise.all([getSeason(seasonId), effectiveBatches(seasonId)]);
+  if (batches.length) {
+    if (!["ready_to_harvest", "completed"].includes(season.status)) {
+      throw new Error("Mùa vụ chưa sẵn sàng thu hoạch, không thể đánh dấu hoàn thành.");
+    }
+    const dates = await Promise.all(batches.map(async batch => {
+      if (batch.harvest_date) return batch.harvest_date;
+      const detail = await getHarvestDetail(batch.batch_id, true);
+      return detail.created_at ? localDate(detail.created_at) : localDate(new Date().toISOString());
+    }));
+    const actualHarvestDate = dates.sort().at(-1)!;
+    if (season.status !== "completed" || season.actual_harvest_date !== actualHarvestDate) {
+      await httpClient.patch(`/seasons/${encodeURIComponent(seasonId)}`, {
+        status: "completed", actual_harvest_date: actualHarvestDate,
+      });
+    }
+  } else if (season.status === "completed" || (season.status === "ready_to_harvest" && season.actual_harvest_date !== null)) {
+    await assertCanReopen(season);
+    await httpClient.patch(`/seasons/${encodeURIComponent(seasonId)}`, {
+      status: "ready_to_harvest", actual_harvest_date: null,
+    });
+  }
+}
+
+async function finishHarvestChange(batch: HarvestBatchDto, seasonIds: string[]) {
+  const affected = [...new Set(seasonIds)];
+  try {
+    // Wait for each update before exposing retry; never leave PATCHes running behind it.
+    for (const id of affected) await synchronizeSeason(id);
+    return mapHarvestBatch(batch);
+  } catch (cause) {
+    throw new HarvestSeasonSyncError(mapHarvestBatch(batch), affected, cause);
+  } finally {
+    // A saved lot must refresh views even if the following season request fails.
+    notifyHarvestChanged();
+  }
+}
+
+async function finishContributionChange(fallback: HarvestBatchDto, seasonIds: string[]) {
+  let batch: HarvestBatchDto;
+  try {
+    batch = await getHarvestDetail(fallback.batch_id, true);
+  } catch (cause) {
+    notifyHarvestChanged();
+    throw new HarvestSeasonSyncError(mapHarvestBatch(fallback), seasonIds, cause);
+  }
+  return finishHarvestChange(batch, seasonIds);
+}
+
+async function validateNewHarvest(input: CreateHarvestBatchInput) {
+  const ids = input.contributions.map(contribution => contribution.seasonId);
+  if (!ids.length || new Set(ids).size !== ids.length || input.contributions.some(item => !Number.isFinite(item.quantityKg) || item.quantityKg <= 0)) {
+    throw new Error("Chọn các mùa vụ khác nhau và nhập sản lượng lớn hơn 0.");
+  }
+  const date = new Date(`${input.harvestDate}T00:00:00Z`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.harvestDate) || !Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== input.harvestDate) {
+    throw new Error("Ngày thu hoạch không hợp lệ.");
+  }
+  const seasons = await Promise.all(ids.map(getSeason));
+  if (seasons.some(season => season.org_id !== input.farmId || !["ready_to_harvest", "completed"].includes(season.status))) {
+    throw new Error("Mùa vụ phải thuộc nông trại đã chọn và sẵn sàng thu hoạch hoặc đã hoàn thành.");
+  }
+  if (new Set(seasons.map(season => season.crop_id)).size !== 1) {
+    throw new Error("Các mùa vụ trong cùng lô thu hoạch phải cùng giống cây trồng.");
+  }
 }
 
 export const harvestService = {
@@ -89,6 +228,7 @@ export const harvestService = {
   },
 
   async create(input: CreateHarvestBatchInput): Promise<HarvestBatch> {
+    await validateNewHarvest(input);
     const created = await httpClient.post<HarvestBatchDto>("/harvest-batches", {
       org_id: input.farmId,
       harvest_date: input.harvestDate,
@@ -97,9 +237,7 @@ export const harvestService = {
         contributed_quantity: contribution.quantityKg,
       })),
     });
-    window.dispatchEvent(new Event("harvest-batches-updated"));
-    window.dispatchEvent(new Event("seasons-updated"));
-    return mapHarvestBatch(created);
+    return finishHarvestChange(created, input.contributions.map(item => item.seasonId));
   },
 
   async update(id: string, input: UpdateHarvestBatchInput): Promise<HarvestBatch> {
@@ -110,20 +248,30 @@ export const harvestService = {
     if (input.harvestDate !== undefined) payload.harvest_date = input.harvestDate;
     if (input.status !== undefined) payload.status = input.status;
     const updated = await httpClient.patch<HarvestBatchDto>(`/harvest-batches/${id}`, payload);
-    window.dispatchEvent(new Event("harvest-batches-updated"));
+    if (input.harvestDate !== undefined || input.status !== undefined) {
+      return finishHarvestChange(updated, batchSeasonIds(updated));
+    }
+    notifyHarvestChanged();
     return mapHarvestBatch(updated);
   },
 
   async generateTraceCode(id: string): Promise<HarvestBatch> {
     const updated = await httpClient.post<HarvestBatchDto>(`/harvest-batches/${id}/generate-qr`);
-    window.dispatchEvent(new Event("harvest-batches-updated"));
+    notifyHarvestChanged();
     return mapHarvestBatch(updated);
   },
 
   async cancel(id: string): Promise<HarvestBatch> {
+    const before = await getHarvestDetail(id, true);
+    const seasonIds = batchSeasonIds(before);
+    if (before.status !== "cancelled") await checkReleaseSeasons(id, seasonIds);
     const cancelled = await httpClient.delete<HarvestBatchDto>(`/harvest-batches/${id}`);
-    window.dispatchEvent(new Event("harvest-batches-updated"));
-    return mapHarvestBatch(cancelled);
+    return finishHarvestChange(cancelled, seasonIds);
+  },
+
+  async syncSeasonStatuses(id: string, seasonIds?: string[]): Promise<HarvestBatch> {
+    const batch = await getHarvestDetail(id, true);
+    return finishHarvestChange(batch, seasonIds ?? batchSeasonIds(batch));
   },
 
   async getContributions(batchId: string): Promise<HarvestContribution[]> {
@@ -138,13 +286,17 @@ export const harvestService = {
     batchId: string,
     contribution: HarvestContribution,
   ): Promise<HarvestBatch> {
+    const before = await getHarvestDetail(batchId, true);
     await httpClient.post<BatchSeasonDto>("/batch-seasons", {
       batch_id: batchId,
       season_id: contribution.seasonId,
       contributed_quantity: contribution.quantityKg,
     });
-    window.dispatchEvent(new Event("harvest-batches-updated"));
-    return mapHarvestBatch(await getHarvestDetail(batchId));
+    return finishContributionChange({
+      ...before,
+      quantity: (before.quantity ?? 0) + contribution.quantityKg,
+      seasons: [...(before.seasons ?? []), { season_id: contribution.seasonId, contributed_quantity: contribution.quantityKg }],
+    }, [contribution.seasonId]);
   },
 
   async updateContribution(
@@ -155,13 +307,19 @@ export const harvestService = {
       `/batch-seasons/${batchId}/${contribution.seasonId}`,
       { contributed_quantity: contribution.quantityKg },
     );
-    window.dispatchEvent(new Event("harvest-batches-updated"));
+    notifyHarvestChanged();
     return mapHarvestBatch(await getHarvestDetail(batchId));
   },
 
   async removeContribution(batchId: string, seasonId: string): Promise<HarvestBatch> {
+    const before = await getHarvestDetail(batchId, true);
+    if (before.status !== "cancelled") await checkReleaseSeasons(batchId, [seasonId]);
     await httpClient.delete<BatchSeasonDto>(`/batch-seasons/${batchId}/${seasonId}`);
-    window.dispatchEvent(new Event("harvest-batches-updated"));
-    return mapHarvestBatch(await getHarvestDetail(batchId));
+    const removed = before.seasons?.find(season => season.season_id === seasonId);
+    return finishContributionChange({
+      ...before,
+      quantity: (before.quantity ?? 0) - (removed?.contributed_quantity ?? 0),
+      seasons: before.seasons?.filter(season => season.season_id !== seasonId),
+    }, [seasonId]);
   },
 };

@@ -73,7 +73,7 @@ export default function HomeScreen() {
   );
 
   const ownerTasks = tasks.filter(
-    t => t.owner && (!taskId || t.id === taskId)
+    t => t.owner && t.status !== 'done' && (!taskId || t.id === taskId)
   );
 
   const active = members.filter(m => m.active);

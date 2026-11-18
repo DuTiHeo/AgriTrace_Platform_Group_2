@@ -175,8 +175,11 @@ function useScheduleState() {
     ++loadSequence.current;
     pendingLoad.current = null;
     const mapped = created.map(task => ({ ...mapTask(task), owner: task.worker_id === sessionUserId(accessToken ?? '') }));
-    setTasks(old => groupLeaderTasks([...mapped, ...old.filter(task => !created.some(item => task.taskIds.includes(item.task_id)))]));
-  }, [accessToken]);
+    setTasks(old => {
+      const next = [...mapped, ...old.filter(task => !created.some(item => task.taskIds.includes(item.task_id)))];
+      return user?.role === 'leader' ? groupLeaderTasks(next) : next;
+    });
+  }, [accessToken, user?.role]);
 
   const loadTasks = useCallback(async () => {
     if (!accessToken || !user || ![
@@ -255,6 +258,21 @@ function useScheduleState() {
     user
   ]);
 
+  const completeTask = useCallback(async (taskId: string) => {
+    if (!accessToken || !user || !['worker', 'leader'].includes(user.role))
+      throw new Error('Vui lòng đăng nhập lại để hoàn thành công việc.');
+
+    const updated = await updateTaskStatus(accessToken, taskId, 'completed');
+    if (currentToken.current !== accessToken)
+      throw new Error('Phiên đăng nhập đã thay đổi.');
+
+    // Apply the confirmed write before refreshing. Older GETs cannot undo it,
+    // and a refresh failure must not make a saved completion look unsuccessful.
+    registerCreatedTasks([updated]);
+    void loadTasks();
+    return updated;
+  }, [accessToken, user, registerCreatedTasks, loadTasks]);
+
   return {
     workerTasks: user?.role === 'worker' ? tasks : [],
     leaderTasks: user?.role === 'leader' ? tasks : [],
@@ -264,6 +282,7 @@ function useScheduleState() {
     loadWorkerTasks: loadTasks,
     loadTasks,
     startTask,
+    completeTask,
     registerCreatedTasks,
   };
 }

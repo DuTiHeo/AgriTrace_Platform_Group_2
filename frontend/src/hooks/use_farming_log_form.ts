@@ -2,14 +2,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/contexts/auth_context';
 import { type ReportDraft, useReports } from '@/contexts/report_context';
 import { getLogLocation, prepareLogPhoto, uploadDraftPhotos } from '@/sevices/log_media';
-import { updateTaskStatus, locatePlot } from '@/sevices/farming_log.service';
+import { locatePlot } from '@/sevices/farming_log.service';
 import { useWorkSchedule } from '@/contexts/work_schedule_context';
 import { taskExecutionError } from '@/sevices/journal_filter';
 
 export function useFarmingLogForm(draft: ReportDraft, updateDraft: (update: (old: ReportDraft) => ReportDraft) => void) {
   const { accessToken } = useAuth();
   const { seasons, createReport, storeDetail } = useReports();
-  const { loadWorkerTasks, workerTasks, leaderTasks } = useWorkSchedule();
+  const { completeTask, workerTasks, leaderTasks } = useWorkSchedule();
   const [gpsStatus, setGpsStatus] = useState('Đang lấy vị trí hiện tại…');
   const [locationError, setLocationError] = useState<string | null>(null);
   const [isLocating, setIsLocating] = useState(false);
@@ -162,8 +162,7 @@ export function useFarmingLogForm(draft: ReportDraft, updateDraft: (update: (old
 
     if (draft.taskId) {
       checkExecutionDate();
-      await updateTaskStatus(accessToken, draft.taskId, 'completed');
-      await loadWorkerTasks();
+      await completeTask(draft.taskId);
     }
 
     return detail;

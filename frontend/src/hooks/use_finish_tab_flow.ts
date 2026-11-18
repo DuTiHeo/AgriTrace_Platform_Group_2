@@ -3,7 +3,6 @@ import { useNavigation } from 'expo-router';
 type HistoryEntry = {
   type: string;
   key: string;
-  params?: object
 };
 
 /** Replace a completed tab flow without losing the screen that opened it. */
@@ -14,34 +13,22 @@ export function useFinishTabFlow() {
   return (name: string) => {
     const state = navigation.getState();
     if (!state) throw new Error('Navigation is not ready.');
-    navigation.dispatch((() => {
-      const index = state.routes.findIndex(route => route.name === name);
+    if (!state.routeNames.includes(name))
+      throw new Error('A completed tab flow must target a sibling tab.');
 
-      if (state.type !== 'tab' || index < 0 || !('history' in state)) {
-        throw new Error('A completed tab flow must target a sibling tab.');
-      }
+    const route = state.routes.find(item => item.name === name);
+    const history = (state.history as HistoryEntry[] | undefined)?.filter(item => item.type === 'route');
+    if (route && history?.at(-2)?.key === route.key) {
+      navigation.dispatch({ type: 'GO_BACK', target: state.key });
+      return;
+    }
 
-      const route = state.routes[index];
-      const history = (state.history as HistoryEntry[]).slice(0, -1);
-      // If the flow came from this tab, return to that entry instead of duplicating it.
-
-      if (history[history.length - 1]?.key !== route.key) {
-        history.push({
-          type: 'route',
-          key: route.key,
-          params: route.params
-        });
-      }
-
-      return {
-        type: 'RESET',
-        target: state.key,
-        payload: {
-          ...state,
-          index,
-          history
-        },
-      };
-    })());
+    // The router creates an unvisited tab and removes the completed form from Back history.
+    // Seeded Expo states can omit both `type` and the unvisited route in `routes`.
+    navigation.dispatch({
+      type: 'REPLACE',
+      target: state.key,
+      payload: { name, params: route?.params },
+    });
   };
 }

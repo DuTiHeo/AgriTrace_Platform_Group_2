@@ -9,11 +9,12 @@ import {
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useFarmContext } from "../../contexts/FarmContext_wb";
-import { harvestService } from "../../sevices/harvestService_wb";
+import { HarvestSeasonSyncError, harvestService } from "../../sevices/harvestService_wb";
 import { plotService } from "../../sevices/plotService_wb";
 import { seasonService } from "../../sevices/seasonService_wb";
 import type { Plot } from "../../features/owner/plot_wb";
 import type { Season } from "../../features/owner/season_wb";
+import type { HarvestBatch } from "../../features/owner/harvest_wb";
 
 function todayKey() {
   return new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Ho_Chi_Minh", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
@@ -38,6 +39,8 @@ function CreateHarvestPage() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [savedBatch, setSavedBatch] = useState<HarvestBatch | null>(null);
+  const [pendingSeasonIds, setPendingSeasonIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (farmId || farms.length === 0) return;
@@ -110,8 +113,8 @@ function CreateHarvestPage() {
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (saving || loading) return;
-    if (!selectedSeasonIds.length || selectedSeasonIds.some(id => !Number.isFinite(quantities[id]) || quantities[id] <= 0)) {
+    if (saving || (!savedBatch && loading)) return;
+    if (!savedBatch && (!selectedSeasonIds.length || selectedSeasonIds.some(id => !Number.isFinite(quantities[id]) || quantities[id] <= 0))) {
       setError("Chọn ít nhất một mùa vụ và nhập sản lượng lớn hơn 0.");
       return;
     }
@@ -119,20 +122,26 @@ function CreateHarvestPage() {
     setError("");
 
     try {
-      const batch = await harvestService.create({
-        farmId,
-        harvestDate,
-        contributions: selectedSeasonIds.map((seasonId) => ({
-          seasonId,
-          quantityKg: quantities[seasonId],
-        })),
-      });
+      const batch = savedBatch
+        ? await harvestService.syncSeasonStatuses(savedBatch.id, pendingSeasonIds)
+        : await harvestService.create({
+          farmId,
+          harvestDate,
+          contributions: selectedSeasonIds.map((seasonId) => ({
+            seasonId,
+            quantityKg: quantities[seasonId],
+          })),
+        });
       navigate(`/harvests/${batch.id}`);
     } catch (submitError) {
+      const persistedBatch = submitError instanceof HarvestSeasonSyncError ? submitError.batch : savedBatch;
+      if (persistedBatch) setSavedBatch(persistedBatch);
+      if (submitError instanceof HarvestSeasonSyncError) setPendingSeasonIds(submitError.seasonIds);
+      const message = submitError instanceof Error ? submitError.message : "Không thể cập nhật mùa vụ.";
       setError(
-        submitError instanceof Error
-          ? submitError.message
-          : "Không thể tạo lô thu hoạch.",
+        persistedBatch
+          ? `Lô ${persistedBatch.code || persistedBatch.id} đã được tạo. Mùa vụ chưa được cập nhật đầy đủ. Chọn “Đồng bộ mùa vụ” để thử lại. ${message}`
+          : submitError instanceof Error ? submitError.message : "Không thể tạo lô thu hoạch.",
       );
     } finally {
       setSaving(false);
@@ -166,7 +175,7 @@ function CreateHarvestPage() {
               <span>Nông trại <b>*</b></span>
               <select
                 required
-                disabled={saving}
+                disabled={saving || Boolean(savedBatch)}
                 value={farmId}
                 onChange={(event) => { setFarmId(event.target.value); setSeasons([]); setPlots([]); setQuantities({}); setError(""); setLoading(!!event.target.value); }}
               >
@@ -184,7 +193,7 @@ function CreateHarvestPage() {
               <span>Ngày thu hoạch <b>*</b></span>
               <input
                 required
-                disabled={saving}
+                disabled={saving || Boolean(savedBatch)}
                 type="date"
                 max={todayKey()}
                 value={harvestDate}
@@ -203,6 +212,7 @@ function CreateHarvestPage() {
               <h2>Mùa vụ đóng góp sản lượng</h2>
               <p>
                 Chọn các mùa vụ cùng giống cây và nhập sản lượng đóng góp.
+                {" "}Tạo lô sẽ đánh dấu các mùa vụ đã chọn là đã hoàn thành.
               </p>
             </div>
           </div>
@@ -236,7 +246,7 @@ function CreateHarvestPage() {
                       <input
                         type="checkbox"
                         checked={selected}
-                        disabled={incompatible || saving}
+                        disabled={incompatible || saving || Boolean(savedBatch)}
                         onChange={(event) =>
                           setSeasonSelected(season.id, event.target.checked)
                         }
@@ -268,7 +278,7 @@ function CreateHarvestPage() {
                             min="0.01"
                             step="0.01"
                             required
-                            disabled={saving}
+                            disabled={saving || Boolean(savedBatch)}
                             aria-label={`Sản lượng đóng góp của ${season.name} (kg)`}
                             value={quantities[season.id] || ""}
                             onChange={(event) =>
@@ -305,17 +315,20 @@ function CreateHarvestPage() {
             className="btn btn-secondary"
             type="button"
             disabled={saving}
-            onClick={() => navigate("/harvests")}
+            onClick={() => navigate(savedBatch ? `/harvests/${savedBatch.id}` : "/harvests")}
           >
-            Hủy
+            {savedBatch ? "Xem lô đã tạo" : "Hủy"}
           </button>
           <button
             className="btn btn-primary"
             type="submit"
-            disabled={saving || loading || !farmId || selectedSeasonIds.length === 0}
+            formNoValidate={Boolean(savedBatch)}
+            disabled={saving || (!savedBatch && (loading || !farmId || selectedSeasonIds.length === 0))}
           >
             <PackageCheck size={17} />
-            {saving ? "Đang tạo..." : "Tạo lô thu hoạch"}
+            {savedBatch
+              ? saving ? "Đang đồng bộ..." : "Đồng bộ mùa vụ"
+              : saving ? "Đang tạo..." : "Tạo lô thu hoạch"}
           </button>
         </footer>
       </form>
