@@ -70,6 +70,7 @@ export function FarmingLogFormScreen() {
   const [taskPickerOpen, setTaskPickerOpen] = useState(false);
   const [customTitle, setCustomTitle] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [reportSaved, setReportSaved] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const appendTranscript = useCallback((text: string) => {
@@ -106,6 +107,7 @@ export function FarmingLogFormScreen() {
   }, []);
   useFocusEffect(useCallback(() => {
     submitted.current = false;
+    setReportSaved(false);
     setError('');
   }, []));
   useFocusEffect(useCallback(() => {
@@ -265,6 +267,19 @@ export function FarmingLogFormScreen() {
     }
   }
 
+  function openSavedReport() {
+    try {
+      finishTabFlow('diary');
+      setDrafts(old => {
+        const next = { ...old };
+        delete next[draftKey];
+        return next;
+      });
+    } catch {
+      setError('Chưa mở được trang Nhật ký. Chọn “Xem nhật ký” để thử lại; nhật ký của bạn đã được lưu.');
+    }
+  }
+
   async function submitReport() {
     Keyboard.dismiss();
 
@@ -274,28 +289,24 @@ export function FarmingLogFormScreen() {
     if (!validate())
       return;
 
-    submitted.current = true;
+    pending.current = true;
     setBusy(true);
     setError('');
 
     try {
       await submit();
-      setDrafts(old => {
-        const next = {
-          ...old
-        };
-        delete next[draftKey];
-
-        return next;
-      });
-      finishTabFlow('diary');
     } catch (e) {
-      submitted.current = false;
       setError(e instanceof Error ? e.message : 'Không lưu được báo cáo.');
+      return;
     }
     finally {
+      pending.current = false;
       setBusy(false);
     }
+
+    submitted.current = true;
+    setReportSaved(true);
+    openSavedReport();
   }
 
   function goBack() {
@@ -304,6 +315,17 @@ export function FarmingLogFormScreen() {
   }
 
   const isSubmitDisabled = busy || isLocating || !draft.plotId || !draft.seasonId || !draft.gps || !!locationError;
+
+  if (reportSaved) {
+    return <SafeAreaView style={styles.page} edges={['top', 'bottom']}>
+      <View style={styles.content}>
+        <Text style={styles.headerTitle}>Đã gửi nhật ký</Text>
+        <Text>Nhật ký của bạn đã được lưu thành công.</Text>
+        {!!error && <Text style={styles.fieldError} accessibilityRole="alert">{error}</Text>}
+        <PrimaryButton title="Xem nhật ký" onPress={openSavedReport} />
+      </View>
+    </SafeAreaView>;
+  }
 
   return (
     <SafeAreaView

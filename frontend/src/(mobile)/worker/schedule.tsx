@@ -299,11 +299,12 @@ export default function WorkerScheduleScreen() {
                       accessibilityRole="button"
                       style={shared.button}
                       onPress={() => {
-                        const message = taskExecutionError(task);
+                        const canSubmitReport = task.started || task.displayStatus === 'incomplete';
+                        const message = taskExecutionError(task, new Date(), canSubmitReport);
                         setActionError(message ? { taskId: task.id, message } : null);
                         if (message) return;
 
-                        if (!task.started) {
+                        if (!canSubmitReport) {
                           void startTask(task.id);
                           return;
                         }
@@ -314,7 +315,7 @@ export default function WorkerScheduleScreen() {
                         });
                       }}
                     >
-                      <Text style={shared.buttonText}>{task.started ? 'Hoàn thành' : 'Bắt đầu'}</Text>
+                      <Text style={shared.buttonText}>{task.started || task.displayStatus === 'incomplete' ? 'Hoàn thành' : 'Bắt đầu'}</Text>
                     </Pressable>
                   )}
                 <Pressable

@@ -43,7 +43,7 @@ export default function WorkerHome() {
     }, [loadWorkerTasks])
   );
 
-  const tasks = workerTasks.filter(task => task.status !== 'done' && occursOn(task, today));
+  const tasks = workerTasks.filter(task => task.status !== 'done' && (occursOn(task, today) || task.displayStatus === 'incomplete'));
   const completedToday = workerTasks.filter(task => task.status === 'done' && localDateKey(task.updatedAt) === today);
   const todayTotal = tasks.length + completedToday.length;
   const reportsToday = reports.filter(report => localDateKey(report.completedAt) === today);
@@ -202,7 +202,7 @@ export default function WorkerHome() {
                   ]}
                   accessibilityRole="button"
                   onPress={() => {
-                    if (!task.started) {
+                    if (!task.started && task.displayStatus !== 'incomplete') {
                       void startTask(task.id);
                       return;
                     }
@@ -219,7 +219,7 @@ export default function WorkerHome() {
                   }}
                 >
                   <Text style={styles.actionText}>
-                    {task.started ? 'Gửi nhật ký hoàn thành' : 'Bắt đầu'}
+                    {task.started || task.displayStatus === 'incomplete' ? 'Gửi nhật ký hoàn thành' : 'Bắt đầu'}
                   </Text>
                 </Pressable>
 

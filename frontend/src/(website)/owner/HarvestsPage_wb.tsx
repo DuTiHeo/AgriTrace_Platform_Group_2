@@ -14,7 +14,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useFarmContext } from "../../contexts/FarmContext_wb";
-import { harvestService } from "../../sevices/harvestService_wb";
+import { HarvestSeasonSyncError, harvestService } from "../../sevices/harvestService_wb";
 import { seasonService } from "../../sevices/seasonService_wb";
 import type { HarvestBatch, HarvestBatchStatus } from "../../features/owner/harvest_wb";
 import { harvestStatusLabels } from "../../features/owner/harvest_wb";
@@ -46,6 +46,7 @@ function HarvestsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [cancelTarget, setCancelTarget] = useState<HarvestBatch | null>(null);
+  const [pendingSync, setPendingSync] = useState<HarvestSeasonSyncError | null>(null);
 
   const loadRequest = useRef(0);
   const loadData = useCallback(async (background = false) => {
@@ -132,6 +133,20 @@ function HarvestsPage() {
       ? "tất cả nông trại"
       : selectedFarm?.name ?? "nông trại đã chọn";
 
+  const cancelBatch = async () => {
+    if (!cancelTarget) return;
+    try {
+      const updated = await harvestService.cancel(cancelTarget.id);
+      setBatches(current => current.map(item => item.id === updated.id ? updated : item));
+      setPendingSync(current => current?.batch.id === updated.id ? null : current);
+    } catch (cause) {
+      if (!(cause instanceof HarvestSeasonSyncError)) throw cause;
+      setBatches(current => current.map(item => item.id === cause.batch.id ? cause.batch : item));
+      setPendingSync(cause);
+      setCancelTarget(null);
+    }
+  };
+
   return (
     <div className="page harvests-page">
       <div className="page-heading harvests-heading">
@@ -196,6 +211,10 @@ function HarvestsPage() {
         </div>
 
         {error && <div className="page-error">{error}</div>}
+        {pendingSync && <div className="page-error" role="alert">
+          <p>{pendingSync.message}</p>
+          <Link className="btn btn-secondary" to={`/harvests/${pendingSync.batch.id}`}>Xem lô và cập nhật mùa vụ</Link>
+        </div>}
 
         {loading ? (
           <div className="page-loading">Đang tải lô thu hoạch...</div>
@@ -283,7 +302,7 @@ function HarvestsPage() {
           </div>
         )}
       </section>
-      {cancelTarget && <ListActionConfirmation action="delete" title="Hủy lô thu hoạch?" confirmLabel="Xác nhận hủy lô" name={cancelTarget.code} statusLabel="Hủy lô thu hoạch" description="Bạn có chắc muốn hủy lô thu hoạch này? Dữ liệu vẫn được giữ để truy xuất lịch sử." onClose={() => setCancelTarget(null)} onConfirm={async () => { const updated = await harvestService.cancel(cancelTarget.id); setBatches(current => current.map(item => item.id === updated.id ? updated : item)); }} />}
+      {cancelTarget && <ListActionConfirmation action="delete" title="Hủy lô thu hoạch?" confirmLabel="Xác nhận hủy lô" name={cancelTarget.code} statusLabel="Hủy lô thu hoạch" description="Dữ liệu vẫn được giữ để truy xuất lịch sử. Mùa vụ chỉ trở về sẵn sàng thu hoạch khi lô này là lô cuối cùng còn hiệu lực." onClose={() => setCancelTarget(null)} onConfirm={cancelBatch} />}
     </div>
   );
 }

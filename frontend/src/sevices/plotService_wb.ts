@@ -53,7 +53,9 @@ function mapPlot(dto: PlotDto): Plot {
     boundaryStatus: boundary.length >= 3 ? "valid" : "invalid",
     status: dto.status,
     currentSeasonId: dto.current_season_id,
-    currentSeasonName: null,
+    currentSeasonName: dto.current_season_id
+      ? `${dto.current_crop_name?.trim() || "Mùa vụ"} · ${dto.code}`
+      : null,
     currentSeasonStatus: dto.current_season_id ? "active" : "none",
     linkedData: { seasons: dto.seasons_count ?? 0, tasks: dto.tasks_count ?? 0, cultivationLogs: dto.farming_logs_count ?? 0 },
     createdAt: dto.created_at ?? "",

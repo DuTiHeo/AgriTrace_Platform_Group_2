@@ -2,8 +2,9 @@ export type JournalPeriod = 'all' | 'today' | 'week' | 'month';
 
 export function taskExecutionError(task: {
   startDate?: string;
-  due: string
-}, now = new Date()) {
+  due: string;
+  dueAt?: string | null;
+}, now = new Date(), allowLateCompletion = false) {
   const today = localDay(now);
   const start = task.startDate || task.due;
 
@@ -13,7 +14,7 @@ export function taskExecutionError(task: {
   if (today < start)
     return 'Chưa đến ngày bắt đầu thực hiện công việc';
 
-  if (today > task.due)
+  if (!allowLateCompletion && (today > task.due || (task.dueAt && Date.parse(task.dueAt) < now.getTime())))
     return 'Đã quá ngày kết thúc thực hiện công việc.';
 
   return '';

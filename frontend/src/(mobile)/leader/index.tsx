@@ -73,7 +73,7 @@ export default function HomeScreen() {
   );
 
   const ownerTasks = tasks.filter(
-    t => t.owner && (!taskId || t.id === taskId)
+    t => t.owner && t.status !== 'done' && (!taskId || t.id === taskId)
   );
 
   const active = members.filter(m => m.active);
@@ -240,12 +240,17 @@ export default function HomeScreen() {
           const status = task.started && task.displayStatus === 'pending'
             ? 'in_progress'
             : task.displayStatus;
+          const canSubmitReport = task.started || status === 'incomplete';
 
           return (
             <Card key={task.id}>
               <View style={s.row}>
                 <Text style={styles.taskName}>{getTaskTypeLabel(task.title)}</Text>
-                {status === 'pending' ? (
+                {status === 'incomplete' ? (
+                  <Text style={[s.chip, s.chipText, styles.incomplete]}>Chưa hoàn thành</Text>
+                ) : status === 'in_progress' ? (
+                  <Text style={[s.chip, s.chipText, styles.inProgress]}>Đang làm</Text>
+                ) : status === 'pending' ? (
                   <Text style={[s.chip, s.chipText, styles.received]}>Đã nhận</Text>
                 ) : (
                   <Status status={status} />
@@ -253,6 +258,7 @@ export default function HomeScreen() {
               </View>
 
               <Text style={s.muted}>{task.area} · Hạn: {dateText(task.due)}</Text>
+              {!!task.instructions.trim() && <Text style={s.muted}>{task.instructions}</Text>}
 
               <View style={styles.actions}>
                 {task.status !== 'done' && (
@@ -260,7 +266,7 @@ export default function HomeScreen() {
                     accessibilityRole="button"
                     style={styles.primaryAction}
                     onPress={() => {
-                      if (!task.started) {
+                      if (!canSubmitReport) {
                         void startTask(task.id);
                         return;
                       }
@@ -277,7 +283,7 @@ export default function HomeScreen() {
                     }}
                   >
                     <Text style={styles.actionText}>
-                      {task.started ? 'Gửi nhật ký hoàn thành' : 'Bắt đầu'}
+                      {canSubmitReport ? 'Gửi nhật ký hoàn thành' : 'Bắt đầu'}
                     </Text>
                   </Pressable>
                 )}
@@ -348,6 +354,8 @@ const styles = StyleSheet.create({
   taskHeading: { ...s.row, justifyContent: 'space-between', paddingBottom: 10 },
   taskName: { ...s.section, flex: 1 },
   received: { color: colors.muted, backgroundColor: '#EFF2F0' },
+  incomplete: { color: colors.danger, backgroundColor: '#fef2f2' },
+  inProgress: { color: colors.warning, backgroundColor: colors.warningSoft },
   actions: { ...s.row, flexWrap: 'wrap' },
   primaryAction: { ...s.button, flex: 1 },
   actionText: { ...s.buttonText, textAlign: 'center' }

@@ -20,7 +20,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { farmService } from "../../sevices/farmService_wb";
-import { harvestService } from "../../sevices/harvestService_wb";
+import { HarvestSeasonSyncError, harvestService } from "../../sevices/harvestService_wb";
 import { plotService } from "../../sevices/plotService_wb";
 import { seasonService } from "../../sevices/seasonService_wb";
 import type { Farm } from "../../features/owner/farm_wb";
@@ -72,13 +72,24 @@ function HarvestDetailPage() {
   const [editContributions, setEditContributions] = useState<Record<string, string>>({});
   const [editError, setEditError] = useState("");
   const [cancelOpen, setCancelOpen] = useState(false);
+  const [pendingSeasonIds, setPendingSeasonIds] = useState<string[] | null>(null);
   const editDialog = useRef<HTMLDialogElement>(null);
   const qrCanvas = useRef<HTMLCanvasElement>(null);
+  const showSavedBatch = (cause: HarvestSeasonSyncError) => {
+    setBatch(cause.batch);
+    setPendingSeasonIds(cause.seasonIds);
+    setEditing(false);
+    setCancelOpen(false);
+    setError(`Lô ${cause.batch.code || cause.batch.id} đã được ${cause.batch.status === "cancelled" ? "hủy" : "lưu"}. Trạng thái mùa vụ chưa được cập nhật đầy đủ. ${cause.message}`);
+  };
   const generateQr = async () => {
-    if (!batch || busy || batch.status === "cancelled") return;
+    if (!batch || busy || pendingSeasonIds !== null || batch.status === "cancelled") return;
     setBusy(true); setError(""); setNotice("");
     try { setBatch(await harvestService.generateTraceCode(batch.id)); setNotice("Đã tạo mã QR truy xuất cho lô thu hoạch."); }
-    catch (cause) { setError(cause instanceof Error ? cause.message : "Không thể tạo mã QR."); }
+    catch (cause) {
+      if (cause instanceof HarvestSeasonSyncError) showSavedBatch(cause);
+      else setError(cause instanceof Error ? cause.message : "Không thể tạo mã QR.");
+    }
     finally { setBusy(false); }
   };
   const downloadQr = () => {
@@ -97,7 +108,7 @@ function HarvestDetailPage() {
   }, [editing]);
 
   const openEdit = () => {
-    if (!batch || batch.status === "cancelled") return;
+    if (!batch || busy || pendingSeasonIds !== null || batch.status === "cancelled") return;
     setHarvestDate(batch.harvestDate);
     setEditCode(batch.code);
     setEditStatus(batch.status);
@@ -154,17 +165,45 @@ function HarvestDetailPage() {
     () => new Map(plots.map((plot) => [plot.id, plot])),
     [plots],
   );
+  const needsSeasonUpdate = batch?.contributions.some((contribution) => {
+    const season = seasonById.get(contribution.seasonId);
+    return batch.status === "cancelled" ? season?.status === "completed" : season?.status === "ready";
+  }) ?? false;
+
+  const syncSeasons = async () => {
+    if (!batch || busy) return;
+    setBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      const updated = await harvestService.syncSeasonStatuses(batch.id, pendingSeasonIds ?? undefined);
+      setBatch(updated);
+      setPendingSeasonIds(null);
+      await loadData();
+      setNotice("Đã cập nhật trạng thái mùa vụ theo các lô thu hoạch còn hiệu lực.");
+    } catch (cause) {
+      if (cause instanceof HarvestSeasonSyncError) showSavedBatch(cause);
+      else setError(cause instanceof Error ? cause.message : "Không thể cập nhật trạng thái mùa vụ. Vui lòng thử lại.");
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const cancelBatch = async () => {
-    if (!batch) {
+    if (!batch || busy || pendingSeasonIds !== null) {
       return;
     }
 
     setBusy(true);
     setError("");
+    setNotice("");
     try {
-      await harvestService.cancel(batch.id);
+      const cancelled = await harvestService.cancel(batch.id);
+      setBatch(cancelled);
       navigate("/harvests");
+    } catch (cause) {
+      if (cause instanceof HarvestSeasonSyncError) showSavedBatch(cause);
+      else throw cause;
     } finally {
       setBusy(false);
     }
@@ -172,7 +211,7 @@ function HarvestDetailPage() {
 
   const saveBatch = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!batch) return;
+    if (!batch || busy || pendingSeasonIds !== null) return;
     if (!editCode.trim() || !harvestDate) { setEditError("Vui lòng nhập mã lô và ngày thu hoạch."); return; }
     setBusy(true);
     setEditError("");
@@ -194,9 +233,11 @@ function HarvestDetailPage() {
       });
       setBatch(updated);
       setEditing(false);
+      await loadData();
       setNotice("Đã cập nhật thông tin lô thu hoạch.");
     } catch (actionError) {
-      setEditError(actionError instanceof Error ? actionError.message : "Không thể cập nhật lô thu hoạch.");
+      if (actionError instanceof HarvestSeasonSyncError) showSavedBatch(actionError);
+      else setEditError(actionError instanceof Error ? actionError.message : "Không thể cập nhật lô thu hoạch.");
     } finally {
       setBusy(false);
     }
@@ -230,15 +271,18 @@ function HarvestDetailPage() {
           <p>{farm?.name ?? "Nông trại không xác định"}</p>
         </div>
         {batch.status !== "cancelled" && <div className="harvest-detail-actions">
-          <button className="btn btn-secondary" type="button" disabled={busy} onClick={openEdit}><Edit3 size={16} />Chỉnh sửa</button>
-          <button className="harvest-delete-button" type="button" disabled={busy} onClick={() => setCancelOpen(true)}><Trash2 size={16} />Hủy lô</button>
+          <button className="btn btn-secondary" type="button" disabled={busy || pendingSeasonIds !== null} onClick={openEdit}><Edit3 size={16} />Chỉnh sửa</button>
+          <button className="harvest-delete-button" type="button" disabled={busy || pendingSeasonIds !== null} onClick={() => setCancelOpen(true)}><Trash2 size={16} />Hủy lô</button>
         </div>}
       </div>
 
-      {error && <div className="page-error">{error}</div>}
+      {error && <div className="page-error" role="alert">{error}</div>}
+      {(pendingSeasonIds !== null || needsSeasonUpdate) && <div className="harvest-detail-actions">
+        <button className="btn btn-secondary" type="button" disabled={busy} onClick={() => void syncSeasons()}><Sprout size={16} />{busy ? "Đang cập nhật..." : "Cập nhật trạng thái mùa vụ"}</button>
+      </div>}
       {notice && <div className="harvest-notice">{notice}</div>}
 
-      {cancelOpen && <ListActionConfirmation action="delete" title="Hủy lô thu hoạch?" confirmLabel="Xác nhận hủy lô" name={batch.code} statusLabel="Hủy lô thu hoạch" description="Bạn có chắc muốn hủy lô thu hoạch này? Dữ liệu vẫn được giữ để truy xuất lịch sử." onClose={() => setCancelOpen(false)} onConfirm={cancelBatch} />}
+      {cancelOpen && <ListActionConfirmation action="delete" title="Hủy lô thu hoạch?" confirmLabel="Xác nhận hủy lô" name={batch.code} statusLabel="Hủy lô thu hoạch" description="Dữ liệu vẫn được giữ để truy xuất lịch sử. Mùa vụ chỉ trở về sẵn sàng thu hoạch khi lô này là lô cuối cùng còn hiệu lực." onClose={() => setCancelOpen(false)} onConfirm={cancelBatch} />}
 
       {editing && <dialog onClick={event => { if (!busy && isDialogBackdropClick(event)) setEditing(false); }} ref={editDialog} className="harvest-edit-dialog" aria-labelledby="harvest-edit-title" onCancel={event => { event.preventDefault(); if (!busy) setEditing(false); }}>
         <form onSubmit={saveBatch}>
@@ -312,7 +356,7 @@ function HarvestDetailPage() {
             <div><QrCode size={19} /><h2>Tem truy xuất</h2></div>
           </div>
           <div className="harvest-qr-empty">
-            {batch.traceUrl ? <><QRCodeCanvas ref={qrCanvas} value={batch.traceUrl} size={240} marginSize={4} level="M" /><strong>{batch.code}</strong><button className="btn btn-secondary" type="button" onClick={downloadQr}><Download size={17} />Tải mã QR</button>{/^https?:\/\//i.test(batch.traceUrl) && <a href={batch.traceUrl} target="_blank" rel="noreferrer">Mở đường dẫn truy xuất</a>}</> : <><QrCode size={44} /><strong>Chưa có mã QR</strong><p>Tạo mã QR để gắn với thông tin lô thu hoạch.</p>{batch.status !== "cancelled" && <button type="button" className="btn btn-primary" disabled={busy} onClick={() => void generateQr()}><QrCode size={17} />{busy ? "Đang tạo..." : "Tạo mã QR"}</button>}</>}
+            {batch.traceUrl ? <><QRCodeCanvas ref={qrCanvas} value={batch.traceUrl} size={240} marginSize={4} level="M" /><strong>{batch.code}</strong><button className="btn btn-secondary" type="button" onClick={downloadQr}><Download size={17} />Tải mã QR</button>{/^https?:\/\//i.test(batch.traceUrl) && <a href={batch.traceUrl} target="_blank" rel="noreferrer">Mở đường dẫn truy xuất</a>}</> : <><QrCode size={44} /><strong>Chưa có mã QR</strong><p>Tạo mã QR để gắn với thông tin lô thu hoạch.</p>{batch.status !== "cancelled" && <button type="button" className="btn btn-primary" disabled={busy || pendingSeasonIds !== null} onClick={() => void generateQr()}><QrCode size={17} />{busy ? "Đang tạo..." : "Tạo mã QR"}</button>}</>}
           </div>
         </aside>
       </div>
