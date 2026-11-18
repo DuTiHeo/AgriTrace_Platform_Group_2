@@ -1,6 +1,7 @@
 export type TaskContent = {
   title: string;
   instructions?: string;
+  cropVarietyName?: string;
   startTime?: string;
   endTime?: string;
   tools?: string;
@@ -32,6 +33,7 @@ export function decodeTaskContent(content: string): TaskContent {
       ...value,
       title: value.title,
       instructions: typeof value.instructions === 'string' ? value.instructions : undefined,
+      cropVarietyName: typeof value.cropVarietyName === 'string' ? value.cropVarietyName : undefined,
       tools: typeof value.tools === 'string' ? value.tools : undefined,
       assignedById: typeof value.assignedById === 'string' ? value.assignedById : undefined,
       assignedByName: typeof value.assignedByName === 'string' ? value.assignedByName : undefined,
